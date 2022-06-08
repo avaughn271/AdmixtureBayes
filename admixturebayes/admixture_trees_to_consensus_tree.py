@@ -242,7 +242,7 @@ def main(args):
             adms=get_all_admixture_origins(tree)
             adm_interpretation={}
             for key, (branch_name, node_destination) in list(adms.items()):
-                adm_interpretation[key]='For the lineages that passes through {}, this is the proportion that follows branch {} to node {}'.format(key, branch_name,node_destination)
+                adm_interpretation[key]='For the lineages that pass through {}, this is the proportion that follows branch {} to node {}'.format(key, branch_name,node_destination)
             if not options.suppress_plot:
                 plot_as_directed_graph(tree, drawing_name=options.prefix+'topology_labels_' + str(i + 1) + '.png', plot_edge_lengths=True,  popup=options.popup)
             if options.write_estimates_to_file:
