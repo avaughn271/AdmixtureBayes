@@ -280,18 +280,8 @@ def main(args):
     before_added_outgroup, full_nodes, reduced_nodes=get_nodes(options.nodes, options.input_file, options.create_outgroup, options.outgroup)
 
 
-    if options.unadmixed_populations:
-        warnings.warn('Some populations are restricted to being non-admixed - therefore there is no longer a geometrical prior on the number of admixture events.')
 
-
-    if len(options.prefix)>0:
-        print(options.prefix, len(options.prefix))
-        prefix_dirname=os.path.dirname(options.prefix)
-        if prefix_dirname and not os.path.exists(prefix_dirname):
-            os.makedirs(prefix_dirname)
-        prefix=options.prefix
-    else:
-        prefix=options.prefix
+    prefix=options.prefix
 
     if options.alternative_treemix_infile:
         treemix_file=options.alternative_treemix_infile
@@ -303,32 +293,12 @@ def main(args):
         treemix_file=prefix+"treemix_in.txt"
         treemix_in_file=treemix_file+'.gz'
 
-    #treemix_file=prefix+"treemix_in.txt"
-    if options.treemix_output_prefix:
-        treemix_out_files=prefix+options.treemix_output_prefix
-    else:
-        treemix_out_files=prefix+'treemix_out'
 
-    if options.starting_trees and options.indirect_correction:
-        if options.starting_tree_scaling=='empirical_trace':
-            temp_scaling='starting_tree_trace'
-        else:
-            temp_scaling=options.starting_tree_scaling
-        preliminary_starting_trees=get_starting_trees(options.starting_trees,
-                                          options.MCMC_chains,
-                                          adds=options.starting_adds,
-                                          nodes=reduced_nodes,
-                                          pipeline=options.covariance_pipeline,
-                                          multiplier=None,
-                                          scale_tree_factor=options.scale_tree_factor,
-                                          start=options.start,
-                                          prefix=prefix,
-                                          starting_tree_scaling=temp_scaling,
-                                          starting_tree_use_scale_tree_factor=options.starting_tree_use_scale_tree_factor,
-                                          scale_goal=options.scale_goal)
-    else:
-        preliminary_starting_trees=[None]
-        assert options.initial_Sigma!='start', 'to make the filter start somewhere specific it should also be specified specifically'
+    treemix_out_files=prefix+'treemix_out'
+
+
+    preliminary_starting_trees=[None]
+    assert options.initial_Sigma!='start', 'to make the filter start somewhere specific it should also be specified specifically'
 
     locus_filter=make_filter(options.filter_type,
                              outgroup_name=options.outgroup, #options.reduce_node,
@@ -386,33 +356,6 @@ def main(args):
                               verbose_level=options.verbose_level
                               )
 
-
-
-
-    if options.treemix_instead or options.treemix_also:
-
-        dir = os.path.dirname(__file__)
-        program=os.path.join(dir,'treemixrunner.py')
-        if options.treemix_output_names:
-            outfiles=options.treemix_output_names
-        else:
-            outfiles=[treemix_out_files+str(k) for k in options.treemix_no_admixtures]
-        calls_to_treemix=[['python',program,
-                           '-p', str(options.treemix_processes),
-                           '-n', str(options.treemix_reps),
-                           '-i', treemix_in_file,
-                           '-o', o_file,
-                           '-root', options.outgroup, #reduce_node,
-                           '-m', str(k)] for k, o_file in zip(options.treemix_no_admixtures,outfiles)]
-        from subprocess import call
-        for c in calls_to_treemix:
-            call(c)
-
-        if not options.treemix_also:
-            import sys
-            sys.exit()
-
-
     if options.df_file:
         if options.likelihood_treemix and not options.df_treemix_adjust_to_wishart:
             df = file_to_emp_cov(options.df_file, nodes=reduced_nodes)
@@ -424,8 +367,6 @@ def main(args):
         df = options.wishart_df
         boot_covs = []
     else:
-        #assert 6 in options.covariance_pipeline, 'Can not estimate the degrees of freedom without SNP data.'
-        #reduce_also= (8 in options.covariance_pipeline)
         estimator_arguments['save_variance_correction']=False
         if options.likelihood_treemix:
             summarization='var'
@@ -452,20 +393,12 @@ def main(args):
     else:
         multiplier=covariance[1]
 
-    if options.starting_tree_scaling=='treemix_tree':
-        if not (6 in options.covariance_pipeline) and not (8 in options.covariance_pipeline):
-            if not options.mscale_file:
-                warnings.warn('No mscale file created and no mscale file provided, so it will look for the default position')
     if not options.mscale_file:
         mscale_file=None
     else:
         mscale_file=options.mscale_file
 
-    if options.outgroup_type=='Free':
-        tree_nodes=full_nodes
-    else:
-        tree_nodes=reduced_nodes
-    #print('tree_nodes',tree_nodes) #ANDREWDEBUG
+    tree_nodes=reduced_nodes
     starting_trees=get_starting_trees(options.starting_trees,
                                       options.MCMC_chains,
                                       adds=options.starting_adds,
@@ -480,7 +413,6 @@ def main(args):
                                       scale_goal=options.scale_goal,
                                       mscale_file=mscale_file,
                                       no_add=no_add)
-    from Rtree_operations import pretty_print
     #print('first tree') ANDREWDEBUG
     #pretty_print(starting_trees[0][0])
     #if options.verbose_level!='silent':
@@ -518,15 +450,8 @@ def main(args):
     else:
         sc=None
 
-    if options.stop_evaluations:
-        import sys
-        sys.exit()
-    if options.outgroup_type=='Free':
-        collapse_row=options.outgroup
-        likelihood_nodes=full_nodes
-    else:
-        collapse_row=''
-        likelihood_nodes=reduced_nodes
+    collapse_row=''
+    likelihood_nodes=reduced_nodes
     posterior = posterior_class(emp_cov=covariance[0],
                                 M=df,
                                 p=options.p,
@@ -542,39 +467,11 @@ def main(args):
                                 prior_run=options.prior_run,
                                 unadmixed_populations=options.unadmixed_populations,
                                 collapse_row=collapse_row)
-    if options.rs:
-        assert options.MCMC_chains>1, 'More than one chain is needed to use several rs'
-        posterior_function_list=[posterior]
-        for i in range(1,options.MCMC_chains):
+
+    posterior_function_list=[]
 
 
-            n_posterior= posterior_class(emp_cov=covariance[0],
-                           M=df,
-                           p=options.p,
-                           use_skewed_distr=options.sap_analysis,
-                           multiplier=covariance[1],
-                           nodes=likelihood_nodes,
-                           use_uniform_prior=not options.not_uniform_prior,
-                           treemix=options.likelihood_treemix,
-                           add_variance_correction_to_graph=(options.variance_correction!='None' and
-                                                                                     options.add_variance_correction_to_graph),
-                           prefix=prefix,
-                           variance_correction_file=options.variance_correction_input_file,
-                           prior_run=options.prior_run,
-                           unadmixed_populations=options.unadmixed_populations,
-                           collapse_row=collapse_row,
-                           r=1.0+options.r_scale*i)
-            posterior_function_list.append(n_posterior)
-    else:
-        posterior_function_list=[]
-
-
-    if options.adaptive_temperatures:
-        temperature_scheme=temperature_adapting(options.max_temp, options.MCMC_chains)
-    else:
-        temperature_scheme=fixed_geometrical(options.max_temp,options.MCMC_chains)
-
-    #print('Initialization complete.')
+    temperature_scheme=fixed_geometrical(options.max_temp,options.MCMC_chains)
 
     #####    ANDREW DEBUG   !!!!!!!!!!
     if os.path.exists("DF.txt"):
@@ -631,29 +528,10 @@ def main(args):
                     appending_result_file=options.result_file,
                     appending_result_frequency=sim_lengths[0])
 
-    def single_evaluation_run(alts=[]):
-        one_evaluation(starting_trees[0],
-                       posterior,
-                       options.result_file,
-                       alts)
-    if options.evaluate_likelihood:
-        if options.evaluate_bootstrap_likelihoods and boot_covs:
-            single_evaluation_run(boot_covs)
-        else:
-            single_evaluation_run()
-        with open(options.result_file, 'r') as f:
-            for r in f.readlines():
-                print(r)
+    if options.MCMC_chains==1:
+        single_chain_run()
     else:
-        if options.profile:
-            import cProfile
-            cProfile.run('single_chain_run()')
-        elif options.MCMC_chains==1:
-            single_chain_run()
-        else:
-            res=multi_chain_run()
-            if options.store_permuts:
-                save_permuts_to_csv(res, get_permut_filename(options.result_file))
+        res=multi_chain_run()
 
 if __name__=='__main__':
     import sys

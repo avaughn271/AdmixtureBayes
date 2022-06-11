@@ -106,30 +106,6 @@ def remove_empty_children(tree):
                 tree[k][5+n]=None
     return tree
 
-def get_most_likely_subgraphs_list(strees, nodes, subgraph_keys, sort_nodes=True):
-    if sort_nodes:
-        nodes=sorted(nodes)
-    topologies={}
-    n=len(strees)
-    for i,stree in enumerate(strees):
-        if i%(n/10)==0:
-            print(float(i)/n)
-        tree=identifier_to_tree_clean(stree, leaves=generate_predefined_list_string(deepcopy(nodes)))
-        sub_tree=get_subtree(tree, subgraph_keys)
-        sub_stree=get_unique_plottable_tree(sub_tree)
-        sub_topology, sbranch_lengths, sadmixture_proportions = sub_stree.split(';')
-        branch_lengths=list(map(float, sbranch_lengths.split('-')))
-        if len(sadmixture_proportions)>0:
-            admixture_proportions=list(map(float, sadmixture_proportions.split('-')))
-        else:
-            admixture_proportions=[]
-        if sub_topology in topologies:
-            topologies[sub_topology][0].append(branch_lengths)
-            topologies[sub_topology][1].append(admixture_proportions)
-        else:
-            topologies[sub_topology]=[[branch_lengths],[admixture_proportions]]
-    return topologies
-
 def get_and_save_most_likely_substrees(sub_strees, subgraph_keys, max_num=10, total_probability=1.0, prefix='',**not_needed):
     topologies={}
     for sub_stree in sub_strees:
@@ -196,43 +172,7 @@ def save_top_subgraphs(topologies, nodes, max_num=10, total_probability=1.0, pre
                      filename=prefix+'subgraph_'+'_'.join(nodes)+'-'+str(n)+'.txt', 
                      param_val=topologies[topology])
         
-def read_subgraphing_dict(filename, types=['full','topological']):
-    if isinstance(types, str):
-        types=[types]
-    res=[]
-    with open(filename,'r') as f:
-        for lin in f.readlines():
-            elements=lin.split()
-            arguments={}
-            if '__' in elements:
-                if 'full' not in types:
-                    continue
-                i=elements.index('__')
-                outp=elements[i+1:]
-                if len(outp)>0:
-                    arguments['max_num']=int(outp[0])
-                if len(outp)>1:
-                    arguments['total_probability']=float(outp[1])
-                if len(outp)>2:
-                    arguments['prefix']=outp[2]
-                elements=elements[:i]
-            if '++' in elements:
-                if 'topological' not in types:
-                    continue
-                i=elements.index('++')
-                outp=elements[i+1:]
-                if len(outp)>0:
-                    arguments['max_num']=int(outp[0])
-                    print('setting max num to ', arguments['max_num'])
-                if len(outp)>1:
-                    arguments['prefix']=outp[1]
-                elements=elements[:i]
-            arguments['subgraph_keys']=elements
-            res.append(arguments)
-    return res
-    
-        
-    
+
 
 
 def prune_subtree(tree):

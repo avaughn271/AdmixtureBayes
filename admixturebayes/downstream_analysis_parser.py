@@ -1,21 +1,15 @@
 from argparse import ArgumentParser, SUPPRESS
 from downstream_analysis_tool import (thinning, iterate_over_output_file, always_true, make_Rtree, make_full_tree, read_true_values,
                                       make_Rcovariance, cov_truecov, topology_identity,get_pops,compare_pops,extract_number_of_sadmixes, 
-                                      read_one_line,summarize_all_results, create_treemix_csv_output, topology, float_mean, mode,
-                                      create_treemix_sfull_tree_csv_output, subgraph, subsets,
+                                      read_one_line,summarize_all_results, topology, float_mean,
+                                       subgraph, subsets,
                                       make_string_tree, topology_without_outgroup)
-from subgraphing import read_subgraphing_dict, get_most_likely_subgraphs_list, save_top_subgraphs
 from find_true_trees import tree_unifier
 from copy import deepcopy
-from collections import Counter
-from Rtree_operations import get_leaf_keys
 import sys
 from custom_summary import all_custom_summaries
 
-
 def run_posterior_main(args):
-
-
 
     possible_summaries={'Rtree': make_Rtree,
                         'full_tree':make_full_tree,
@@ -34,7 +28,6 @@ def run_posterior_main(args):
     possible_summaries.update(all_custom_summaries())
 
     parser = ArgumentParser(usage='pipeline for post analysis')
-
 
     parser.add_argument('--mcmc_results', required=True, type=str, help='The output file from an AdmixtureBayes run.')
     parser.add_argument('--covariance', required=True, type=str,
@@ -147,23 +140,6 @@ def run_posterior_main(args):
                           subnodes_wo_outgroup=subnodes_wo_outgroup)
     _, _, _, emp_covariance_reduced, (emp_covariance_scaled,multiplier), _, emp_m_scale, vc, df=outp
 
-    if options.treemix_post_analysis:
-        if not options.treemix_full_tree:
-            outp=read_true_values(true_tree=options.treemix_tree,
-                                  true_add=options.treemix_add,
-                                  subnodes_with_outgroup=subnodes_with_outgroup,
-                                  subnodes_wo_outgroup=subnodes_wo_outgroup)
-            _, treemix_tree, treemix_add, _, _, _, _, _, _=outp
-            create_treemix_csv_output(treemix_tree,treemix_add*multiplier, emp_m_scale, options.treemix_csv_output)
-        elif options.treemix_full_tree:
-            outp=read_true_values(true_scaled_tree=options.treemix_full_tree,
-                          subnodes_with_outgroup=subnodes_with_outgroup,
-                          subnodes_wo_outgroup=subnodes_wo_outgroup)
-            full_treemix_tree, _, _, _, _, _, _, _, _=outp
-            create_treemix_sfull_tree_csv_output(full_treemix_tree, emp_m_scale, options.treemix_csv_output)
-            full_nodes=sorted(get_leaf_keys(full_treemix_tree))
-
-
 
     thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
 
@@ -233,52 +209,13 @@ def run_posterior_main(args):
         if 'string_tree' in options.save_summaries:
             options.save_summaries.remove('string_tree')
 
-    if 'subgraph' in options.calculate_summaries:
-        subgraph_dicts=read_subgraphing_dict(options.subgraph_file, types=['full'])
-        for dic in subgraph_dicts:
-            skeys=dic['subgraph_keys']
-            identifier='.'.join(skeys)
-            code='subgraph_'+identifier
-            sum_func=possible_summaries['subgraph'](skeys,identifier)
-            row_sums.append(sum_func)
-            name_to_rowsum_index(code)
-            options.save_summaries.append(code)
-            options.summary_summaries.append(code)
-            possible_summary_summaries[code]=sum_func.summarise
-    if 'Rcov' in options.calculate_summaries:
-        row_sums.append(possible_summaries['Rcov'](deepcopy(nodes_wo_outgroup), add_multiplier=1.0/multiplier))
-        name_to_rowsum_index('Rcov')
     if 'topology' in options.calculate_summaries:
         row_sums.append(possible_summaries['topology'](nodes=nodes))
         name_to_rowsum_index('topology')
         assert  'topology_without_outgroup' not in options.calculate_summaries, 'not possible to have both topology_without_outgroup and topology'
-    elif 'topology_without_outgroup' in options.calculate_summaries:
-        assert options.outgroup_name, 'You should not use topology_without_outgroup when no outgroup is specified'
-        row_sums.append(possible_summaries['topology_without_outgroup'](outgroup_to_remove=options.outgroup_name))
-        name_to_rowsum_index('topology')
-        nodes_with_outgroup=nodes_wo_outgroup
     if 'pops' in options.calculate_summaries:
         row_sums.append(possible_summaries['pops'](min_w=options.min_w, keys_to_include=nodes))
         name_to_rowsum_index('pops')
-    if 'subsets' in options.calculate_summaries:
-        subgraph_dicts=read_subgraphing_dict(options.subgraph_file, types=['topological'])
-        for dic in subgraph_dicts:
-            skeys=dic['subgraph_keys']
-            identifier='.'.join(skeys)
-            code='subsets_'+identifier
-            sum_func=possible_summaries['subsets'](identifier=identifier, **dic)
-            row_sums.append(sum_func)
-            name_to_rowsum_index(code)
-            options.save_summaries.append(code)
-            options.summary_summaries.append(code)
-            possible_summary_summaries[code]=sum_func.summarise
-    if 'no_sadmixes' in options.calculate_summaries:
-        if options.constrain_number_of_effective_admixes:
-            no_effective_admixes=int(options.constrain_number_of_effective_admixes)
-        else:
-            no_effective_admixes=None
-        row_sums.append(possible_summaries['no_sadmixes'](no_effective_admixes))
-        name_to_rowsum_index('no_sadmixes')
 
     for summary in possible_summaries:
         if summary not in special_summaries:
@@ -289,22 +226,7 @@ def run_posterior_main(args):
     def save_thin_columns(d_dic):
         return {summ:d_dic[summ] for summ in list(set(options.save_summaries+options.custom_summaries))}
 
-
-    if options.treemix_post_analysis:
-        if options.treemix_full_tree:
-            constant_kwargs={'full_nodes':nodes_with_outgroup}
-        else:
-            constant_kwargs={}
-        all_results,_=iterate_over_output_file(options.treemix_csv_output,
-                                             cols=options.use_cols,
-                                             pre_thin_data_set_function=thinner,
-                                             while_thin_data_set_function=always_true,
-                                             row_summarize_functions=row_sums,
-                                             thinned_d_dic=save_thin_columns,
-                                             full_summarize_functions=[],
-                                             **constant_kwargs)
-    else:
-        all_results,_=iterate_over_output_file(options.mcmc_results,
+    all_results,_=iterate_over_output_file(options.mcmc_results,
                                              cols=options.use_cols,
                                              pre_thin_data_set_function=thinner,
                                              while_thin_data_set_function=always_true,
@@ -320,67 +242,6 @@ def run_posterior_main(args):
                 s_summs=[str(row[summ]) for summ in summaries]
                 f.write(','.join(s_summs)+ '\n')
         sys.exit()
-
-    if 'mode_topology_compare' in options.summary_summaries or 'mode_topology' in options.summary_summaries:
-        def mode_topology_compare(v):
-            a=mode(v)
-            #removedprin a
-            return row_sums[name_to_rowsum_index['top_identity']](a)[0]['top_identity']
-        def mode_topology(v):
-            #removedprin 'tops', v
-            a=mode(v)
-            return(a)
-        possible_summary_summaries['mode_topology']=mode_topology
-        possible_summary_summaries['mode_topology_compare']=mode_topology_compare
-    if 'mode_pops_compare' in options.summary_summaries or 'mode_pops' in options.summary_summaries:
-        def mode_pops(v):
-            #removedprin 'pops',v
-            v2=['-'.join(sorted(vi)) for vi in v]
-            vmax_s=mode(v2)
-            return vmax_s
-        def mode_pops_compare(v):
-            v2=['-'.join(sorted(vi)) for vi in v]
-            vmax_s=mode(v2)
-            vmax=vmax_s.split('-')
-            #removedprin vmax
-            return row_sums[name_to_rowsum_index['set_differences']](vmax)[0]['set_differences']
-        possible_summary_summaries['mode_pops_compare']=mode_pops_compare
-        possible_summary_summaries['mode_pops']=mode_pops
-    if 'node_count' in options.summary_summaries:
-        def count_measure(v):
-            ad=Counter([a for k in v for a in k])
-            l=ad.most_common(4000)
-            total=len(v)
-            with open('node_counts.txt','w') as f:
-                for key,count_num in l:
-                    f.write(key+' '+str(float(count_num)/total)+'\n')
-        possible_summary_summaries['node_count']=count_measure
-    if 'top_pops' in options.summary_summaries:
-        def write_top_pops(v):
-            v2=['_'.join(sorted(vi)) for vi in v]
-            ad=Counter(v2)
-            if options.number_of_top_pops<=0:
-                l=ad.most_common()
-            else:
-                l=ad.most_common(options.number_of_top_pops)
-            total=len(v)
-            with open('top_pops.txt','w') as f:
-                for n,(key,count_num) in enumerate(l):
-                    f.write(str(n+1)+','+str(float(count_num)/total)+','+key+'\n')
-        possible_summary_summaries['top_pops']=write_top_pops
-    if 'subgraph' in options.summary_summaries:
-        subgraph_dicts=read_subgraphing_dict(options.subgraph_file)
-        def subgraphing(trees):
-            for dic in subgraph_dicts:
-                sgraphs=get_most_likely_subgraphs_list(strees=trees, nodes=nodes_with_outgroup, subgraph_keys=dic['subgraph_keys'])
-                save_top_subgraphs(topologies=sgraphs, nodes=dic['subgraph_keys'], **dic)
-        possible_summary_summaries['subgraph']=subgraphing
-
-
-
-
-
-
 
     n=len(options.save_summaries)
     summary_summaries=options.summary_summaries
@@ -400,8 +261,6 @@ def run_posterior_main(args):
         f.write(','.join(['mcmc_results']+header)+'\n')
         f.write(','.join([options.mcmc_results]+list(map(str,res))))
     
-
-        
 if __name__=='__main__':
     import sys
     run_posterior_main(sys.argv[1:])
