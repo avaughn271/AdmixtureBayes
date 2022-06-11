@@ -171,7 +171,6 @@ def simulate_generation(no_totally_free, halfly_frees, no_admixes, lineages, tre
     no_halfly_frees=len(halfly_frees)
     new_lineages=[]
     #removedprin 'lineages', lineages
-    #pretty_print(tree)
     #removedprin 'no_totally_free', no_totally_free
     #removedprin 'no_halfly_frees',no_halfly_frees
     #removedprin 'no_admixes', no_admixes

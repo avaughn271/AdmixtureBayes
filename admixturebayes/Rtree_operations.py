@@ -1103,7 +1103,6 @@ def tree_to_0tree(tree):
         if adm_key in pruned_tree:
             #removedprin '------------------------------------------'
             #removedprin 'removing', (adm_key, int_bin) , 'from tree:'
-            #pretty_print(pruned_tree)
             pruned_tree=remove_admixture(pruned_tree, adm_key, 1)
     return pruned_tree
 

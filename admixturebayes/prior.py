@@ -20,7 +20,6 @@ def illegal_admixtures(unadmixed_populations, tree):
         return True
     return False
 
-
 def prior(x, p=0.5, use_skewed_distr=False, pks={}, use_uniform_prior=False, unadmixed_populations=[], r=0):
     tree, add=x
     no_leaves=get_number_of_leaves(tree)

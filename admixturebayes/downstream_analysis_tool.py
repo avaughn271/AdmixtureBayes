@@ -375,7 +375,6 @@ class set_identity(object):
         ident=(set_differences==0)
         return {'set_identity':ident}
     
-    
 class extract_number_of_sadmixes(object):
     
     def __init__(self, filter_on_sadmixes=None):

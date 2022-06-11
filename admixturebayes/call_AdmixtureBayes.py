@@ -6,18 +6,13 @@ from construct_covariance_choices import get_covariance
 from construct_nodes_choices import get_nodes
 from construct_summary_choices import get_summary_scheme
 from construct_filter_choices import make_filter
-from temperature_scheme import fixed_geometrical, temperature_adapting
-from analyse_results import save_permuts_to_csv, get_permut_filename
+from temperature_scheme import fixed_geometrical
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
 from MCMC import basic_chain
 from stop_criteria import stop_criteria
-from one_evaluation import one_evaluation
 from tree_to_data import emp_cov_to_file, file_to_emp_cov
-
-import warnings
-
 
 import os
 
@@ -261,7 +256,6 @@ def main(args):
 
     no_add=options.outgroup_type=='None' or options.outgroup_type=='Free'
 
-
     mp = make_proposal(deladmix=options.deladmix,
                   addadmix=options.addadmix,
                   rescale=options.rescale,
@@ -283,19 +277,12 @@ def main(args):
 
     prefix=options.prefix
 
-    if options.alternative_treemix_infile:
-        treemix_file=options.alternative_treemix_infile
-        treemix_in_file=options.alternative_treemix_infile
-    elif options.covariance_pipeline[0]==6:
+    if options.covariance_pipeline[0]==6:
         treemix_in_file=options.input_file
         treemix_file=options.input_file
     else:
         treemix_file=prefix+"treemix_in.txt"
         treemix_in_file=treemix_file+'.gz'
-
-
-    treemix_out_files=prefix+'treemix_out'
-
 
     preliminary_starting_trees=[None]
     assert options.initial_Sigma!='start', 'to make the filter start somewhere specific it should also be specified specifically'
@@ -307,9 +294,6 @@ def main(args):
         locus_filter_on_simulated=make_filter(options.filter_type)
     else:
         locus_filter_on_simulated=make_filter(options.filter_on_simulated)
-
-
-
 
     estimator_arguments=dict(reducer=options.outgroup, #options.reduce_node,
                              variance_correction=options.variance_correction,
@@ -362,10 +346,8 @@ def main(args):
         else:
             with open(options.df_file, 'r') as f:
                 df = float(f.readline().rstrip())
-        boot_covs = []
     elif options.wishart_df>0:
         df = options.wishart_df
-        boot_covs = []
     else:
         estimator_arguments['save_variance_correction']=False
         if options.likelihood_treemix:
@@ -382,10 +364,6 @@ def main(args):
                                                est=estimator_arguments, locus_filter=locus_filter,
                                                load_bootstrapped_covariances=options.load_bootstrapped_covariances,
                                                verbose_level=options.verbose_level)
-
-
-
-
 
     if 9 not in options.covariance_pipeline:
         multiplier=None
@@ -413,12 +391,6 @@ def main(args):
                                       scale_goal=options.scale_goal,
                                       mscale_file=mscale_file,
                                       no_add=no_add)
-    #print('first tree') ANDREWDEBUG
-    #pretty_print(starting_trees[0][0])
-    #if options.verbose_level!='silent':
-    #    print('starting trees:')
-    #    for j in starting_trees:
-    #        print('\t'+str(j))
 
     if (not options.likelihood_treemix) or options.df_treemix_adjust_to_wishart:
         ANDREWDEBUG = 333.33

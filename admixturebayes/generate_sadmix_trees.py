@@ -1,6 +1,6 @@
 from Rtree_to_covariance_matrix import get_populations
 from generate_prior_trees import generate_phylogeny, simulate_number_of_admixture_events
-from Rtree_operations import node_is_admixture, get_number_of_admixes, get_number_of_leaves,tree_to_0tree
+from Rtree_operations import get_number_of_admixes, get_number_of_leaves,tree_to_0tree
 from Rproposal_admix import deladmix, addadmix
 from Rtree_to_coefficient_matrix import get_rank
 
@@ -58,14 +58,3 @@ def effective_number_of_admixes(tree):
     n=get_number_of_leaves(tree)
     Zero_tree=tree_to_0tree(tree)
     return get_rank(tree)-get_rank(Zero_tree)
-
-
-def admixes_are_sadmixes_popz(tree):
-    pops=get_populations(tree)
-    #removedprin pops
-    for key,node in list(tree.items()):
-        if node_is_admixture(node):
-            sadmix_bool=admix_is_sadmix(tree, (key,1), pops)
-            if not sadmix_bool:
-                return False
-    return True

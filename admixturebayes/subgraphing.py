@@ -1,9 +1,7 @@
 from Rtree_to_covariance_matrix import leave_node, _thin_out_dic, Population, _add_to_waiting
 from Rtree_operations import (node_is_non_admixture, get_leaf_keys, get_real_parents, get_real_children, rename_root, 
                               screen_and_prune_one_in_one_out, remove_non_mixing_admixtures)
-from tree_statistics import identifier_to_tree_clean, generate_predefined_list_string
 from copy import deepcopy
-from find_true_trees import get_unique_plottable_tree
 from collections import Counter
 
 def leave_node(key, node, population, target_nodes, follow_branch):

@@ -74,14 +74,6 @@ def get_possible_strees(tree, nodes):
         n_trees.append(n_tree)
     return n_trees
 
-
-def permutation_stree_to_permutations(permutation_stree):
-    topology, branches, admixtures=permutation_stree.split(';')
-    branches_permutation=invert(branches.split('-'))
-    admixtures_signs=[-1 if i<0 else 1 for i in map(int, admixtures.split('-'))]
-    admixtures_values=list(map(abs, list(map(int, admixtures.split('-')))))
-    admixtures_permutation=invert(admixture_values)
-
 def analyze_tree(topology, branches, admixtures):
     
     id_branches='-'.join(map(str, list(range(len(branches.split('-'))))))
@@ -133,7 +125,3 @@ def get_possible_permutation_strees(tree):
         n_trees.append(n_tree)
     return n_trees
     
-
-def change_admixture_permutation(node):
-    new_node=[node[1],node[0],100000+node[2],node[4],node[3]]+node[5:]
-    return new_node
