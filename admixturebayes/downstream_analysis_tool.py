@@ -390,46 +390,6 @@ class extract_number_of_sadmixes(object):
             return {}, True
         return {'no_sadmixes':no_sadmixes}, False
 
-class thinning_on_admixture_events(object):
-    
-    def __init__(self, burn_in_fraction=None, total=None, no_admixes=None, if_no_trees='error'):
-         self.burn_in_fraction=burn_in_fraction
-         self.total=total
-         self.no_admixes=no_admixes
-         self.if_no_trees=if_no_trees
-        
-    def __call__(self, df):
-        n=len(df)
-        print('Removing burn in from dataframe with ', n, 'rows.')
-        if self.burn_in_fraction is not None:
-            df=df[int(n*self.burn_in_fraction):]
-        print('burn_in operation finished. Now ', len(df), 'rows.')
-        if self.no_admixes is not None:
-            print('filtering on ', 'no_admixes','==',self.no_admixes)
-            print('the admixture column is of type', df['no_admixes'].dtype)
-            print('the first entry(', str(df.iloc[0]['no_admixes']) ,')is of type', type(df.iloc[0]['no_admixes']))
-            print('the no_admixes(',str(self.no_admixes) ,') is of type', type(self.no_admixes))
-            df2=df.loc[df['no_admixes']==self.no_admixes,:]
-            no_admixtures=[self.no_admixes]
-            if self.if_no_trees=='nearest_admixture_events':
-                print('CHANGES THE REQUESTED NUMBER OF ADMIXTURE EVENTS!!')
-                max_count=22
-                count=0
-                while len(df2)==0 and count<max_count:
-                    count+=1
-                    no_admixtures=list(map(str,[int(no_admixtures[0])-1]+no_admixtures+[int(no_admixtures[-1])+1]))
-                    print('No graphs with requested number of admixtures! - now increasing to', no_admixtures)
-                    df2=df.loc[df['no_admixes'].isin(no_admixtures),:]
-            df=df2
-        print('after filtering operations there are now', len(df),'rows')
-        if self.total is not None:
-            n=len(df)
-            stepsize=max(n//self.total,1)
-            df=df[::stepsize]
-            print('thinning complete. Now', len(df), 'rows')
-        return df
-        
-
 class thinning(object):
     
     def __init__(self, burn_in_fraction=None, total=None, **values_to_filter_by):

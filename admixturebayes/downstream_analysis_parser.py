@@ -2,7 +2,7 @@ from argparse import ArgumentParser, SUPPRESS
 from downstream_analysis_tool import (thinning, iterate_over_output_file, always_true, make_Rtree, make_full_tree, read_true_values,
                                       make_Rcovariance, cov_truecov, topology_identity,get_pops,compare_pops,extract_number_of_sadmixes, 
                                       read_one_line,summarize_all_results, create_treemix_csv_output, topology, float_mean, mode,
-                                      create_treemix_sfull_tree_csv_output, subgraph, subsets, thinning_on_admixture_events,
+                                      create_treemix_sfull_tree_csv_output, subgraph, subsets,
                                       make_string_tree, topology_without_outgroup)
 from subgraphing import read_subgraphing_dict, get_most_likely_subgraphs_list, save_top_subgraphs
 from find_true_trees import tree_unifier
@@ -32,8 +32,6 @@ def run_posterior_main(args):
                         'no_sadmixes':extract_number_of_sadmixes
                         }
     possible_summaries.update(all_custom_summaries())
-    #removedprin possible_summaries
-
 
     parser = ArgumentParser(usage='pipeline for post analysis')
 
@@ -92,11 +90,8 @@ def run_posterior_main(args):
     parser.add_argument('--emp_covariance_and_multiplier', default='', type=str, help=SUPPRESS)
     parser.add_argument('--emp_covariance_reduced', default='', type=str, help=SUPPRESS)
 
-
     parser.add_argument('--choice_if_no_thinned_graphs', default='error', choices=['error', 'nearest_admixture_events'],
                         help='If the thinning leaves no graphs left, this is what will be done in stead. error will throw an error and nearest_admixture_events will expand the band of allowed number of admixture events(if the chain has been thinned on number of admixture events).')
-    parser.add_argument('--test_run', default=False, action='store_true',
-                    help=SUPPRESS)#'will overwrite everything and run a test function')
 
     parser.add_argument('--summary_summaries', default=['mean'], nargs='*', type=str,
                         help=SUPPRESS)#'How each list is summarized as a single, numerical value. If it doesnt have the same length as save summaries the arguments will be repeated until it does')
@@ -121,11 +116,7 @@ def run_posterior_main(args):
 
     assert not ('string_tree' in options.calculate_summaries and not 'full_tree' in options.calculate_summaries), 'The full tree flag is needed for the string tree'
 
-    #if 'full_tree' in options.calculate_summaries:
-    #    assert options.outgroup_name, 'The outgroup is specified to calculate the full tree'
-
     if options.subnodes:
-        #assert options.outgroup_name,'when '
         if not options.outgroup_name:
             subnodes_wo_outgroup=options.subnodes
             subnodes_with_outgroup=options.subnodes
@@ -139,7 +130,6 @@ def run_posterior_main(args):
     else:
         subnodes_with_outgroup=[]
         subnodes_wo_outgroup=[]
-
 
     outp=read_true_values(true_scaled_tree=options.true_scaled_tree,
                           true_tree=options.true_tree,
@@ -174,13 +164,8 @@ def run_posterior_main(args):
             full_nodes=sorted(get_leaf_keys(full_treemix_tree))
 
 
-    if options.constrain_number_of_admixes:
-        if options.constrain_number_of_admixes=='true_val':
-            thinner=thinning_on_admixture_events(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate, no_admixes=true_no_admix, if_no_trees=options.choice_if_no_thinned_graphs)
-        else:
-            thinner=thinning_on_admixture_events(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate, no_admixes=options.constrain_number_of_admixes,if_no_trees=options.choice_if_no_thinned_graphs)
-    else:
-        thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
+
+    thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
 
     nodes=read_one_line(options.covariance).split() #this will not include any outgroup.
     nodes_wo_outgroup = deepcopy(nodes)
@@ -214,7 +199,6 @@ def run_posterior_main(args):
     name_to_rowsum_index=pointers()
     possible_summary_summaries={'mean':float_mean}
 
-    #removedprin 'subnodes_wo_outgroup', subnodes_wo_outgroup
     special_summaries=['Rtree','full_tree','string_tree','subgraph','Rcov','cov_dist','topology','topology_without_outgroup','top_identity','pops','subsets', 'set_differences','no_admixes']
     if 'Rtree' in options.calculate_summaries:
         row_sums.append(possible_summaries['Rtree'](deepcopy(nodes_wo_outgroup),options.constrain_sadmix_trees, subnodes=subnodes_wo_outgroup, outgroup_name=options.outgroup_name))
@@ -264,9 +248,6 @@ def run_posterior_main(args):
     if 'Rcov' in options.calculate_summaries:
         row_sums.append(possible_summaries['Rcov'](deepcopy(nodes_wo_outgroup), add_multiplier=1.0/multiplier))
         name_to_rowsum_index('Rcov')
-    if 'cov_dist' in options.calculate_summaries:
-        row_sums.append(possible_summaries['cov_dist'](true_covariance_reduced))
-        name_to_rowsum_index('cov_dist')
     if 'topology' in options.calculate_summaries:
         row_sums.append(possible_summaries['topology'](nodes=nodes))
         name_to_rowsum_index('topology')
@@ -276,9 +257,6 @@ def run_posterior_main(args):
         row_sums.append(possible_summaries['topology_without_outgroup'](outgroup_to_remove=options.outgroup_name))
         name_to_rowsum_index('topology')
         nodes_with_outgroup=nodes_wo_outgroup
-    if 'top_identity' in options.calculate_summaries:
-        row_sums.append(possible_summaries['top_identity'](true_tree, nodes=nodes))
-        name_to_rowsum_index('top_identity')
     if 'pops' in options.calculate_summaries:
         row_sums.append(possible_summaries['pops'](min_w=options.min_w, keys_to_include=nodes))
         name_to_rowsum_index('pops')
@@ -294,9 +272,6 @@ def run_posterior_main(args):
             options.save_summaries.append(code)
             options.summary_summaries.append(code)
             possible_summary_summaries[code]=sum_func.summarise
-    if 'set_differences' in options.calculate_summaries:
-        row_sums.append(possible_summaries['set_differences'](true_tree, min_w=options.min_w, keys_to_include=nodes))
-        name_to_rowsum_index('set_differences')
     if 'no_sadmixes' in options.calculate_summaries:
         if options.constrain_number_of_effective_admixes:
             no_effective_admixes=int(options.constrain_number_of_effective_admixes)
@@ -310,8 +285,6 @@ def run_posterior_main(args):
             if summary in options.calculate_summaries or summary in options.custom_summaries:
                 row_sums.append(possible_summaries[summary]())
                 name_to_rowsum_index(summary)
-
-    #removedprin row_sums
 
     def save_thin_columns(d_dic):
         return {summ:d_dic[summ] for summ in list(set(options.save_summaries+options.custom_summaries))}
@@ -347,19 +320,6 @@ def run_posterior_main(args):
                 s_summs=[str(row[summ]) for summ in summaries]
                 f.write(','.join(s_summs)+ '\n')
         sys.exit()
-
-
-    #removedprin 'all_results:'
-    #removedprin all_results
-
-
-    def save_wrapper(filename):
-        def save(listi):
-            with open(filename,'w') as f:
-                for ele in listi:
-                    f.write(str(ele))
-
-
 
     if 'mode_topology_compare' in options.summary_summaries or 'mode_topology' in options.summary_summaries:
         def mode_topology_compare(v):
