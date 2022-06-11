@@ -10,7 +10,6 @@ from MCMCMC import MCMCMC
 from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
 from MCMC import basic_chain
 from stop_criteria import stop_criteria
-
 import os
 
 class fixed_geometrical(object):
@@ -193,7 +192,6 @@ def main(args):
     parser.add_argument('--rs', action='store_true', default=False, help='will change the prior on the number of admixture events in the tree.')
     parser.add_argument('--r_scale', type=float, default=1.0, help='This will set the the mean of the number of admixture events in chain i to 1+i*r')
 
-
     #more obscure convenience arguments
     parser.add_argument('--save_df_file', type=str, default='DF.txt',
                         help=SUPPRESS)#'the prefix is put before this string and the degrees of freedom is saved to this file.')
@@ -298,8 +296,6 @@ def main(args):
                   no_add=no_add)
 
     before_added_outgroup, full_nodes, reduced_nodes=get_nodes(options.nodes, options.input_file, options.create_outgroup, options.outgroup)
-
-
 
     prefix=options.prefix
 

@@ -77,17 +77,11 @@ def MCMCMC(starting_trees,
     if numpy_seeds is None:
         numpy_seeds=[None]*no_chains
 
-    if posterior_function_list:
-        pool = basic_chain_pool(summaries, None, proposal_scheme, numpy_seeds, posterior_function_list)
-        rs= [posterior_f.base_r for posterior_f in posterior_function_list]
-        ps=[posterior_f.p for posterior_f in posterior_function_list]
-        posteriors=[posterior_f(x) for x,posterior_f in zip(xs, posterior_function_list)]
-    else:
-        rs=[]
-        ps=[posterior_function.p]
-        pool = basic_chain_pool(summaries, posterior_function, proposal_scheme, numpy_seeds)
-        posteriors = [posterior_function(x) for x in xs]
 
+    rs=[]
+    ps=[posterior_function.p]
+    pool = basic_chain_pool(summaries, posterior_function, proposal_scheme, numpy_seeds)
+    posteriors = [posterior_function(x) for x in xs]
 
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
     
@@ -115,8 +109,6 @@ def MCMCMC(starting_trees,
             xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates,
                                                                 rs, ps,
                                                                 [posterior_function])  # trees, posteriors, range(len(trees)),[None]*len(trees)#
-        else:
-            xs, posteriors, permut, proposal_updates=flipping(xs, posteriors, temperature_scheme, proposal_updates, rs, ps, posterior_function_list) #trees, posteriors, range(len(trees)),[None]*len(trees)#
         if store_permuts:
             permuts.append(permut)
         temperature_scheme.update_temps(permut)
@@ -131,7 +123,6 @@ def MCMCMC(starting_trees,
                 subprocess.call(cp_command)
                 make_outfile_stills.pop(0)
             
-        
     pool.terminate()
     if result_file is None and store_permuts:
         return df_result, permuts

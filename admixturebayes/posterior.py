@@ -1,9 +1,7 @@
 from prior import prior
 from likelihood import likelihood, likelihood_from_matrix
-from scipy.stats import norm
 from math import log
-from Rtree_to_covariance_matrix import make_covariance
-from numpy import median, amin, amax, loadtxt
+from numpy import loadtxt
 from numpy.linalg import norm
 
 def zero_likelihood(*args, **kwargs):

@@ -356,9 +356,6 @@ def tree_to_mode_ntree(tree):
                 remove=1
             else:
                 remove=0
-            #removedprin '------------------------------------------'
-            #removedprin 'removing', (adm_key, int_bin) , 'from tree:'
-            #pretty_print(pruned_tree)
             pruned_tree=remove_admixture(pruned_tree, adm_key, remove)
     return non_admixture_to_newick(pruned_tree)
 

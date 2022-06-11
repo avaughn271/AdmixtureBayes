@@ -42,7 +42,6 @@ class basic_chain_class(object):
             
     def run_chain(self, p):
         start_tree, post, N, sample_verbose_scheme, overall_thinning, i_start_from, temperature, proposal_update, multiplier = p
-        #removedprin 'run_chain proposal.node_naming.n', self.proposal.node_naming.n
         return basic_chain(start_tree,
                            self.summaries, 
                            self.posterior_function, 
@@ -55,7 +54,6 @@ class basic_chain_class(object):
                            temperature, 
                            proposal_update,
                            multiplier)
-        
         
 class basic_chain_pool(object):
     
@@ -75,13 +73,11 @@ class basic_chain_pool(object):
         '''
         The list of arguments should math that of p in basic_chain_class.run_chain()
         '''
-        #print("begin")
         counter=0
         for chain, list_of_arguments in zip(self.group, list_of_lists_of_arguments):
             chain.start(list_of_arguments)
             counter+=1
         assert counter==len(self.group)
-        #print("end")
         return [chain.complete() for chain in self.group]
     
     def terminate(self):
