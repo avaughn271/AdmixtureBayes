@@ -24,37 +24,6 @@ def bootstrap_indices(k):
     bootstrap_inds=choice(k, size=k, replace = True)
     return bootstrap_inds
 
-def make_bootstrap_files(filename, blocksize=None, no_blocks=None, bootstrap_samples=None, prefix=''):
-    assert (blocksize is not None) or (no_blocks is not None), 'Has to specify either block size or number of blocks'
-    filenames=[]
-    if filename.endswith('.gz'):
-        filename=unzip(filename)
-    filename_reduced=os.path.join(prefix, filename.split(os.sep)[-1]+'boot.')
-    with open(filename, 'r') as f:
-        first_line=f.readline()
-        lines=f.readlines()
-    n=len(lines)
-    if no_blocks is not None:
-        blocksize=n/no_blocks
-    line_sets=get_partitions(lines, blocksize)
-    print('total SNPs=', n)
-    print('total blocksize', blocksize)
-    print('no_blocks', no_blocks)
-    print('bootstrap_samples', bootstrap_samples)
-    print('len(line_sets)', len(line_sets))
-    if bootstrap_samples is None:
-        bootstrap_samples=len(line_sets)
-    for i in range(bootstrap_samples):
-        new_filename= filename_reduced+str(i)
-        with open(new_filename, 'w') as g:
-            g.write(first_line)
-            bootstrap_inds=bootstrap_indices(len(line_sets))
-            for i in bootstrap_inds:
-                g.writelines(line_sets[i])
-        gzipped_filename=gzip(new_filename, overwrite=True)
-        filenames.append(gzipped_filename)
-    return filenames, first_line.split()
-
 def combine_covs(tuple_covs, indices):
     cov_sum, scale_sum=0.0,0.0
     for i in indices:

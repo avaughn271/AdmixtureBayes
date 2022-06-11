@@ -5,11 +5,11 @@ from tree_to_data import (file_to_emp_cov, reduce_covariance,
                           get_xs_and_ns_from_treemix_file, order_covariance, reorder_covariance, reorder_reduced_covariance)
 from generate_prior_trees import simulate_number_of_admixture_events, generate_phylogeny
 from generate_sadmix_trees import generate_sadmix_tree
-from Rtree_operations import add_outgroup, get_number_of_leaves, scale_tree, time_adjust_tree
+from Rtree_operations import add_outgroup, scale_tree, time_adjust_tree
 from scipy.stats import expon, wishart
 from Rtree_to_covariance_matrix import make_covariance
 from copy import deepcopy
-from rescale_covariance import rescale_empirical_covariance
+from reduce_covariance import rescale_empirical_covariance
 import time
 from brownian_motion_generation import produce_p_matrix, simulate_with_binomial, remove_non_snps
 from numpy import loadtxt, savetxt
@@ -92,7 +92,6 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
         est_args['add_variance_correction_to_graph'] and
         'save_variance_correction' in est_args and
         est_args['save_variance_correction']):
-       # print 'CHaninging VC'
         filename=est_args['prefix']+'variance_correction.txt'
         vc=loadtxt(filename)
         vc=reorder_reduced_covariance(vc, names, est_args['nodes'], outgroup=est_args['reducer'])

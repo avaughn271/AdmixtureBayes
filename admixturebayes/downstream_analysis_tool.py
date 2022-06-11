@@ -1,5 +1,5 @@
 from reduce_covariance import reduce_covariance
-from Rtree_operations import add_outgroup, scale_tree
+from Rtree_operations import add_outgroup
 from tree_statistics import (identifier_to_tree_clean, generate_predefined_list_string, 
                              identifier_file_to_tree_clean, unique_identifier_and_branch_lengths)
 from Rtree_to_covariance_matrix import make_covariance, get_populations
@@ -16,6 +16,8 @@ from Rtree_operations import get_leaf_keys, rearrange_root_foolproof, remove_out
 from collections import Counter
 from subgraphing import get_subtree,get_and_save_most_likely_substrees
 from find_true_trees import get_unique_plottable_tree
+
+
 
 
 def rearrange_root_force(tree, new_outgroup):
@@ -84,21 +86,6 @@ def iterate_over_output_file(outfile,
             continue
         all_results.append(thinned_d_dic(d_dic))
     return all_results, full_summs
-
-def create_treemix_csv_output(tree,add,m_scale, outfile):
-    if m_scale is not None:
-        tree=scale_tree(tree,1.0/m_scale)
-        add=add/m_scale
-    with open(outfile, 'w') as f:
-        f.write('tree,add'+'\n')
-        f.write(unique_identifier_and_branch_lengths(tree)+','+str(add))
-        
-def create_treemix_sfull_tree_csv_output(tree,m_scale, outfile):
-    if m_scale is not None:
-        tree=scale_tree(tree,1.0/m_scale)
-    with open(outfile, 'w') as f:
-        f.write('sfull_tree'+'\n')
-        f.write(unique_identifier_and_branch_lengths(tree))
 
 class make_Rtree(object):
     

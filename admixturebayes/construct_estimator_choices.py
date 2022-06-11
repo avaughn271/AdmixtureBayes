@@ -1,8 +1,6 @@
 from covariance_estimator import initor
 from covariance_EM import EmEstimator
 from covariance_scaled import ScaledEstimator
-from covariance_indirect_correction import IndirectEstimator
-from covariance_simulation import Simulator
 from covariance_estimator import RepeatEstimator
 
 from Rtree_to_covariance_matrix import make_covariance
@@ -99,16 +97,7 @@ def make_estimator(reduce_method,
                  add_variance_correction_to_graph=add_variance_correction_to_graph,
                  prefix_for_saving_variance_correction=prefix,
                  save_variance_correction=save_variance_correction)
-    if indirect_correction:
-        simulator=Simulator(ns, multiplier=Indirect_multiplier_s, estimator=est, fixed_seed=Simulator_fixed_seed,  load_from_file=Simulator_from_file, locus_filter=locus_filter_on_simulated)
-        print('MULTIPLIER', Indirect_multiplier_s)
-        est2=IndirectEstimator(no_its=Indirect_its,
-                               s=Indirect_multiplier_s,
-                               initial_Sigma_generator=initial_Sigma_generator,
-                               estimator=est,
-                               simulator=simulator)
-    else:
-        est2=est
+    est2=est
         
     if no_repeats_of_cov_est>1:
         est3=RepeatEstimator(est2, no_repeats_of_cov_est)

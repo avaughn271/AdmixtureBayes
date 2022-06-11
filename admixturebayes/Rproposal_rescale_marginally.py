@@ -35,3 +35,4 @@ class rescale_marginally_class(object):
     
     def __call__(self,*args, **kwargs):
         return rescale(*args, **kwargs)
+    

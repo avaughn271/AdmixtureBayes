@@ -2,7 +2,7 @@ from generate_prior_trees import generate_phylogeny, generate_add
 from tree_statistics import identifier_to_tree_clean, generate_predefined_list_string
 from Rtree_operations import create_trivial_tree, scale_tree, rename_leaves
 from Rtree_to_covariance_matrix import make_covariance
-from rescale_covariance import rescale_empirical_covariance
+from reduce_covariance import rescale_empirical_covariance
 from copy import deepcopy
 
 def get_starting_trees(inputs, 

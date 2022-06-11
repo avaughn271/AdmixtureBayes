@@ -50,9 +50,6 @@ def get_summary_scheme(majority_tree=False,
                     summaries.append(summary.s_variable(prop_name+"_adap_param", output= 'double_missing'))
     sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
-    #if 'posterior' in sample_verbose_scheme and verbose_level!='silent':
-    #    sample_verbose_scheme_first['posterior']=(1,1) #ANDREW DEBUG
-    #    #sample_verbose_scheme_first['no_admixes']=(1,1) #ANDREW DEBUG
     if no_chains==1:
         return [sample_verbose_scheme_first], summaries
     elif only_coldest_chain:

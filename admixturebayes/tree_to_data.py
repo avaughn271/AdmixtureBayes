@@ -3,8 +3,6 @@ from Rtree_operations import (find_rooted_nodes, get_number_of_leaves, get_real_
                                node_is_admixture, node_is_leaf_node, node_is_coalescence,
                               get_real_children_root, get_trivial_nodes, scale_tree_copy, get_leaf_keys,
                                get_max_timing, get_all_branch_lengths)
-from tree_statistics import get_timing, identifier_to_tree_clean
-from load_data import read_data
 from reduce_covariance import reduce_covariance, thin_covariance
 
 from numpy import loadtxt, array, mean, vstack, sum, insert, hstack, vsplit, amin, delete, ix_, ones,nan, dtype
@@ -39,17 +37,6 @@ def read_freqs(new_filename, locus_filter):
                 pop_sizes.append(pop_sizes_SNP)
                 allele_counts.append(freqs)
     return allele_counts, names, pop_sizes, minors, total_sum
-
-def make_uncompressed_copy(filename):
-    take_copy_args=['cp', filename, filename+".tmp"]
-    move_back_args=['mv', filename+'.tmp', filename]
-    args=['gunzip', '-f', filename]
-    new_filename='.'.join(filename.split('.')[:-1])
-    subprocess.call(take_copy_args)
-    subprocess.call(args)
-    subprocess.call(move_back_args)
-    return new_filename
-
 
 
 def get_xs_and_ns_from_freqs(ps, npop, locus_filter):

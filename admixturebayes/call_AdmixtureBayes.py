@@ -3,7 +3,6 @@ from argparse import ArgumentParser, SUPPRESS
 from construct_proposal_choices import make_proposal
 from construct_starting_trees_choices import get_starting_trees
 from construct_covariance_choices import get_covariance
-from construct_nodes_choices import get_nodes
 from construct_summary_choices import get_summary_scheme
 from construct_filter_choices import make_filter
 from posterior import posterior_class
@@ -11,7 +10,6 @@ from MCMCMC import MCMCMC
 from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
 from MCMC import basic_chain
 from stop_criteria import stop_criteria
-from tree_to_data import emp_cov_to_file, file_to_emp_cov
 
 import os
 
@@ -29,6 +27,43 @@ class fixed_geometrical(object):
     def update_temps(self, permut):
         pass
 
+
+from copy import deepcopy
+from Rtree_operations import get_trivial_nodes
+
+def get_nodes(arguments, input_file, outgroup_name, reduce_node, backup_number=8):
+    ''' The outgroup_name is only used for simulation purposes and reduce_node is the important one
+    that is used when analysing the admixture graphs.  '''
+    if not arguments[0]:#this means that we should use the input file for nodes
+        if ';' in input_file:
+            nodes=get_trivial_nodes(len(input_file.split('-')[0].split('.')))
+        elif '.' in input_file:
+            nodes=read_one_line(input_file)
+        elif ',' in input_file:
+            nodes=get_trivial_nodes(int(input_file[1:].split(',')[0]))
+        else:
+            nodes=get_trivial_nodes(int(input_file))
+    else:
+        nodes=arguments
+    before_added_outgroup=deepcopy(nodes)
+    reduced_nodes=deepcopy(nodes)
+    if outgroup_name in nodes:
+        before_added_outgroup.remove(outgroup_name)
+    elif outgroup_name:
+        nodes.append(outgroup_name)
+    if reduce_node in reduced_nodes:      
+        reduced_nodes.remove(reduce_node)
+    if reduce_node and reduce_node not in nodes:
+        nodes.append(reduce_node)
+    return before_added_outgroup, nodes, reduced_nodes
+
+from tree_to_data import unzip
+    
+def read_one_line(filename):
+    if filename.endswith('.gz'):
+        filename=unzip(filename)
+    with open(filename, 'r') as f:
+        return f.readline().rstrip().split()
 
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -239,29 +274,6 @@ def main(args):
                         help=SUPPRESS)#'This will apply a filter to positions based on their value.')
     parser.add_argument('--filter_on_simulated', choices=['same', 'none', 'outgroup_other', 'outgroup', 'snp', 'all_pops'], default='same',
                         help=SUPPRESS)#'In indirect inference, whole datasets are simulated under ')
-    #treemix arguments
-    parser.add_argument('--treemix_instead', action='store_true', default=False,
-                        help=SUPPRESS)#'this will call treemix instead of AdmixtureBayes')
-    parser.add_argument('--treemix_also', action='store_true', default=False,
-                        help=SUPPRESS)#'this will call treemix in addition to AdmixtureBayes')
-    parser.add_argument('--likelihood_treemix', action='store_true', default=False,
-                        help=SUPPRESS)#'DEPRECATED. this will use the likelihood from treemix instead of the wishart distribution.')
-    parser.add_argument('--treemix_reps', type=int, default=1,
-                        help=SUPPRESS)#"'the number of repititions of the treemix call. Only used when treemix_instead or treemix_also')
-    parser.add_argument('--treemix_no_admixtures', type=int, nargs='+', default=[0, 1, 2, 3],
-                        help=SUPPRESS)#'the number of admixture events in treemixrun. Only used when treemix_instead or treemix_also')
-    parser.add_argument('--treemix_processes', type=int, default=1,
-                        help=SUPPRESS)#'the number of parallel processes to run treemix over.')
-    parser.add_argument('--alternative_treemix_infile', type=str, default='',
-                        help=SUPPRESS)#'By default the program will use the treemix file generated in the covariance pipeline (or go looking for the file that would have been made if 6 was part of the pipeline). This will override that')
-    # parser.add_argument('--treemix_file', type=str, default='', help= 'the filename of the intermediate step that contains the ms output.')
-    parser.add_argument('--treemix_output_prefix', type=str, default='',
-                        help=SUPPRESS)#'the filename prefix of all the treemix output files. Each file will get the suffix k.txt where k is the number of admixture events.')
-    parser.add_argument('--treemix_output_names', type=str, nargs='+', default=[],
-                        help=SUPPRESS)#'if supplied, this will choose the name of the output files for treemix, disregarding the treemix output prefix')
-    parser.add_argument('--df_treemix_adjust_to_wishart', action='store_true', default=False,
-                        help=SUPPRESS)#'This will, if likelihood_treemix is flagged and df_file is a wishart-df, choose a variance matrix that gives a normal distribution with the same mode-likelihood-value as if no likelihood_treemix had been switched on.')
-
 
     options=parser.parse_args(args)
 
@@ -269,7 +281,6 @@ def main(args):
 
 
     no_add=options.outgroup_type=='None' or options.outgroup_type=='Free'
-
 
     mp = make_proposal(deladmix=options.deladmix,
                   addadmix=options.addadmix,
@@ -356,19 +367,13 @@ def main(args):
                               )
 
     if options.df_file:
-        if options.likelihood_treemix and not options.df_treemix_adjust_to_wishart:
-            df = file_to_emp_cov(options.df_file, nodes=reduced_nodes)
-        else:
-            with open(options.df_file, 'r') as f:
-                df = float(f.readline().rstrip())
+        with open(options.df_file, 'r') as f:
+            df = float(f.readline().rstrip())
     elif options.wishart_df>0:
         df = options.wishart_df
     else:
         estimator_arguments['save_variance_correction']=False
-        if options.likelihood_treemix:
-            summarization='var'
-        else:
-            summarization=options.bootstrap_type_of_estimation
+        summarization=options.bootstrap_type_of_estimation
         df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
                                                bootstrap_blocksize=options.bootstrap_blocksize,
                                                no_bootstrap_samples=options.no_bootstrap_samples,
@@ -407,12 +412,8 @@ def main(args):
                                       mscale_file=mscale_file,
                                       no_add=no_add)
 
-    if (not options.likelihood_treemix) or options.df_treemix_adjust_to_wishart:
-        ANDREWDEBUG = 333.33
-        with open(prefix+options.save_df_file, 'w') as f:
-            f.write(str(df))
-    else:
-        emp_cov_to_file(df, prefix+options.save_df_file, nodes=reduced_nodes)
+    with open(prefix+options.save_df_file, 'w') as f:
+        f.write(str(df))
 
 
     make_topological_summaries = options.stop_criteria and (options.stop_criteria_topological_ess_threshold>=0)
@@ -446,7 +447,7 @@ def main(args):
                                 multiplier=covariance[1],
                                 nodes=likelihood_nodes,
                                 use_uniform_prior=not options.not_uniform_prior,
-                                treemix=options.likelihood_treemix,
+                                treemix=False,
                                 add_variance_correction_to_graph=(options.variance_correction != 'None' and
                                                                   options.add_variance_correction_to_graph),
                                 prefix=prefix,

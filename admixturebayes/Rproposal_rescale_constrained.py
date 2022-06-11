@@ -57,4 +57,3 @@ class rescale_constrained_class(object):
         #removedprin kwargs
         return rescale(*args, **kwargs)
 
-    
