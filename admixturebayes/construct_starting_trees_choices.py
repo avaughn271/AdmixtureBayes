@@ -4,8 +4,6 @@ from Rtree_operations import create_trivial_tree, scale_tree, rename_leaves
 from Rtree_to_covariance_matrix import make_covariance
 from rescale_covariance import rescale_empirical_covariance
 from copy import deepcopy
-from warnings import warn
-
 
 def get_starting_trees(inputs, 
                        no_chains, 
@@ -42,9 +40,6 @@ def get_starting_trees(inputs,
         elif start=='random':
             no_pops=len(nodes) #error if nodes is not specified
             trees=[generate_phylogeny(no_pops, leaf_nodes=nodes, skewed_admixture_prior=False) for _ in range(no_chains)]
-        elif start=='perfect':
-            tree=get_perfect_tree(prefix, nodes)
-            trees=[deepcopy(tree) for _ in range(no_chains)]
         else:
             assert False, 'wrong input to start'
     
@@ -56,8 +51,6 @@ def get_starting_trees(inputs,
         elif start=='random':
             no_pops=len(nodes) #error if nodes is not specified
             add_vals=[generate_add() for _ in range(no_chains)]
-        elif start=='perfect':
-            add_vals=[get_perfect_add(prefix)]
         else:
             assert False, 'wrong input to add_start'
     
@@ -102,22 +95,6 @@ def scale_xs(xs, multiplier, scale_tree_factor, starting_tree_scaling, starting_
         return xs
     else:
         assert False, 'unknown input for scale_xs: '+str(starting_tree_scaling)
-            
-
-def get_perfect_tree(prefix, nodes):
-    with open(prefix+'true_tree.txt', 'r') as f:
-        first_string=f.readline().rstrip()
-        if ';' in first_string:
-            return identifier_to_tree_clean(first_string, leaves=generate_predefined_list_string(deepcopy(nodes)))
-        nodes2=first_string.split()
-        assert set(nodes)==set(nodes2), 'the perfect tree does not have the correct leaf nodes'
-        return identifier_to_tree_clean(f.readline().rstrip(), leaves=generate_predefined_list_string(deepcopy(nodes)))
-    
-def get_perfect_add(prefix):
-    with open(prefix+'true_add.txt', 'r') as f:
-        a=f.readline().rstrip()
-        return float(a)
-        
         
 def match_trees_and_adds(list_of_trees, list_of_adds):
     if len(list_of_adds)==0:
@@ -128,23 +105,6 @@ def match_trees_and_adds(list_of_trees, list_of_adds):
         return [(t,a) for t,a in zip(list_of_trees, list_of_adds)]
     else:
         assert False, 'couldnt match adds and trees in starting_trees'
-        
-        
-            
-            
-def fill_up_list(list_of_trees, no_chains):
-    list_of_trees=[]
-    if len(list_of_trees)>no_chains:
-        warn('Some starting trees will not be used')
-    trees=[]
-    count=0
-    for _ in range(no_chains):
-        trees.append(list_of_trees[count])
-        count+=1
-        if count==len(list_of_trees):
-            count=0
-    return trees
-        
 
             
 def input_to_tree(input, nodes, skewed_admixture_prior=False):

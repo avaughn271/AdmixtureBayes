@@ -1,9 +1,23 @@
 from numpy.random import random
 from math import exp, log, fabs
 from summary import *
-from tree_warner import check
 from Rtree_operations import scale_tree_copy
-            
+from Rtree_operations import make_consistency_checks
+
+def check(tree, pks={}):
+    result, fails = make_consistency_checks(tree)
+    if not result:
+        stringed_message=''
+        print(fails)
+        for test_key, (test_result, test_message) in list(fails.items()):
+            if test_result:
+                stringed_message+=test_key+": TRUE"+'\n'
+            else:
+                stringed_message+=test_key+": FALSE"+'\n'
+                stringed_message+="    "+test_message+'\n'
+        print(stringed_message)
+        assert result, "The tree was inconsistent :" + '\n'+stringed_message
+
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     check_old = False
     if check_old:
@@ -25,16 +39,8 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     post_new=posterior_function(newx,pks)
     pks['proposed_posterior']=post_new
 
-
-    #removedprin temperature
     likelihood_old, prior_old = post[:2]
     likelihood_new, prior_new = post_new[:2]
-    #removedprin 'Posterior Matrix:'
-    #removedprin likelihood_old, prior_old
-    #removedprin likelihood_new, prior_new
-    
-    #for key,val in pks.items():
-    #    print key, '=', val
     
     if g2<=0 or j2<=0:
         logmhr=-float('inf')
@@ -45,7 +51,6 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     else:
         mhr=exp(logmhr)
         
-    #removedprin post_new, post, post_new-post, exp(post_new-post), mhr
     pks['mhr']=mhr
     
     u=random()

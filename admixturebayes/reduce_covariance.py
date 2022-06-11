@@ -2,11 +2,7 @@ from numpy import insert, identity,ones, ix_
 
 def reduce_covariance(covmat, subtracted_population_index):
     reducer=insert(identity(covmat.shape[0]-1), subtracted_population_index, -1, axis=1)
-    #removedprin reducer
     return reducer.dot(covmat).dot(reducer.T)
-
-def get_R(s, subtracted_population_index):
-    return insert(identity(s-1), subtracted_population_index, -1, axis=1)
 
 def Areduce(mat):
     A=identity(mat.shape[0])-1.0/mat.shape[0]*ones((mat.shape))

@@ -5,26 +5,39 @@ from tree_statistics import (identifier_to_tree_clean, generate_predefined_list_
 from Rtree_to_covariance_matrix import make_covariance, get_populations
 import numpy as np
 from generate_sadmix_trees import effective_number_of_admixes, admixes_are_sadmixes
-from calculate_covariance_distances import open_cov_file_admb
 from construct_covariance_choices import read_one_line
 import pandas as pd
 from copy import deepcopy
 from tree_to_data import file_to_emp_cov
 
-from tree_statistics import admixture_sorted_unique_identifier
-from Rtree_operations import get_leaf_keys, rearrange_root_foolproof, remove_outgroup, pretty_string, rearrange_root
-from rearrange_root_forcefully import rearrange_root_force
+from tree_statistics import admixture_sorted_unique_identifier, get_timing
+from Rtree_operations import get_leaf_keys, rearrange_root_foolproof, remove_outgroup, pretty_string, rearrange_root, remove_admix, get_all_admixture_meetings
 
 from collections import Counter
-from subgraphing import get_subtree, get_unique_plottable_tree,get_and_save_most_likely_substrees
+from subgraphing import get_subtree,get_and_save_most_likely_substrees
+from find_true_trees import get_unique_plottable_tree
+
+
+def rearrange_root_force(tree, new_outgroup):
+    '''
+    Like rearrange_root this changes the outgroup by reversing branches. However, before doing so, all obstacles are removed.
+    '''
+    if tree[new_outgroup][0]=='r' or tree[new_outgroup][1]=='r':
+        #The root was already in the requested location so no rearranging performed
+        return tree
+    relevant_admixture_keys=get_all_admixture_meetings(tree, new_outgroup)
+    key_timings=get_timing(tree)
+    timed_admixtures=[(key, key_timings[key]) for key in relevant_admixture_keys]
+    s_adm=sorted(timed_admixtures, key=lambda  x: x[1], reverse=True)
+    for admixture_to_remove,_ in s_adm:
+        tree=remove_admix(tree, admixture_to_remove, 1)[0]
+    return rearrange_root(tree, new_outgroup)
+
+
 
 def get_list_of_turned_topologies(trees, true_tree):
     nodes=get_leaf_keys(true_tree)
     return [admixture_sorted_unique_identifier(tree, nodes) for tree in trees], admixture_sorted_unique_identifier(true_tree, nodes)
-
-def get_covariance(outfile):
-    cov, _, mult= open_cov_file_admb(outfile, None)
-    return cov, mult
 
 def always_true(**args):
     return True
@@ -292,11 +305,8 @@ class subgraph(object):
         if full_tree is None:
             full_tree=kwargs['Rtree']
         full_tree=deepcopy(full_tree)
-        #removedprin 'Rtree',Rtree
         subgraph=get_subtree(Rtree, self.subgraph_keys)
-        #removedprin 'subgraph', subgraph
         sub_stree=get_unique_plottable_tree(subgraph)
-        #removedprin 'sub_stree', sub_stree
         return {'subgraph_'+self.identifier:sub_stree}, False
     
     def summarise(self, sub_strees):

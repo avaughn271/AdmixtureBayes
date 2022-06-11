@@ -1,7 +1,11 @@
 from numpy.random import random, choice
 from copy import deepcopy
-from tree_operations import get_number_of_admixes
 from random import getrandbits
+
+def get_number_of_admixes(tree):
+    tot_length=sum(map(len, tree))
+    no_admixs=(tot_length-len(tree)*3)/4
+    return no_admixs
 
 def _update_branch(b,other,direction,prop,identifier):
     '''
@@ -23,12 +27,6 @@ def _update_branch(b,other,direction,prop,identifier):
             insertion=[pos_de_new-old_cumtime, [direction, other, prop, identifier], cumtime-pos_de_new]
             break
     return b[:(2+n*2)] + insertion + b[(2+n*2+1):], b_length, u
-
-def _jacobian(c1,c2,u1,u2,w):
-    '''
-    This function returns the jacobian of h(c1,c2,u1,u2,w)=(c1*u1, c1*(1-u1), c2*u2, c2*(1-u2), 0.5*w)
-    '''
-    return -0.5*c1*c2
 
 def addadmix(tree,pks={}):
     '''

@@ -2,7 +2,13 @@ from numpy.random import choice
 from Rtree_operations import rename_root, get_number_of_leaves
 from collections import Counter
 from scipy.stats import uniform, expon, geom
-import linear_distribution
+
+
+def rvss(fro=0.0, to=1.0):
+    guess=uniform.rvs(fro, to-fro)
+    while uniform.rvs() > (to-(guess-fro))/(to-fro):
+        guess=uniform.rvs(fro, to-fro)
+    return guess
 
 
 def set_outgoing_branch(node, parent_name, branch, length):
@@ -79,7 +85,7 @@ def generate_add():
 def _resimulate(node, factor=1.0, skewed_admixture_prior=False):
     if node[2] is not None:
         if skewed_admixture_prior:
-            node[2]=linear_distribution.rvs()
+            node[2]=rvss()
         else:
             node[2]=uniform.rvs()
     if node[3] is not None:

@@ -6,7 +6,6 @@ from construct_covariance_choices import get_covariance
 from construct_nodes_choices import get_nodes
 from construct_summary_choices import get_summary_scheme
 from construct_filter_choices import make_filter
-from temperature_scheme import fixed_geometrical
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
@@ -15,6 +14,21 @@ from stop_criteria import stop_criteria
 from tree_to_data import emp_cov_to_file, file_to_emp_cov
 
 import os
+
+class fixed_geometrical(object):
+    
+    def __init__(self, maxT, no_chains):
+        if no_chains==1:
+            self.temps=[1.0]
+        else:
+            self.temps=[maxT**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
+    
+    def get_temp(self,i):
+        return self.temps[i]
+    
+    def update_temps(self, permut):
+        pass
+
 
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -255,6 +269,7 @@ def main(args):
 
 
     no_add=options.outgroup_type=='None' or options.outgroup_type=='Free'
+
 
     mp = make_proposal(deladmix=options.deladmix,
                   addadmix=options.addadmix,

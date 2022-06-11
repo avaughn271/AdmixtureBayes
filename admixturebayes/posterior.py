@@ -1,5 +1,5 @@
 from prior import prior
-from likelihood import likelihood, likelihood_from_matrix, likelihood_treemix, likelihood_treemix_from_matrix
+from likelihood import likelihood, likelihood_from_matrix
 from scipy.stats import norm
 from math import log
 from Rtree_to_covariance_matrix import make_covariance
@@ -38,8 +38,7 @@ class posterior_class(object):
         self.p=p
         self.base_r=r
         if treemix:
-            self.lik=likelihood_treemix
-            self.likmat=likelihood_treemix_from_matrix
+            print("error")
         else:
             if prior_run:
                 self.lik=zero_likelihood
@@ -87,17 +86,6 @@ class posterior_class(object):
         pks['likelihood']=likelihood_value
         #pks['posterior']=prior_value+likelihood_value
         return likelihood_value, prior_value
-    
-    
-    def get_size_diff(self, x):
-        t,add=x
-        p_cov=make_covariance(t)+add
-        if self.b is not None:
-            p_cov+=self.b
-        diffs=p_cov-self.emp_cov
-        max_dif=amax(diffs)
-        min_dif=amin(diffs)
-        return median(p_cov/self.emp_cov), (max_dif+min_dif)/(abs(max_dif)+abs(min_dif)), norm(diffs)
 
 def rescale_empirical_covariance(m):
     '''

@@ -36,24 +36,6 @@ def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
         old_y=new_y
         new_y=function(new_x)
     return new_x
-        
-
-def likelihood_mean_based(sample_of_matrices, verbose_level='normal'):
-    mean_wishart=  np.mean(sample_of_matrices, axis=0)
-    dets=[ np.linalg.det(mat) for mat in sample_of_matrices]
-    assert not ((not all(det>0 for det in dets)) or np.linalg.det(mean_wishart)==0), 'Some covariance was not invertible. Perhaps using "var_opt" in the flag --bootstrap_type_of_estimation will fix the issue'
-    
-    r=mean_wishart.shape[0]
-    
-    def joint_density(df_l, verbose=False):
-        df=df_l
-        val=-sum((wishart.logpdf(x, df=df, scale=mean_wishart/df)  for x in sample_of_matrices))
-        if verbose:
-            print(df, ':', val)
-        return val
-    
-    return I_cant_believe_I_have_to_write_this_function_myself(joint_density, r)
-
 
 def variance_mean_based(sample_of_matrices, divisor=None, verbose_level='normal'):
     #removedprin len(sample_of_matrices), sample_of_matrices[0].shape

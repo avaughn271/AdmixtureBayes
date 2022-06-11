@@ -3,9 +3,15 @@ from Rtree_operations import (get_all_branch_lengths, get_all_admixture_proporti
 get_destination_of_lineages, get_categories, get_parent_of_branch, propagate_married, propagate_admixtures)
 from math import log, factorial,exp
 from scipy.special import binom 
-import linear_distribution
 from uniform_topological_prior import uniform_topological_prior_function
 from Rtree_to_covariance_matrix import get_admixtured_populations
+
+
+def logpdf(x, fro=0.0, to=1.0):
+    log_max_height=log((to-fro)*2)
+    log_frac=log( (to-(x-fro))/(to-fro) )
+    return log_max_height+log_frac
+
 
 def calculate_branch_prior(branches, n):
     rate=float(2*n-2)/len(branches)
@@ -50,7 +56,7 @@ def prior(x, p=0.5, use_skewed_distr=False, pks={}, use_uniform_prior=False, una
     return logsum
 
 def linear_admixture_proportions(admixtures):
-    return sum((linear_distribution.logpdf(admixture) for admixture in admixtures))
+    return sum((logpdf(admixture) for admixture in admixtures))
 
 def no_admixes(p, admixes, hard_cutoff=20, r=0):
     if admixes>hard_cutoff:

@@ -1,4 +1,4 @@
-from numpy import var, savetxt, square, loadtxt
+from numpy import var, savetxt, loadtxt
 from numpy.random import choice
 from tree_to_data import unzip, gzip
 from covariance_estimator import initor
@@ -6,7 +6,7 @@ import warnings
 
 from construct_covariance_choices import empirical_covariance_wrapper_directly
 from pathos.multiprocessing import Pool
-from df_estimators import variance_mean_based, likelihood_mean_based
+from df_estimators import variance_mean_based
 import os
     
 def estimate(sample_of_matrices):
@@ -96,7 +96,6 @@ def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='n
     with open(filename, 'r') as f:
         first_line=f.readline()
         lines=f.readlines()
-        #removedprin lines
     n=len(lines)
     if no_blocks is not None:
         blocksize=n/no_blocks
@@ -104,8 +103,6 @@ def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='n
     if verbose_level!='silent':
         print('total number of SNPs: '+ str(n))
         print('total blocksize: ' + str(blocksize))
-        #removedprin 'no_blocks', no_blocks
-        #prxint('len(line_sets)', len(line_sets))
     for i,lins in enumerate(line_sets):
         new_filename= filename_reduced+str(i)
         with open(new_filename, 'w') as g:
@@ -142,8 +139,6 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
     summarization=initor(summarization)
     if summarization=='var':
         res=estimate(covs)
-    elif summarization=='mle_opt':
-        res=likelihood_mean_based(covs, verbose_level=verbose_level)
     elif summarization=='var_opt':
         res=variance_mean_based(covs, verbose_level=verbose_level)
     return res, covs

@@ -68,13 +68,6 @@ def main(args):
                     node_structure[attached_branch].add_parent(new_node)
         return node_structure
 
-
-    def get_number_of_tadmixtures(node_structure):
-        total=0
-        for key in node_structure:
-            total+=max(0,node_structure[key].get_number_of_parents()-1)
-        return total
-
     def node_combinations_to_node_structure(node_combinations):
         length_sorted={}
         for node_combination in node_combinations:

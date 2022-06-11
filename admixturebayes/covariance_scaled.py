@@ -101,39 +101,9 @@ def reduced_covariance_bias_correction(p,n,n_outgroup=0, type_of_scaling='unbias
     
 
 def bias_correction(m, p, pop_sizes, n_outgroup=None, type_of_scaling='unbiased'):
-    #pop sizes are the number of chromosome for each SNP. It is also called the haploid population size
     Bs=[B(prow, pop_size, type_of_scaling=type_of_scaling) for prow, pop_size in zip(p, pop_sizes)]
-    #removedprin 'Bs',Bs
     adjusting_matrix=adjuster(Bs)
-    #removedprin 'adjusting matrix',adjusting_matrix
-    #removedprin 'm',m
-    #if n_outgroup is not None:
-    #    adjusting_matrix[n_outgroup,:]=0
-    #    adjusting_matrix[:,n_outgroup]=0
-    #removedprin 'adjusting matrix',adjusting_matrix
-    res=m-adjusting_matrix
-    #removedprin 'm-adjusting', res
-    from reduce_covariance import reduce_covariance
-    #removedprin 'mreduced', reduce_covariance(m, n_outgroup)
-    #removedprin 'adjustingreduced', reduce_covariance(adjusting_matrix, n_outgroup)
-    #removedprin 'mreduced -adjusting reduced', reduce_covariance(m, n_outgroup)-reduce_covariance(adjusting_matrix, n_outgroup)
-    #removedprin '(m -adjusting) reduced', reduce_covariance(res, n_outgroup)
     return adjusting_matrix
-
-def other_bias_correction(m,p,pop_sizes,n_outgroup):
-    counter=0
-    p_vars=[]
-    for i in range(len(pop_sizes)):
-        if i==n_outgroup:
-            p0_var=avg_var(p[n_outgroup,:])/(pop_sizes[n_outgroup])
-        else:
-            p_vars.append(avg_var(p[i,:])/(pop_sizes[i]))
-    adjusting_matrix=diag(array(p_vars))+p0_var
-    print('adjusting_matrix', adjusting_matrix)
-    print('m', m)
-    res=m-adjusting_matrix
-    print('m-adjusting_matrix', res)
-    return res
 
 class ScaledEstimator(Estimator):
     

@@ -1,28 +1,11 @@
 from Rtree_operations import (find_rooted_nodes, node_is_admixture, node_is_leaf_node, 
                               get_branch_length, get_admixture_proportion_from_key, get_children,
                               mother_or_father, other_branch)
-from scipy.stats import uniform, norm, binom, multivariate_normal
+from scipy.stats import uniform, norm, binom
 from copy import deepcopy
-from numpy import clip, cov, array, mean, sqrt, zeros
-
-def simulate_xs_and_ns(n,N, Sigma, ns, normal_xval=False):
-    p0s=uniform.rvs(size=N)
-    pij=zeros((n+1,N))
-    for s,p0 in enumerate(p0s):
-        pij[1:,s]=multivariate_normal.rvs(mean=[p0]*n, cov=Sigma*p0*(1-p0))
-        pij[0,s]=p0
-    pij2=clip(pij,0,1)
-    ##removedprin ns
-   # print pij
-    if normal_xval:
-        xs=norm.rvs(loc= ns*pij2, scale=np.sqrt(pij2*(1-pij2)*ns) ) 
-    else:
-        xs=binom.rvs(ns.astype(int), p=pij2)
-    #xs=np.clip(xs, 0,ns)
-    return xs, p0s, pij
+from numpy import clip, array, mean, sqrt
 
 def add_noise(p,branch_length):
-    #return add_noise2(p, branch_length)
     p=array(p)
     sd=sqrt(branch_length*p*(1-p))
     p=[a+norm.rvs(scale=sd[n]) if 0<a<1 else a for n,a in enumerate(p) ]
@@ -30,7 +13,6 @@ def add_noise(p,branch_length):
     return p
 
 def add_noise3(p,branch_length):
-    #return add_noise2(p, branch_length)
     sd=sqrt(branch_length)
     p=[a+norm.rvs(scale=sd) if 0<a<1 else a for n,a in enumerate(p) ]
     p=clip(p,0,1)
@@ -62,10 +44,7 @@ def add_noise2(p, branch_length):
     return p
 
 def merge_ps(w, p1,p2):
-    #removedprin p1
-    #removedprin p2
     res=[w*a+(1-w)*b for a,b in zip(p1,p2)]
-    #removedprin res
     return res
 
 def produce_p_matrix(tree, nSNP, clip=True, middle_start=False, allele_dependent=True, fixed_in_outgroup='out'):
@@ -138,16 +117,4 @@ def simulate_with_binomial(ps, Ns, p_clip_value=0.01):
     for k in ps:
         sims[k]=simulate_row_with_binomial(clip(ps[k],p_clip_value, 1.0-p_clip_value), Ns[k])
     return sims
-
-def calculate_covariance_matrix_from_p(ps, nodes=None):
-    p_mat=[]
-    if nodes is None:
-        nodes=list(ps.keys())
-    for node in nodes:
-        p_mat.append(ps[node])
-        
-    m=array(p_mat)-mean(p_mat, axis=0)
-    return cov(m)
-        
-    
     

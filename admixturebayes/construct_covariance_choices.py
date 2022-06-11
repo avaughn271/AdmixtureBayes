@@ -1,6 +1,6 @@
 from tree_statistics import identifier_to_tree_clean, unique_identifier_and_branch_lengths, generate_predefined_list_string
-from tree_to_data import (file_to_emp_cov, reduce_covariance, ms_to_treemix3, call_ms_string,
-                          tree_to_ms_command, emp_cov_to_file, time_adjusted_tree_to_ms_command,
+from tree_to_data import (file_to_emp_cov, reduce_covariance,
+                         emp_cov_to_file,
                            get_xs_and_ns_from_freqs,
                           get_xs_and_ns_from_treemix_file, order_covariance, reorder_covariance, reorder_reduced_covariance)
 from generate_prior_trees import simulate_number_of_admixture_events, generate_phylogeny
@@ -119,37 +119,7 @@ def reduce_covariance_wrapper(full_covariance, **kwargs):
     return reduce_covariance(full_covariance, reduce_node_index)
 
 def ms_simulate_wrapper(tree, **kwargs):
-    no_pops= get_number_of_leaves(tree)
-    #ms_command, minmaxv=tree_to_ms_command(tree,  #TO CHANGE BACK
-    if kwargs['time_adjust']:
-        ms_command=time_adjusted_tree_to_ms_command(tree,  #TO CHANGE BACK
-                       sample_per_pop=kwargs['sample_per_pop'],
-                       nreps=kwargs['nreps'],
-                       theta=kwargs['theta'],
-                       sites=kwargs['sites'],
-                       recomb_rate=kwargs['recomb_rate'],
-                       leaf_keys=kwargs['full_nodes'],
-                       final_pop_size=kwargs['final_pop_size'])
-    else:
-        ms_command=tree_to_ms_command(tree,  #TO CHANGE BACK
-                       sample_per_pop=kwargs['sample_per_pop'],
-                       nreps=kwargs['nreps'],
-                       theta=kwargs['theta'],
-                       sites=kwargs['sites'],
-                       recomb_rate=kwargs['recomb_rate'],
-                       leaf_keys=kwargs['full_nodes'])
-    #kwargs['pks']['minmaxv']=minmaxv  #TO CHANGE BACK
-    #removedprin ms_command
-    call_ms_string(ms_command, kwargs['ms_file'])
-    filename_gz=ms_to_treemix3(kwargs['ms_file'],
-                    samples_per_pop=kwargs['sample_per_pop'],
-                    no_pops=no_pops,
-                    n_reps=kwargs['nreps'],
-                    filename2=kwargs['treemix_file'],
-                    nodes=kwargs['full_nodes'])
-    return filename_gz
-
-
+    print("error")
 
 def simulate_brownian_motion_wrapper(tree, **kwargs):
     N=kwargs['nreps'] #number of independent SNPs.

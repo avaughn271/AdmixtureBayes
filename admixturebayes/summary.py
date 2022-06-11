@@ -1,8 +1,22 @@
 import matplotlib.pyplot as plt
 from Rtree_operations import get_number_of_admixes, get_all_branch_lengths
 from tree_statistics import unique_identifier
-from data_wrangling_functions import values_to_numbers, count_strings, count_strings2, thin_out_nans
-from numpy import linspace
+
+from numpy import isfinite
+
+def values_to_numbers(list_of_objects):
+    res=[]
+    seen={}
+    count=0
+    for element in list_of_objects:
+        if element not in seen:
+            count+=1
+            seen[element]=count
+        res.append(seen[element])
+    return res
+
+def thin_out_nans(x, index):
+    return list(zip(*[(y,i) for y,i in zip(x,index) if isfinite(y)]))
 
 
 class Summary(object):
@@ -30,30 +44,6 @@ class Summary(object):
             plt.plot(index, numbers, **kwargs)
         plt.title(self.name)
     
-    
-
-            
-    def make_histogram(self, x, a=None, **kwargs):
-        if isinstance(x[0], float):
-            x,_=thin_out_nans(x,x)
-            _,bins,_= plt.hist(x, fc=(1, 0, 0, 0.5), normed=True, **kwargs)
-            if a is not None:
-                a,_=thin_out_nans(a,a)
-                if 'bins' in kwargs:
-                    plt.hist(a,fc=(0, 1, 0, 0.5), normed=True,  **kwargs)
-                else:
-                    plt.hist(a,fc=(0, 1, 0, 0.5), normed=True, bins=bins, **kwargs)
-        else:
-            if a is None:
-                labels, counts1 = count_strings(x)
-                counts2=None
-            else:
-                labels, counts1, counts2 = count_strings2(x,a)
-            print('labels', labels)
-            plt.bar(list(range(len(labels))), counts1, width=1.0, alpha=0.5, color='r', label='MCMC')
-            if counts2 is not None:
-                plt.bar(list(range(len(labels))), counts2, width=1.0, alpha=0.5, color='g', label='MCMC')
-        plt.title(self.name)
         
 class s_basic_tree_statistics(Summary):
     
@@ -82,11 +72,6 @@ class s_no_admixes(Summary):
     def summary_of_phylogeny(self, tree):
         return get_number_of_admixes(tree)
     
-    def make_histogram(self, x,a):
-        maxval=max(x)
-        if a is not None:
-            maxval=max(maxval, max(a))
-        return Summary.make_histogram(self, x, a, bins=list(range(maxval+1)))
     
 
 class s_total_branch_length(Summary):
@@ -202,25 +187,6 @@ class s_tree_identifier(Summary):
     def summary_of_phylogeny(self, tree):
         return unique_identifier(tree)
     
-    def make_histogram(self, x, a=None, **kwargs):
-        if a is None:
-            labels, counts1 = count_strings(x)
-            counts2=None
-        else:
-            labels, counts1, counts2 = count_strings2(x,a)
-            labels, counts1, counts2 = list(zip(*[(x,y,z) for (x,y,z) in sorted(zip(labels,counts1,counts2), key=lambda pair: pair[1], reverse=True)]))
-            print('labels', labels)
-            xaxis=list(range(0,20,2))+list(range(20,30,1))+list(linspace(30,40, len(labels)-20))
-            yaxis=counts1
-            zaxis=[2]*10+[1]*10+[10.0/(len(labels)-20)]*(len(labels)-20)
-            print(len(xaxis), xaxis)
-            print(len(yaxis), yaxis)
-            print(len(zaxis), zaxis)
-            print(labels[:20])
-            plt.bar(xaxis, counts1, width=zaxis, alpha=0.5, color='r', label='MCMC')
-            if counts2 is not None:
-                plt.bar(xaxis, counts2, width=zaxis, alpha=0.5, color='g', label='MCMC')
-        plt.title(self.name)
     
 
 class s_tree_identifier_new_tree(s_tree_identifier):
