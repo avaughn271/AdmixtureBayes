@@ -54,7 +54,7 @@ def run_posterior_main(args):
                         help='The subset of populations to perform the analysis on. If not declared, the analysis will be done on the full dataset.')
     parser.add_argument('--result_file', default='posterior_distributions.csv', type=str,
                         help='The resulting file. It will be comma-separated and contain one column per summary plus a header.')
-    parser.add_argument('--faster', default=False, action='store_true',
+    parser.add_argument('--faster', default=False, action='store_true', #ANDREWDEBUG
                         help='This will make the program not calculate the string_tree summary which can be very slow when there are many admixture events. '
                              'As a consequence, the option "--plot estimates" can not be used by AdmixtureBayes plot.')
 
@@ -161,6 +161,7 @@ def run_posterior_main(args):
 
     thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
 
+
     nodes=read_one_line(options.covariance).split() #this will not include any outgroup.
     nodes_wo_outgroup = deepcopy(nodes)
     if options.outgroup_name:
@@ -243,7 +244,7 @@ def run_posterior_main(args):
 
     def save_thin_columns(d_dic):
         return {summ:d_dic[summ] for summ in list(set(options.save_summaries+options.custom_summaries))}
-
+    print("uuuuu")
     all_results,_=iterate_over_output_file(options.mcmc_results,
                                              cols=options.use_cols,
                                              pre_thin_data_set_function=thinner,
@@ -251,6 +252,7 @@ def run_posterior_main(args):
                                              row_summarize_functions=row_sums,
                                              thinned_d_dic=save_thin_columns,
                                              full_summarize_functions=[])
+    print("qqqqqq")
 
     if not options.summarize_posterior_distributions:
         summaries=list(all_results[0].keys())
@@ -260,6 +262,7 @@ def run_posterior_main(args):
                 s_summs=[str(row[summ]) for summ in summaries]
                 f.write(','.join(s_summs)+ '\n')
         sys.exit()
+    print("ppppp")
 
     n=len(options.save_summaries)
     summary_summaries=options.summary_summaries
