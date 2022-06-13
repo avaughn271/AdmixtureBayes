@@ -48,6 +48,38 @@ In this step, we run the MCMC chain that explores the space of admixture graphs.
 $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 ```
 
+## This step takes as input:
+
+**--input-file** The input file of allele counts as described above.
+
+**--outgroup** The name of the population that will serve as the outgroup. For example, in the above file, "out" could be the outgroup.
+
+**--n** (optional) The number of proposal steps the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proporional to the number of proposal steps). Default value is 200.
+
+**--MCMC_chains** (optional) The number of chains to run the MCMCMC with. More chains will results in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8.
+
+
+**--result_file** (optional) The name of the mcmc output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "mcmc_samples.csv"
+
+**--stop_criteria** (optional) Either True or False. If True, then the MCMC sampler will stop as soon as the effective sample size has been reached or until n iterations have been reached, whichever comes first. Otherwise, the algorithm will continue until n iterations have been reached. Default value is False.
+
+
+**--stop_criteria_threshold** (optional) Ignored if stop_criteria is False. Sets the effective samples size that much be reached for the algorithm to terminate. Default value is 200.
+
+**--Rscript_command** (optional) Ignored if stop_criteria is False. The command with which to run an R script on the desired machine (eg. "Rscript" or "R CMD BATCH"). Default value is "Rscript".
+
+**--verbose_level** (optional) Either "normal" or "silent". If "normal", then the total number of snps will be printed to the console, along with the progress of the MCMC sampler. Every 1000th iteration, the progress towards the total number of iterations is printed. If "silent", then nothing will be printed to the console. Default value is "normal."
+
+
+ ## This step produces (in the current working directory)
+
+**result_file** This file contains the list of MCMC samples. 
+
+
+*covariance_and_multiplier.txt* This file contains the covariance matrix corresponding to the given input file.
+
+
+
 ## (2) analyzeSamples
 
 In this step, we analyze the output of the Markov chain from the previous step.  The script to run is
@@ -160,20 +192,11 @@ If **--write_rankings** is specified, a file      containing a list of all nodes
 
 ## Increasing number of populations
 
-As more populations are added to the input file, the more steps it will take for the MCMC to converge. By default there are 50 MCMC steps between each MCMCMC flip and the number of MCMCMC flips is 200. The total number of MCMC steps is therefore 200\*50=10,000 which is only suitable for datasets with 4 or fewer populations. To increase the number of steps to 1,000,000 which is often enough to analyze 10 populations, use the command  
-
 It is also possible to stop the chain using a stopping criteria. The stopping criteria calculates the Effective Sample Size of different summaries and stops if all of them are above a certain threshold (default is 200). To do so, AdmixtureBayes calls the [rwty package](https://cran.r-project.org/web/packages/rwty/index.html) in R with the command Rscript. To use the stopping criteria it is therefore necessary to install rwty
 ```bash
 $ R
 ...
 > install.packages("rwty")
 ```
-and run AdmixtureBayes with the command
-
-```bash
-$ AdmixtureBayes run --input_file big_allele_counts.txt --outgroup population10 --n 50000 --stop_criteria
-```
-
-The parameter --n then defines an upper limit on the number of iterations.
 
 ## More advanced functionalities.
