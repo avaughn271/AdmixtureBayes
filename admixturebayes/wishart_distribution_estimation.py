@@ -71,7 +71,7 @@ def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='n
     line_sets=get_partitions(lines, blocksize)
     if verbose_level!='silent':
         print('total number of SNPs: '+ str(n))
-        print('total blocksize: ' + str(blocksize))
+        #print('total blocksize: ' + str(blocksize))
     for i,lins in enumerate(line_sets):
         new_filename= filename_reduced+str(i)
         with open(new_filename, 'w') as g:

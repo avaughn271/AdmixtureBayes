@@ -64,22 +64,17 @@ def iterate_over_output_file(outfile,
     all_results=[]
     
     for n,(i,r) in enumerate(df.iterrows()):
-        print("iterationyyy")
-        if n%5==0: #ANDREW DEBUG
-            print(float(100*n)/len(df),'%')
-            print("mmmmm")
+        #if n%5==0: #ANDREW DEBUG
+        #    print(float(100*n)/len(df),'%')
+        #    print("mmmmm")
         cont=False
         d_dic={colname:r[k] for k, colname in enumerate(cols)}
         d_dic.update(constant_kwargs)
-        print("aaaaaa")
         if not while_thin_data_set_function(**d_dic):
             print('breaking from while_thin')
             continue
-        print("bbbbbbb")
 
         for row_summarize_function in row_summarize_functions:
-            print("dddddd")
-            print(row_summarize_function)
             #removedprin row_summarize_function
             #removedprin d_dic
             add_dic, skip=row_summarize_function(**d_dic)
@@ -88,7 +83,6 @@ def iterate_over_output_file(outfile,
                 cont=True
                 break
             d_dic.update(add_dic)
-        print("ccccccc")
         if cont:
             print('breaking because of cont')
             continue

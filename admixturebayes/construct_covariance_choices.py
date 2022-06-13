@@ -210,11 +210,9 @@ def save_stage(value, stage_number, prefix, full_nodes, before_added_outgroup_no
     elif stage_number==4:
         write_two_lines_to_file(filename, ' '.join(full_nodes), unique_identifier_and_branch_lengths(value, full_nodes))
     elif stage_number==5:
-       # print full_nodes
         write_two_lines_to_file(filename, ' '.join(full_nodes), unique_identifier_and_branch_lengths(value, full_nodes))
     elif stage_number==6:
         pass
-        #removedprin 'file is already made elsewhere'
     elif stage_number==7:
         emp_cov_to_file(value, filename, full_nodes)
     elif stage_number==8:
