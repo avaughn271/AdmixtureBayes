@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from Rtree_operations import get_number_of_admixes, get_all_branch_lengths
 from tree_statistics import unique_identifier
 
@@ -38,11 +38,11 @@ class Summary(object):
     def make_trajectory(self, index, x, **kwargs):
         if isinstance(x[0], float):
             x, index=thin_out_nans(x,index)
-            plt.plot(index,x,**kwargs)
+            #plt.plot(index,x,**kwargs)
         else:
             numbers=values_to_numbers(x)
-            plt.plot(index, numbers, **kwargs)
-        plt.title(self.name)
+            #plt.plot(index, numbers, **kwargs)
+        #plt.title(self.name)
     
         
 class s_basic_tree_statistics(Summary):

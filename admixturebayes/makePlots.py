@@ -49,12 +49,12 @@ def main(args):
     parser = ArgumentParser(usage='pipeline for plotting posterior distribution summaries.')
 
     parser.add_argument('--posterior', required=True, type=str, help='The file containing posterior distributions from the "AdmixtureBayes posterior" command. It needs the two columns "pops" and topology.')
-    parser.add_argument('--plot', choices=['consensus_trees', 'top_node_trees', 'top_trees','estimates'], required=True,
+    parser.add_argument('--plot', choices=['consensus_trees', 'top_minimal_topologies', 'top_trees','estimates'], required=True,
                         help='The type of plot to make. Choose between: 1) consensus_trees. '
                              'It plots an admixture graph based on all nodes that have a higher (marginal) posterior probability of X. '
                              'Different X\'s can be supplied with the command --consensus_threshold \n'
-                             '2) top_node_trees. It plots the X highest posterior combinations of node types '
-                             'and creates the corresponding minimal topologies.  X can be supplied through the command --top_node_trees_to_plot'
+                             '2) top_minimal_topologies. It plots the X highest posterior combinations of node types '
+                             'and creates the corresponding minimal topologies.  X can be supplied through the command --top_minimal_topologies_to_plot'
                              '3) top_trees. It plots the X highest posterior topologies. X can be supplied by the command --top_trees_to_plot.'
                              '4) estimates. It creates a table  with continuous parameters estimated from the posterior sample'
                              'It also plots the concerned topologies with labels. It does this for either the X highest posterior topologies '
@@ -65,7 +65,7 @@ def main(args):
                                                                'That means that any rankings written to a file by setting --write_rankings or --write_estimates_to_file will have this prefix prepended.')
     parser.add_argument('--consensus_thresholds', default=[0.25, 0.5, 0.75, 0.9, 0.95, 0.99], type=float, nargs='+',
                         help='The posterior thresholds for which to draw different consensus trees.')
-    parser.add_argument('--top_node_trees_to_plot', type=int, default=3,
+    parser.add_argument('--top_minimal_topologies_to_plot', type=int, default=3,
                         help='The number of node trees (or minimal topologies) to plot')
     parser.add_argument('--top_trees_to_plot', type=int, default=3,
                         help='The number of trees (or topologies) to plot ')
@@ -127,7 +127,7 @@ def main(args):
             added_sets.append(lists_of_fixed_size)
         return node_structure
 
-    if options.plot=='consensus_trees' or options.plot=='top_node_trees':
+    if options.plot=='consensus_trees' or options.plot=='top_minimal_topologies':
         df = pd.read_csv(options.posterior, sep=options.sep, usecols=['pops'])
         nodes_list = df['pops'].tolist()
         seen_combinations = {}
@@ -157,9 +157,9 @@ def main(args):
                     to_write = c.most_common(options.rankings_to_write_to_file)
                     for node, frequency in to_write:
                         f.write(node+','+str(float(frequency)/N)+'\n')
-        elif options.plot=='top_node_trees':
+        elif options.plot=='top_minimal_topologies':
             c=Counter(nodes_list)
-            to_plots=c.most_common(options.top_node_trees_to_plot)
+            to_plots=c.most_common(options.top_minimal_topologies_to_plot)
             if options.write_rankings:
                 with open(options.prefix+options.write_rankings, 'w') as f:
                     for tree, frequency in c.most_common(options.rankings_to_write_to_file):

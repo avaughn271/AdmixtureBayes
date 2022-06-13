@@ -54,7 +54,7 @@ def run_posterior_main(args):
                         help='The subset of populations to perform the analysis on. If not declared, the analysis will be done on the full dataset.')
     parser.add_argument('--result_file', default='thinned_samples.csv', type=str,
                         help='The resulting file. It will be comma-separated and contain one column per summary plus a header.')
-    parser.add_argument('--faster', default=True, action='store_true', #ANDREWDEBUG
+    parser.add_argument('--slower', default=False,    action='store_true', #ANDREWDEBUG
                         help='This will make the program not calculate the string_tree summary which can be very slow when there are many admixture events. '
                              'As a consequence, the option "--plot estimates" can not be used by AdmixtureBayes plot.')
 
@@ -218,10 +218,10 @@ def run_posterior_main(args):
         nodes_wo_outgroup=subnodes_wo_outgroup
     else:
         nodes=nodes_with_outgroup
-    if 'string_tree' in options.calculate_summaries and not options.faster:
+    if 'string_tree' in options.calculate_summaries and options.slower:
         row_sums.append(possible_summaries['string_tree'](deepcopy(nodes), tree_unifier())) #calling make_string_tree
         name_to_rowsum_index('string_tree')
-    if options.faster:
+    if not options.slower:
         if 'string_tree' in options.calculate_summaries:
             options.calculate_summaries.remove('string_tree')
 
