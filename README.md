@@ -5,16 +5,32 @@ AdmixtureBayes is a program to generate, analyze, and plot posterior samples of 
 
 ## Installation
 
-AdmixtureBayes can be downloaded install by running the commands
+AdmixtureBayes can be downloaded by running the commands
 ```bash
 $ git clone https://github.com/avaughn271/AdmixtureBayes
 ```
+AdmixtureBayes is written almost completely in Python and requires the following Python packages:
 
-It may also be necessary to install graphviz separately. TODO!!!!!!!!!!!!
+"numpy", "scipy",  "pandas",    "pathos",   "graphviz"
+
+See the following links for installation help: 
+
+https://numpy.org/install/
+https://scipy.org/install/
+https://pandas.pydata.org/docs/getting_started/install.html
+https://pypi.org/project/pathos/
+https://pypi.org/project/graphviz/
+
+Furthermore, if you wish to use the stop_criteria feature of the Markov Chain, then you need to also have R installed with the [rwty package](https://cran.r-project.org/web/packages/rwty/index.html), which can be installed by running: 
+```bash
+$ R
+...
+> install.packages("rwty")
+```
 
 ### Test installation
 
-A test script is found in the *example/* folder together with a test dataset. TODOOO!!!!!
+A test script is found in the *example/* folder together with a test dataset. TODO1!!!!!
 
 ## Input file
 
@@ -63,7 +79,6 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--stop_criteria** (optional) Either True or False. If True, then the MCMC sampler will stop as soon as the effective sample size has been reached or until n iterations have been reached, whichever comes first. Otherwise, the algorithm will continue until n iterations have been reached. Default value is False.
 
-
 **--stop_criteria_threshold** (optional) Ignored if stop_criteria is False. Sets the effective samples size that much be reached for the algorithm to terminate. Default value is 200.
 
 **--Rscript_command** (optional) Ignored if stop_criteria is False. The command with which to run an R script on the desired machine (eg. "Rscript" or "R CMD BATCH"). Default value is "Rscript".
@@ -73,10 +88,10 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
  ## This step produces (in the current working directory)
 
-**result_file** This file contains the list of MCMC samples. 
+***result_file*** This file contains the list of MCMC samples. 
 
 
-*covariance_and_multiplier.txt* This file contains the covariance matrix corresponding to the given input file.
+**covariance_and_multiplier.txt** This file contains the covariance matrix corresponding to the given input file.
 
 
 
@@ -100,9 +115,11 @@ $ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 
 **--thinning_rate** (optional) The thinning rate of the sample thinning step (which occurs after the burn-in step). Deafult value is 10.
 
+**--slower** (optional) If this flag is used, then the necessary information to plot the top trees with branch estimates  will be computed. By default, this is not done as this can be a very slow process when the number of admixture events is large.
+
  ## This step produces (in the current working directory)
 
-**result_file** This file contains the list of samples that is retained after burn-in and thinning. A few lines describing the burn-in and thinning process are also printed to the console.
+***result_file*** This file contains the list of samples that is retained after burn-in and thinning. A few lines describing the burn-in and thinning process are also printed to the console.
 
 ## (3) makePlots
 
@@ -114,13 +131,13 @@ $ python PATH/AdmixtureBayes/admixturebayes/makePlots.py
 
 There are 4 different plots that can be generated:
 
-(i) the top trees
+(i) the top trees - these are the topologies with the highest posterior probabilities.
 
-(ii) the top trees with branch estimates
+(ii) the top trees with branch estimates - these are the topologies with the highest posterior probabilities along with the best estimates of branch lengths and admixture proportions.
 
-(iii) the top node trees (TODO!!!1)
+(iii) the top node trees - these are the minimal topologies with the highest probabilities.
 
-(iv) the consensus trees
+(iv) the consensus trees - these are trees that are formed by combining all nodes that have a given posterior probability of appearing in an admixture graph.
 
 ## (i) Top Trees - input is of the form:
 
@@ -130,14 +147,13 @@ There are 4 different plots that can be generated:
 
 **--top_trees_to_plot** (optional) The number of top trees to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
 
-**--write_rankings** (optional) The name of a file to which the minimal topologies and their likelihoods?????? will be written. If not specified, no such file will be written.
-
+**--write_rankings** (optional) The name of a file to which the minimal topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
 ## This produces (in the current working directory)
 
-**topology_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***topology_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
 
-If **--write_rankings** is specified, a file with the set of all minimal topologies and their likelihoods!!! will be produced.
+If **--write_rankings** is specified, a file with the set of all minimal topologies and their posterior probabilities will be produced.
 
 ## (ii) Top Trees with Branch Estimates - input is of the form:
 
@@ -149,30 +165,29 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 
 ## This produces (in the current working directory)
 
-**topology_labels_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***topology_labels_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
 
-**branch_estimates_i.txt** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
+***branch_estimates_i.txt*** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
 
-**admixture_estimates_i.txt** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
+***admixture_estimates_i.txt*** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
 
-Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--faster False". This will result in an increased runtime for the analyzeSamples step, but will produce the necessry information for the branch estimates to be plotted.
+Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessry information for the branch estimates to be plotted.
 
-## (iii) Top Node Trees - input is of the form:
+## (iii) Top Minimal Topologies - input is of the form:
 
-**--plot top_node_trees**
+**--plot top_minimal_topologies**
 
 **--posterior** This is the output file from the posterior step.
 
-**--top_node_trees_to_plot** (optional) The number of top node trees to plot. If the value is greater than the total number of minimal topologies??????, the total number of minimal topologies will be used instead. Default value is 3.
+**--top_minimal_topologies_to_plot** (optional) The number of top node trees to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
 
-**--write_rankings** (optional) The name of a file to which the minimal topologies and their likelihoods?????? will be written. If not specified, no such file will be written.
+**--write_rankings** (optional) The name of a file to which the minimal topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
 ## This produces (in the current working directory)
 
-**minimal_topology_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***minimal_topology_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
 
-If **--write_rankings** is specified, a file with the set of all minimal topologies and their likelihoods!!! will be produced.
-
+If **--write_rankings** is specified, a file with the set of all minimal topologies and their posterior probabilities will be produced.
 
 ## (iv) Consensus Trees - input is of the form:
 
@@ -180,23 +195,12 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 
 **--posterior** This is the output file from the posterior step.
 
-**--consensus_thresholds** (optional) A list of values strictly between 0 and 1. For each value, a plot will be generated containing TODO!!!!. Default value is 0.25 0.5 0.75 0.9 0.95 0.99.
+**--consensus_thresholds** (optional) A list of values strictly between 0 and 1. For each value, a plot will be generated containing a graph formed by all nodes that have a posterior probability above that threshold. Default value is 0.25 0.5 0.75 0.9 0.95 0.99.
 
 **--write_rankings** (optional)   is specified, a file with the set of nodes and their likelihoods is generated.
 
 ## This produces (in the current working directory)
 
-**consensus_i.pdf** One such plot will be produced for all *i* in the list of thresholds.
+***consensus_i.pdf*** One such plot will be produced for all *i* in the list of thresholds.
 
-If **--write_rankings** is specified, a file      containing a list of all nodes and their likelihoods is generated.
-
-## Increasing number of populations
-
-It is also possible to stop the chain using a stopping criteria. The stopping criteria calculates the Effective Sample Size of different summaries and stops if all of them are above a certain threshold (default is 200). To do so, AdmixtureBayes calls the [rwty package](https://cran.r-project.org/web/packages/rwty/index.html) in R with the command Rscript. To use the stopping criteria it is therefore necessary to install rwty
-```bash
-$ R
-...
-> install.packages("rwty")
-```
-
-## More advanced functionalities.
+If **--write_rankings** is specified, a file  containing a list of all nodes and their posterior probabilities is generated.
