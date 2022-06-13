@@ -34,28 +34,27 @@ where the first line is the populations and the subsequent lines are the bi-alle
 
 AdmixtureBayes has 3 steps:
 
-(1) *run* - this takes the input of allele counts described above, runs the MCMC chain, and generates a set of samples of admixture graphs
+(1) *runMCMC* - this takes the input of allele counts described above, runs the MCMC chain, and generates a set of samples of admixture graphs
 
-(2) *posterior* - this takes the output of the previous step and performs a burn-in and thinning step to generate independent samples of admixture graphs
+(2) *analyzeSamples* - this takes the output of the previous step and performs a burn-in and thinning step to generate independent samples of admixture graphs
 
-(3) *plot* - this takes the output of the previous step and generates different plots that are useful for interpretation
+(3) *makePlots* - this takes the output of the previous step and generates different plots that are useful for interpretation
 
-## (1) run
+## (1) runMCMC
 
 In this step, we run the MCMC chain that explores the space of admixture graphs.  The script to run is
 
 ```bash
-$ python PATH/AdmixtureBayes/admixturebayes/call_AdmixtureBayes.py
+$ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 ```
 
-## (2) posterior
+## (2) analyzeSamples
 
 In this step, we analyze the output of the Markov chain from the previous step.  The script to run is
 
 ```bash
-$ python PATH/AdmixtureBayes/admixturebayes/downstream_analysis_parser.py
+$ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 ```
-
 
 ## This step takes as input:
 
@@ -63,7 +62,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/downstream_analysis_parser.py
 
 **--covariance** This is the output file from the previous step that contains the covariance matrix.
 
-**--result_file** (optional) The name of the output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "posterior_distributions.csv"
+**--result_file** (optional) The name of the output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "thinned_samples.csv"
 
 **--burn_in_fraction** (optional) The fraction of samples to discard as a burn-in period. Default value is 0.5.
 
@@ -73,12 +72,12 @@ $ python PATH/AdmixtureBayes/admixturebayes/downstream_analysis_parser.py
 
 **result_file** This file contains the list of samples that is retained after burn-in and thinning. A few lines describing the burn-in and thinning process are also printed to the console.
 
-## (3) plot
+## (3) makePlots
 
 In this step, we plot admixture graphs that have been sampled by AdmixtureBayes.  The script to run is
 
 ```bash
-$ python PATH/AdmixtureBayes/admixturebayes/admixture_trees_to_consensus_tree.py
+$ python PATH/AdmixtureBayes/admixturebayes/makePlots.py
 ```
 
 There are 4 different plots that can be generated:
@@ -123,6 +122,8 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 **branch_estimates_i.txt** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
 
 **admixture_estimates_i.txt** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
+
+Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--faster False". This will result in an increased runtime for the analyzeSamples step, but will produce the necessry information for the branch estimates to be plotted.
 
 ## (iii) Top Node Trees - input is of the form:
 
