@@ -16,21 +16,24 @@ AdmixtureBayes is written almost completely in Python and requires the following
 See the following links for installation help: 
 
 https://numpy.org/install/
+
 https://scipy.org/install/
+
 https://pandas.pydata.org/docs/getting_started/install.html
+
 https://pypi.org/project/pathos/
+
 https://pypi.org/project/graphviz/
 
-Furthermore, if you wish to use the stop_criteria feature of the Markov Chain, then you need to also have R installed with the [rwty package](https://cran.r-project.org/web/packages/rwty/index.html), which can be installed by running: 
-```bash
-$ R
-...
-> install.packages("rwty")
+Furthermore, if you wish to use the stop_criteria feature of the Markov Chain, then you need to also have R installed with the [rwty](https://cran.r-project.org/web/packages/rwty/index.html) and [coda](https://cran.r-project.org/web/packages/coda/index.html) packages, which can be installed by running: 
 ```
+install.packages(c("rwty", "coda"))
+```
+in any R session. 
 
-### Test installation
+### Example commands
 
-A test script is found in the *example/* folder together with a test dataset. TODO1!!!!!
+A script containing example commands is found in the *example/* folder together with a test dataset.
 
 ## Input file
 
@@ -77,7 +80,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--result_file** (optional) The name of the mcmc output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "mcmc_samples.csv"
 
-**--stop_criteria** (optional) Either True or False. If True, then the MCMC sampler will stop as soon as the effective sample size has been reached or until n iterations have been reached, whichever comes first. Otherwise, the algorithm will continue until n iterations have been reached. Default value is False.
+**--stop_criteria** (optional) If this flag is used, then the MCMC sampler will stop as soon as the effective sample size has been reached or until n iterations have been reached, whichever comes first. Otherwise, the algorithm will continue until n iterations have been reached.
 
 **--stop_criteria_threshold** (optional) Ignored if stop_criteria is False. Sets the effective samples size that much be reached for the algorithm to terminate. Default value is 200.
 
@@ -114,6 +117,8 @@ $ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 **--burn_in_fraction** (optional) The fraction of samples to discard as a burn-in period. Default value is 0.5.
 
 **--thinning_rate** (optional) The thinning rate of the sample thinning step (which occurs after the burn-in step). Deafult value is 10.
+
+**--subnodes** (optional) A list of population labels, which should be a subset of all non-outgroup population labels. This can be specified if only a subset of the population labels should be analyzed. Plots generated using the output of this step will only used the populations given in this step. If not specified, all non-outgroup populations will be considered.
 
 **--slower** (optional) If this flag is used, then the necessary information to plot the top trees with branch estimates  will be computed. By default, this is not done as this can be a very slow process when the number of admixture events is large.
 
@@ -153,7 +158,7 @@ There are 4 different plots that can be generated:
 
 ***topology_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
 
-If **--write_rankings** is specified, a file with the set of all minimal topologies and their posterior probabilities will be produced.
+If **--write_rankings** is specified, a file with the set of all topologies and their posterior probabilities will be produced.
 
 ## (ii) Top Trees with Branch Estimates - input is of the form:
 
