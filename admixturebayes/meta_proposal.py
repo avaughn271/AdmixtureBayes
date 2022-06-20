@@ -158,11 +158,4 @@ def standard_update(count, multiplier, alpha, old_value, mhr, desired_mhr=0.234,
     change=exp(gamma*(min(1.0,mhr)-desired_mhr))
     value=old_value*change
     value=min(value, max_val)
-    if verbose:
-        print('old_'+name+'=',old_value)
-        print('mhr=',mhr)
-        print('count=',count)
-        print('gamma=', gamma)
-        print('multiplier=', change)
-        print('new_'+name+'=', value)
     return value,count

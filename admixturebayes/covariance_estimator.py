@@ -31,7 +31,6 @@ class Estimator(object):
         
     def get_reduce_index(self):
         return 0
-#         print self.full_nodes, self.outgroup
 #         n_outgroup=next((n for n, e in enumerate(self.full_nodes) if e==self.outgroup))
 #         return n_outgroup
     

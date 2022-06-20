@@ -11,7 +11,7 @@ from math import exp
 from itertools import chain
 import time
 import subprocess
-
+import os
 
 def _basic_chain_unpacker(args):
     return basic_chain(*args)
@@ -116,6 +116,11 @@ def MCMCMC(starting_trees,
         cum_iterations+=no_iterations
         if stop_criteria is not None:
             if stop_criteria(cum_iterations, result_file):
+                print("Stop criteria reached. MCMC terminating now.")
+                if os.path.exists("trees_tmp.txt"):
+                    os.remove("trees_tmp.txt")
+                if os.path.exists("stop_criteria.txt"):
+                    os.remove("stop_criteria.txt")
                 break
         if make_outfile_stills:
             if make_outfile_stills[0]*60*60<time.time()-start_time:

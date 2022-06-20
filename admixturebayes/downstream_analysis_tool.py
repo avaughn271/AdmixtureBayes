@@ -65,8 +65,8 @@ def iterate_over_output_file(outfile,
     
     for n,(i,r) in enumerate(df.iterrows()):
         #if n%5==0: #ANDREW DEBUG
-        #    print(float(100*n)/len(df),'%')
-        #    print("mmmmm")
+        #    prignt(float(100*n)/len(df),'%')
+        #    prgint("mmmmm")
         cont=False
         d_dic={colname:r[k] for k, colname in enumerate(cols)}
         d_dic.update(constant_kwargs)
@@ -270,12 +270,8 @@ class topology_without_outgroup(object):
         if Rtree is None:
             Rtree = kwargs['full_tree']
 
-            # print full_tree, outgroup
         cfull_tree=rearrange_root_foolproof(deepcopy(Rtree), self.outgroup_to_remove_) #this removes the admixtures between the outgroup and the root.
         tmp_tree=remove_outgroup(cfull_tree, self.outgroup_to_remove)
-        # print 'topology calculation'
-        # print self.nodes
-        # print Rtree
         top = admixture_sorted_unique_identifier(tmp_tree, leaf_order=self.nodes, not_opposite=True)
         return {'topology': top}, False
 
@@ -410,10 +406,7 @@ class thinning(object):
             n=len(df)
             #stepsize=max(n//self.total,1) #ANDREWDEBUG
             stepsize = self.total
-            #print(len(df))
-            #print(stepsize)
             df=df[::stepsize]
-            #print(len(df))
             print('Thinning every ' + str(stepsize) + ' samples complete. There are now ' + str(len(df)) + ' samples')
         return df
     

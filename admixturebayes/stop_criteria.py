@@ -44,8 +44,8 @@ class stop_criteria(object):
     def stop_yet(self, filename):
         dir = os.path.dirname(__file__)
         command=[self.Rscript_path,os.path.join(dir, 'ESS.R'), filename, str(self.burn_in), self.outfile,  str(self.verbose_level)]+self.summaries
-        if self.verbose_level=='normal':
-            print(command)
+        #if self.verbose_level=='normal':
+        #    print(command)
         call(command)
         return self.check_outfile()
     
@@ -55,8 +55,8 @@ class stop_criteria(object):
             for n,lin in enumerate(f.readlines()):
                 ess=float(lin.split()[-1])
                 name=lin.split()[0]
-                if self.verbose_level=='normal':
-                    print(n, name, ess)
+                #if self.verbose_level=='normal':
+                #    print(n, name, ess)
                 if n<self.non_topological_summaries:
                     if ess < self.continuous_threshold:
                         return False

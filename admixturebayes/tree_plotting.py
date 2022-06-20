@@ -110,7 +110,6 @@ def plot_as_directed_graph(tree, file_prefix='', drawing_name='tmp.png', popup=T
             print("written admixture proportions to file admixture_estimates_" + numm + ".txt")
         #with open("topology_labels_2_old") as f: contents = f.readlines()
         #contents[0] = contents[0] + "graph [ dpi = 300 ]; \n"
-        #print(contents)
         #f = open("demofile2.txt", "a")
         #f.write("Now the file has more content!")
         #f.close()

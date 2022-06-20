@@ -298,9 +298,6 @@ def non_admixture_to_newick(tree):
                 dup_children.append(next_gen[parent_key])
             else:
                 next_gen[parent_key]=[key]
-#         print next_gen
-#         print dup_parents
-#         print dup_children
         for (c1,c2),p in zip(dup_children, dup_parents):
             keys_to_pops[p]='('+','.join(sorted([keys_to_pops[c1],keys_to_pops[c2]]))+')'
             del keys_to_pops[c1]
@@ -331,9 +328,6 @@ def tree_to_prop_newicks(tree, leaves=None):
             else:
                 prop*=get_admixture_proportion_from_key(tree, adm_key)
             if adm_key in pruned_tree:
-                #removedprin '------------------------------------------'
-                #removedprin 'removing', (adm_key, int_bin) , 'from tree:'
-                #pretty_print(pruned_tree)
                 pruned_tree=remove_admixture(pruned_tree, adm_key, int_bin)
         n_tree= non_admixture_to_newick(pruned_tree)
         if n_tree in n_trees:

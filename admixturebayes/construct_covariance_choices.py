@@ -98,7 +98,6 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
         savetxt(filename, vc)
     if 'm_scale' in extra_info_dic:
         if 'import' in kwargs:
-           # print kwargs['import']
             with open(kwargs['import'], 'w') as f:
                 txt=str(extra_info_dic['m_scale'])
                 assert '\0' not in txt, 'binary content in m_scale file'

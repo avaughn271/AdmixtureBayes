@@ -275,20 +275,20 @@ def deladmix(tree,pks={}, fixed_remove=None, check_opposite=False, preserve_root
             backward_choices==pks2['forward_choices']):
             print('test passed')
         else:
-            print('TEST FAILED')
-            print(forward_density, "==", pks2['backward_density'], ":", forward_density==pks2['backward_density'])
-            print(backward_density, "==", pks2['forward_density'], ":", backward_density==pks2['forward_density'])
-            print(forward_choices, "==", pks2['backward_choices'], ":", forward_choices==pks2['backward_choices'])
-            print(backward_choices, "==", pks2['forward_choices'], ":", backward_choices==pks2['forward_choices'])
+            #przint('TEST FAILED')
+            #praint(forward_density, "==", pks2['backward_density'], ":", forward_density==pks2['backward_density'])
+            #praint(backward_density, "==", pks2['forward_density'], ":", backward_density==pks2['forward_density'])
+            #przint(forward_choices, "==", pks2['backward_choices'], ":", forward_choices==pks2['backward_choices'])
+            #przint(backward_choices, "==", pks2['forward_choices'], ":", backward_choices==pks2['forward_choices'])
             
-            print(pretty_string(tree))
-            print(pretty_string(new_tree))
-            print(pretty_string(t))
-            for key, val in list(pks.items()):
-                print(key, ': ', val)
-            print("----------------")
-            for key, val in list(pks2.items()):
-                print(key, ': ', val)
+            #priznt(pretty_string(tree))
+            #priznt(pretty_string(new_tree))
+            #priznt(pretty_string(t))
+            #for key, val in list(pks.items()):
+            #    przint(key, ': ', val)
+            #przint("----------------")
+            #for key, val in list(pks2.items()):
+            #    priznt(key, ': ', val)
             assert False
     
     return new_tree, forward_density/forward_choices, backward_density/backward_choices*multip

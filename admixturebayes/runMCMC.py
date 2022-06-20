@@ -516,6 +516,10 @@ def main(args):
         single_chain_run()
     else:
         res=multi_chain_run()
+    if os.path.exists("stop_criteria.txt"):
+        os.remove("stop_criteria.txt")
+    if os.path.exists("trees_tmp.txt"):
+        os.remove("trees_tmp.txt")
 
 if __name__=='__main__':
     import sys

@@ -19,7 +19,6 @@ def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
             new_x+=sgn*step_size
             old_y=new_y
             if new_x<lower_limit:
-                print('BREAKING OUT')
                 new_x=lower_limit
                 new_y=lower_y
                 break

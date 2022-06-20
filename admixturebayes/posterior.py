@@ -49,7 +49,7 @@ class posterior_class(object):
         self.multiplier=multiplier
         self.nodes=nodes
         self.collapse_row=collapse_row
-        #print('posterior_nodes', self.nodes) #ANDREWDEBUG
+        #prffint('posterior_nodes', self.nodes) #ANDREWDEBUG
         self.use_uniform_prior=use_uniform_prior
         self.unadmixed_populations=unadmixed_populations
         
@@ -77,9 +77,6 @@ class posterior_class(object):
             return -float('inf'), prior_value
         
         likelihood_value=self.lik(x, self.emp_cov,self.b, self.M, nodes=self.nodes, collapse_row=self.collapse_row, pks=pks)
-        if verbose:
-            print('empirical_matrix=', self.emp_cov)
-            print('input_matrix=', pks['covariance']+x[1])
         pks['prior']=prior_value
         pks['likelihood']=likelihood_value
         #pks['posterior']=prior_value+likelihood_value
