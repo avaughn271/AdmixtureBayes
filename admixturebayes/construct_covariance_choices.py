@@ -11,7 +11,6 @@ from Rtree_to_covariance_matrix import make_covariance
 from copy import deepcopy
 from reduce_covariance import rescale_empirical_covariance
 import time
-from brownian_motion_generation import produce_p_matrix, simulate_with_binomial, remove_non_snps
 from numpy import loadtxt, savetxt
 from construct_estimator_choices import make_estimator
 
@@ -116,25 +115,6 @@ def reduce_covariance_wrapper(full_covariance, **kwargs):
     reduce_node_index=next((i for i,s in enumerate(kwargs['full_nodes']) if s==kwargs['reduce_covariance_node']))
     return reduce_covariance(full_covariance, reduce_node_index)
 
-def ms_simulate_wrapper(tree, **kwargs):
-    print("error")
-
-def simulate_brownian_motion_wrapper(tree, **kwargs):
-    N=kwargs['nreps'] #number of independent SNPs.
-    ps=produce_p_matrix(tree,N, clip=(not kwargs['unbounded_brownian']), middle_start=kwargs['favorable_init_brownian'])
-    return ps
-
-def simulate_binomial_wrapper(p_dic, **kwargs):
-    npop=kwargs['sample_per_pop']
-    ps=simulate_with_binomial(p_dic, npop, p_clip_value=0)
-    return ps
-
-def remove_non_snps_wrapper(ps, **kwargs):
-    outg=''
-    if kwargs['filter_on_outgroup']:
-        outg=kwargs['reduce_covariance_node']
-    return remove_non_snps(ps, outg)
-
 def scale_tree_wrapper(tree, **kwargs):
     if kwargs['time_adjust']:
         tree=time_adjust_tree(tree)
@@ -155,21 +135,12 @@ dictionary_of_transformations={
     (3,7):theoretical_covariance_wrapper,
     (4,7):theoretical_covariance_wrapper,
     (5,7):theoretical_covariance_wrapper,
-    (3,21):simulate_brownian_motion_wrapper,
-    (4,21):simulate_brownian_motion_wrapper,
-    (5,21):simulate_brownian_motion_wrapper,
-    (21,22):simulate_binomial_wrapper,
-    (21,23):remove_non_snps_wrapper,
-    (22,23):remove_non_snps_wrapper,
     (21,7):alleles_to_cov_wrapper,
     (21,8):alleles_to_cov_wrapper_directly,
     (22,7): alleles_to_cov_wrapper,
     (22,8): alleles_to_cov_wrapper_directly,
     (23,7): alleles_to_cov_wrapper,
     (23,8): alleles_to_cov_wrapper_directly,
-    (3,6):ms_simulate_wrapper,
-    (4,6):ms_simulate_wrapper,
-    (5,6):ms_simulate_wrapper,
     (6,7):empirical_covariance_wrapper,
     (6,8):empirical_covariance_wrapper_directly,
     (7,8):reduce_covariance_wrapper,

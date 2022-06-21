@@ -8,9 +8,6 @@ class basic_chain_class_as_process(object):
         self.chain=basic_chain_class
         self.process= Process(target=self.chain)
         self.process.start()
-        
-    def set_seed(self, new_seed):
-        self.chain.set_seed(new_seed)
     
     def start(self, p):
         self.chain.task_queue.put(p)
@@ -23,11 +20,11 @@ class basic_chain_class_as_process(object):
     
 class basic_chain_class(object):
     
-    def __init__(self, summaries, posterior_function, proposal, reseed=None):
-        if reseed is None: #if not applied the different chains will run with the same seed, putting the assumptions of the model in danger.
+    def __init__(self, summaries, posterior_function, proposal, resxeed):
+        if resxeed is None: #if not applied the different chains will run with the same seexd, putting the assumptions of the model in danger.
             random.seed()
-        elif isinstance(reseed, int):
-            random.seed(reseed)
+        elif isinstance(resexed, int): #SxEEDINGDEBUG
+            random.seed(resxeed)
         self.summaries=summaries
         self.posterior_function=posterior_function
         self.proposal=proposal
@@ -57,9 +54,9 @@ class basic_chain_class(object):
         
 class basic_chain_pool(object):
     
-    def __init__(self, summaries, posterior_function, proposals, seeds=None, posterior_function_list=[]):
+    def __init__(self, summaries, posterior_function, proposals, seeds, posterior_function_list=[]): #SxEEDDEBUG
         if seeds is None:
-            seeds=[None]*len(proposals)
+                seeds=[None]*len(proposals)
         if posterior_function_list:
             self.group = [basic_chain_class_as_process(
                 basic_chain_class(summaries, post_function, proposal, seed)) for proposal, seed, post_function in
@@ -68,7 +65,6 @@ class basic_chain_pool(object):
             self.group=[basic_chain_class_as_process(
                 basic_chain_class(summaries, posterior_function, proposal,seed)) for proposal,seed in zip(proposals,seeds)]
 
-    
     def order_calculation(self, list_of_lists_of_arguments):
         '''
         The list of arguments should math that of p in basic_chain_class.run_chain()

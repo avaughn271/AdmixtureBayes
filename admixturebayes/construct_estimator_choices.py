@@ -65,7 +65,7 @@ def make_estimator(reduce_method,
                    Indirect_its,
                    EM_alpha,
                    Indirect_multiplier_s,
-                   Simulator_fixed_seed,
+                   Simulator_fixed_sxeed,
                    initial_Sigma_generator,
                    no_repeats_of_cov_est,
                    ns, #only necessary if indirect estimation is used.

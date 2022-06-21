@@ -74,8 +74,8 @@ def MCMCMC(starting_trees,
 
     freeze_support()
     
-    if numpy_seeds is None:
-        numpy_seeds=[None]*no_chains
+    #if numpy_sxeeds is None: #Sxeeddebug
+    #    numpy_sxeeds=[None]*no_chains
 
 
     rs=[]

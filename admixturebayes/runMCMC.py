@@ -11,6 +11,7 @@ from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_f
 from MCMC import basic_chain
 from stop_criteria import stop_criteria
 import os
+from numpy import random
 
 class fixed_geometrical(object):
     
@@ -264,8 +265,6 @@ def main(args):
                         help=SUPPRESS)#'The EM algorithm assumes that the allele frequencies in the outgroup are known. In fact it is estimated with: if alpha=1.0: the empirical allele frequencies of the outgroup, alpha=0.0: the average empirical allele frequency in all the other populations.It can also be chosen as something in between. This estimator is biased because the outgroup allele frequencies are not known and because of extra normal distribution assumptions')
     parser.add_argument('--no_repeats_of_cov_est', type=int, default=1,
                         help=SUPPRESS)#'The number of times the simulation procedure should be run.')
-    parser.add_argument('--indirect_randomize_seed', action='store_true', default=False,
-                        help=SUPPRESS)#'This will make indirect estimation (if indirect_correction) use different seeds, slowing down and making maximization more troublesome yet being more correct.')
     parser.add_argument('--initial_Sigma', choices=['default','random', 'start'], default='default',
                         help=SUPPRESS)#'This means that ')
     parser.add_argument('--filter_type', choices=['snp','none', 'outgroup_other','outgroup','all_pops'], default='snp',
@@ -330,7 +329,7 @@ def main(args):
                              EM_maxits=options.EM_maxits,
                              EM_alpha=options.EM_alpha,
                              no_repeats_of_cov_est=options.no_repeats_of_cov_est,
-                             Simulator_fixed_seed=not options.indirect_randomize_seed,
+                             Simulator_fixed_sxeed=True,
                              initial_Sigma_generator={options.initial_Sigma:(preliminary_starting_trees[0], reduced_nodes)},
                              locus_filter_on_simulated=locus_filter_on_simulated,
                              add_variance_correction_to_graph=options.add_variance_correction_to_graph,
@@ -479,6 +478,10 @@ def main(args):
         print("The file does not exist")
 
     def multi_chain_run():
+        #random_seeds = []
+        #for i in range(options.MCMC_chains):
+        #    random_seeds.append(givenseed + i)
+        #print(random_seeds)
         res=MCMCMC(starting_trees=starting_trees,
                posterior_function= posterior,
                summaries=summaries,
@@ -489,7 +492,7 @@ def main(args):
                proposal_scheme= mp,
                cores=options.MCMC_chains,
                no_chains=options.MCMC_chains,
-               multiplier=multiplier,
+               multiplier=multiplier,  #numpy_seeds = random_seeds,
                result_file=options.result_file,
                store_permuts=options.store_permuts,
                stop_criteria=sc,
