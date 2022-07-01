@@ -13,7 +13,7 @@ AdmixtureBayes is written almost completely in Python and requires the following
 
 "numpy", "scipy",  "pandas",    "pathos",   "graphviz"
 
-See the following links for installation help: 
+See the following links for installation help:
 
 https://numpy.org/install/
 
@@ -120,7 +120,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 
 **--subnodes** (optional) A list of population labels, which should be a subset of all non-outgroup population labels. This can be specified if only a subset of the population labels should be analyzed. Plots generated using the output of this step will only used the populations given in this step. If not specified, all non-outgroup populations will be considered.
 
-**--slower** (optional) If this flag is used, then the necessary information to plot the top trees with branch estimates  will be computed. By default, this is not done as this can be a very slow process when the number of admixture events is large.
+**--slower** (optional) If this flag is used, then the necessary information to plot the top trees with branch estimates  will be computed. By default, this is not done as this can be a very slow process when the number of admixture events is large. This flag also has another effect. For each graph that contains admixture events, each admixture event has one ancestral lineage that is specifically marked as the "introgressed" lineage. Graphs are considered distinct if they have different marked lineages, even if their topologies are the same. However, if this flag is specified, then graphs with the same topology are combined into equivalence classes induced by the set of all introgression markings. This distinction might be important for considering the posterior probabilities of different topologies.
 
  ## This step produces (in the current working directory)
 
@@ -176,7 +176,7 @@ If **--write_rankings** is specified, a file with the set of all topologies and 
 
 ***admixture_estimates_i.txt*** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
 
-Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessry information for the branch estimates to be plotted.
+Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessry information for the branch estimates to be plotted. 
 
 ## (iii) Top Minimal Topologies - input is of the form:
 
