@@ -86,6 +86,8 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--Rscript_command** (optional) Ignored if stop_criteria is False. The command with which to run an R script on the desired machine (eg. "Rscript" or "R CMD BATCH"). Default value is "Rscript".
 
+**--start random** (optional) If this flag is used, then the algorithm will start at a randomly constructed graph, which may be useful for monitoring mixing and convergence of the chain, for example by Gelman-Rubin statistics. By default, a deterministic heuristic tree constructor is used which gives a reasonable starting graph.
+  
 **--verbose_level** (optional) Either "normal" or "silent". If "normal", then the total number of snps will be printed to the console, along with the progress of the MCMC sampler. Every 1000th iteration, the progress towards the total number of iterations is printed. If "silent", then nothing will be printed to the console. Default value is "normal."
 
 
