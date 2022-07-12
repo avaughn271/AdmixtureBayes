@@ -444,7 +444,8 @@ def main(args):
         #End of new part
 
         for i in splitbranches:
-            FinalString = FinalString + str(float(i) * multiplier) + "-"
+            FinalString = FinalString + "{:.12f}".format(float(i) * multiplier) + "-"
+            #FinalString = FinalString + str(float(i) * multiplier) + "-"
 
         FinalString = FinalString[0:(len(FinalString)-1)]
         FinalString = FinalString + ";" + splitted[2]
