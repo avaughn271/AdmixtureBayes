@@ -12,18 +12,19 @@ from MCMC import basic_chain
 from stop_criteria import stop_criteria
 import os
 from numpy import random
+import pandas
 
 class fixed_geometrical(object):
-    
+
     def __init__(self, maxT, no_chains):
         if no_chains==1:
             self.temps=[1.0]
         else:
             self.temps=[maxT**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
-    
+
     def get_temp(self,i):
         return self.temps[i]
-    
+
     def update_temps(self, permut):
         pass
 
@@ -51,14 +52,14 @@ def get_nodes(arguments, input_file, outgroup_name, reduce_node, backup_number=8
         before_added_outgroup.remove(outgroup_name)
     elif outgroup_name:
         nodes.append(outgroup_name)
-    if reduce_node in reduced_nodes:      
+    if reduce_node in reduced_nodes:
         reduced_nodes.remove(reduce_node)
     if reduce_node and reduce_node not in nodes:
         nodes.append(reduce_node)
     return before_added_outgroup, nodes, reduced_nodes
 
 from tree_to_data import unzip
-    
+
 def read_one_line(filename):
     if filename.endswith('.gz'):
         filename=unzip(filename)
@@ -173,7 +174,7 @@ def main(args):
     parser.add_argument('--cancel_preserve_root_distance', default=False, action='store_true',
                         help="if applied there will not be made correction for root distance when adding and deleting admixtures")
     #start arguments
-    parser.add_argument('--starting_trees', type=str, nargs='+', default=[],
+    parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start or the so-called trivial tree')
     parser.add_argument('--starting_adds', type=str, nargs='+', default=[],
                         help="filename of the adds to use on the starting trees.")
@@ -392,7 +393,77 @@ def main(args):
         mscale_file=options.mscale_file
 
     tree_nodes=reduced_nodes
-    starting_trees=get_starting_trees(options.starting_trees,
+    if options.continue_samples != []:
+        #This is where the continuation is all happening.
+        #We first save the tree to a temporary file
+        if os.path.exists(os.getcwd() + "/" +  "temp_start_tree.txt"):
+            os.remove(os.getcwd() + "/" +  "temp_start_tree.txt")
+        temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
+        temp2 = (temp[["tree"]])
+        f = open(os.getcwd() + "/" +  "temp_start_tree.txt", "a")
+        f.write("\n")
+        f.write(temp2.iloc[len(temp2.index) - 1, 0])
+        f.write("\n")
+        f.close()
+
+        if os.path.exists(os.getcwd() + "/" +  "temp_starttree.txt"):
+            os.remove(os.getcwd() + "/" +  "temp_starttree.txt")
+        gii = open(os.getcwd() + "/" + "covariance_and_multiplier.txt", "r")
+        g = gii.readlines()
+        g = g[len(g)-1]
+        g = g.split("=")
+        multiplier = float(g[len(g)-1])
+        gii.close()
+        fff = open(os.getcwd() + "/" + "temp_start_tree.txt", "r")
+
+        FinalString = "\n"
+
+        f = fff.readlines()
+        secondline = f[1]
+        splitted = secondline.split(";")
+
+        FinalString = FinalString + splitted[0] + ";"
+
+        relevantbranches = splitted[1]
+        splitbranches = relevantbranches.split("-")
+
+        for i in splitbranches:
+            FinalString = FinalString + str(float(i) * multiplier) + "-"
+
+        FinalString = FinalString[0:(len(FinalString)-1)]
+        FinalString = FinalString + ";" + splitted[2]
+        fff.close()
+        gg = open(os.getcwd() + "/" +  "temp_starttree.txt", "a")
+        gg.write(FinalString)
+        gg.close()
+
+        temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
+        addvalue = (temp[["add"]])
+        addvalue = float(addvalue.iloc[len(addvalue.index) - 1, 0])
+
+        if os.path.exists(os.getcwd() + "/" + "temp_add.txt"):
+            os.remove(os.getcwd() + "/" + "temp_add.txt")
+        f = open(os.getcwd() + "/" + "temp_add.txt", "a")
+        f.write(str(addvalue) + "\n")
+        f.close()
+
+        #compute addfile as a file with a number
+        starting_trees=get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
+                                        options.MCMC_chains,
+                                        adds=[os.getcwd() + "/" + "temp_add.txt"],
+                                        nodes=tree_nodes,
+                                        pipeline=options.covariance_pipeline,
+                                        multiplier=multiplier,
+                                        scale_tree_factor=options.scale_tree_factor,
+                                        start=options.start,
+                                        prefix=prefix,
+                                        starting_tree_scaling=options.starting_tree_scaling,
+                                        starting_tree_use_scale_tree_factor=options.starting_tree_use_scale_tree_factor,
+                                        scale_goal=options.scale_goal,
+                                        mscale_file=mscale_file,
+                                        no_add=no_add)
+    else:
+        starting_trees=get_starting_trees(options.continue_samples,
                                       options.MCMC_chains,
                                       adds=options.starting_adds,
                                       nodes=tree_nodes,
@@ -427,7 +498,7 @@ def main(args):
         sc=stop_criteria(frequency=options.stop_criteria_frequency,
                          outfile=prefix+'stop_criteria.txt',
                          topological_threshold=options.stop_criteria_threshold,
-                         continuous_threshold=options.stop_criteria_threshold, #ANDREWDEBUG This used to be topological. 
+                         continuous_threshold=options.stop_criteria_threshold, #ANDREWDEBUG This used to be topological.
                          Rscript_path=options.Rscript_command,
                          verbose_level=options.verbose_level)
     else:
@@ -477,6 +548,13 @@ def main(args):
     else:
         print("The file does not exist")
 
+    if os.path.exists("temp_starttree.txt"):
+        os.remove("temp_starttree.txt")
+    if os.path.exists("temp_start_tree.txt"):
+        os.remove("temp_start_tree.txt")
+    if os.path.exists("temp_add.txt"):
+        os.remove("temp_add.txt")
+
     def multi_chain_run():
         #random_seeds = []
         #for i in range(options.MCMC_chains):
@@ -523,6 +601,13 @@ def main(args):
         os.remove("stop_criteria.txt")
     if os.path.exists("trees_tmp.txt"):
         os.remove("trees_tmp.txt")
+    if options.continue_samples != []:
+        oldcsv = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
+        newcsv = pandas.read_csv(os.getcwd() + "/" + options.result_file)
+        result = pandas.concat([oldcsv,newcsv])
+        if os.path.exists(os.getcwd() + "/" + options.result_file):
+            os.remove(os.getcwd() + "/" + options.result_file)
+        result.to_csv(os.getcwd() + "/" + options.result_file, index = False)
 
 if __name__=='__main__':
     import sys
