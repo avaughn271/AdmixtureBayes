@@ -438,6 +438,9 @@ def main(args):
                     break
             break
         print(splitbranches)
+        for i in range(len(splitbranches)):
+            splitbranches[i] = "{:.9f}".format(splitbranches[i])
+        print(splitbranches)
         #End of new part
 
         for i in splitbranches:
