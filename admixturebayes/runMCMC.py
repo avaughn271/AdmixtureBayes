@@ -427,6 +427,19 @@ def main(args):
         relevantbranches = splitted[1]
         splitbranches = relevantbranches.split("-")
 
+        #This part is new
+        while(True):
+            for i in range(len(splitbranches) - 1):
+                currentstring = splitbranches[i]
+                nexstring = splitbranches[i+1]
+                if currentstring[len(currentstring) - 1] == "e":
+                    splitbranches[i] = currentstring + "-" + nexstring
+                    splitbranches.pop(i + 1)
+                    break
+            break
+        print(splitbranches)
+        #End of new part
+
         for i in splitbranches:
             FinalString = FinalString + str(float(i) * multiplier) + "-"
 
