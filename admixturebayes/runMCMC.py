@@ -277,6 +277,12 @@ def main(args):
 
     assert not (any((i < 8 for i in options.covariance_pipeline)) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
+    #Here is the only thing we should be chaning.
+    temp = pandas.read_csv(options.input_file, sep =" ")
+    colnames = list(temp.columns.values)
+    temp = temp[sorted(colnames)]
+    temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
+
 
     no_add=options.outgroup_type=='None' or options.outgroup_type=='Free'
 
@@ -295,13 +301,13 @@ def main(args):
                   cancel_preserve_root_distance=options.cancel_preserve_root_distance,
                   no_add=no_add)
 
-    before_added_outgroup, full_nodes, reduced_nodes=get_nodes(options.nodes, options.input_file, options.create_outgroup, options.outgroup)
+    before_added_outgroup, full_nodes, reduced_nodes=get_nodes(options.nodes, os.getcwd() + "/temp_input.txt", options.create_outgroup, options.outgroup)
 
     prefix=options.prefix
 
     if options.covariance_pipeline[0]==6:
-        treemix_in_file=options.input_file
-        treemix_file=options.input_file
+        treemix_in_file=os.getcwd() + "/temp_input.txt"
+        treemix_file=os.getcwd() + "/temp_input.txt"
     else:
         treemix_file=prefix+"treemix_in.txt"
         treemix_in_file=treemix_file+'.gz'
@@ -338,7 +344,7 @@ def main(args):
                              prefix=prefix)
 
     covariance=get_covariance(options.covariance_pipeline,
-                              options.input_file,
+                              os.getcwd() + "/temp_input.txt",
                               full_nodes=full_nodes,
                               skewed_admixture_prior_sim=options.skewed_admixture_prior_sim,
                               p=options.p_sim,
@@ -609,6 +615,9 @@ def main(args):
                     multiplier=multiplier,
                     appending_result_file=options.result_file,
                     appending_result_frequency=sim_lengths[0])
+
+    if os.path.exists(os.getcwd() + "/temp_input.txt"):
+        os.remove(os.getcwd() + "/temp_input.txt")
 
     if options.MCMC_chains==1:
         single_chain_run()
