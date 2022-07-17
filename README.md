@@ -47,7 +47,7 @@ s1 s2 s3 s4 out
 1,19 2,18 3,17 2,18 2,18
 ```
 
-where the first line is the populations and the subsequent lines are the bi-allelic counts in each population for a number of SNPs. The first and second allele type has no meaning and can be chosen arbitrarily.
+where the first line is the populations and the subsequent lines are the bi-allelic counts in each population for a number of SNPs. The first and second allele type has no meaning and can be chosen arbitrarily. The population names should only include letters and numbers (no spaces, dashes, underscores, etc.).
 
 ## Running AdmixtureBayes
 
