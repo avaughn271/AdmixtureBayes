@@ -30,7 +30,6 @@ def MCMCMC(starting_trees,
            numpy_seeds=None,
            multiplier= None,
            result_file=None,
-           store_permuts=False,
            stop_criteria=None,
            make_outfile_stills=[],
            save_only_coldest_chain=False,
@@ -109,8 +108,6 @@ def MCMCMC(starting_trees,
             xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates,
                                                                 rs, ps,
                                                                 [posterior_function])  # trees, posteriors, range(len(trees)),[None]*len(trees)#
-        if store_permuts:
-            permuts.append(permut)
         temperature_scheme.update_temps(permut)
         total_permutation=_update_permutation(total_permutation, permut)
         cum_iterations+=no_iterations
@@ -129,12 +126,8 @@ def MCMCMC(starting_trees,
                 make_outfile_stills.pop(0)
             
     pool.terminate()
-    if result_file is None and store_permuts:
-        return df_result, permuts
-    elif result_file is None:
+    if result_file is None:
         return df_result
-    elif store_permuts:
-        return permuts
         
 def _update_permutation(config, permut):
     return [config[n] for n in permut]

@@ -163,7 +163,6 @@ def get_insertion_spot(x=None, length=1.0):
     
 
 def insert_admix(tree, source_key, source_branch, sink_key, sink_branch, source_name=None, sink_name=None, pks={}, new_branch_length=None, new_to_root_length=None, preserve_root_distance=False):
-    #removedprin "new branch", new_branch_length
     if source_key=='r':
         u1,q1=get_root_branch_length()
         if new_to_root_length is not None:

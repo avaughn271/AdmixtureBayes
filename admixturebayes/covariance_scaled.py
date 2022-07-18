@@ -200,8 +200,6 @@ class ScaledEstimator(Estimator):
             elif isinstance(ns, int):
                 pop_sizes=[ns]*p2.shape[0]
                 changer=bias_correction(m,p, pop_sizes,n_outgroup, type_of_scaling=self.variance_correction)/m_scaler(self.bias_c_weight, p, n_outgroup)
-                #removedprin 'm',reduce_covariance(m,n_outgroup)
-                #removedprin 'changer', reduce_covariance(changer, n_outgroup)
                 if self.add_variance_correction_to_graph:
                     m-=changer
                 if self.save_variance_correction:

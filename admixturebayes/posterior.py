@@ -2,7 +2,6 @@ from prior import prior
 from likelihood import likelihood, likelihood_from_matrix
 from math import log
 from numpy import loadtxt
-from numpy.linalg import norm
 
 def zero_likelihood(*args, **kwargs):
     return 0
@@ -25,7 +24,6 @@ class posterior_class(object):
                  unadmixed_populations=[],
                  r=0,
                  collapse_row='',
-                 collapse_row_rearrange=False
                  ):
         '''
         M can either be a float - the degrees of freedom in the wishart distribution or the constant variance in the treemix normal approximation of the covariance matrix.
@@ -49,7 +47,6 @@ class posterior_class(object):
         self.multiplier=multiplier
         self.nodes=nodes
         self.collapse_row=collapse_row
-        #prffint('posterior_nodes', self.nodes) #ANDREWDEBUG
         self.use_uniform_prior=use_uniform_prior
         self.unadmixed_populations=unadmixed_populations
         

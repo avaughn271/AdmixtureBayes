@@ -2,7 +2,6 @@ from copy import deepcopy
 from numpy import zeros, ix_, outer
 
 from Rtree_operations import node_is_non_admixture, get_leaf_keys
-import warnings
 
 class Covariance_Matrix():
     
@@ -62,16 +61,6 @@ class Population:
             self.weights.extend(x_w)
             self.members.extend(x_m)
         return self
-        
-        
-    def get_contributions_as_iterable(self, branch_length):
-        for s1,w1 in self.pop.items():
-            for s2,w2 in self.pop.items():
-                yield ((s1,s2),w1*w2*branch_length)
-        
-
-
-       
 
 
 
@@ -207,7 +196,6 @@ def get_populations(tree, min_w=0.0, keys_to_include=None):
     if '' in pop_strings:
         pop_strings.remove('')
     return sorted(list(set(pop_strings)))
-
 
 def get_admixtured_populations(tree):
     node_keys = sorted(get_leaf_keys(tree))

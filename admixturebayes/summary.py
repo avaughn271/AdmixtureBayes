@@ -35,15 +35,6 @@ class Summary(object):
     def summary_of_phylogeny(self, tree):
         return None
     
-    def make_trajectory(self, index, x, **kwargs):
-        if isinstance(x[0], float):
-            x, index=thin_out_nans(x,index)
-            #plt.plot(index,x,**kwargs)
-        else:
-            numbers=values_to_numbers(x)
-            #plt.plot(index, numbers, **kwargs)
-        #plt.title(self.name)
-    
         
 class s_basic_tree_statistics(Summary):
     

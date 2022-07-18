@@ -104,24 +104,6 @@ def remove_empty_children(tree):
                 tree[k][5+n]=None
     return tree
 
-def get_and_save_most_likely_substrees(sub_strees, subgraph_keys, max_num=10, total_probability=1.0, prefix='',**not_needed):
-    topologies={}
-    for sub_stree in sub_strees:
-        sub_topology, sbranch_lengths, sadmixture_proportions = sub_stree.split(';')
-        branch_lengths=list(map(float, sbranch_lengths.split('-')))
-        if len(sadmixture_proportions)>0:
-            admixture_proportions=list(map(float, sadmixture_proportions.split('-')))
-        else:
-            admixture_proportions=[]
-        if sub_topology in topologies:
-            topologies[sub_topology][0].append(branch_lengths)
-            topologies[sub_topology][1].append(admixture_proportions)
-        else:
-            topologies[sub_topology]=[[branch_lengths],[admixture_proportions]]
-    save_top_subgraphs(topologies, subgraph_keys,max_num=max_num, total_probability=total_probability, prefix=prefix)
-    
-    
-    
 def thin_based_on_probs(N, top_keys, total_probs):
     if total_probs>=1:
         return [tk[0] for tk in top_keys]

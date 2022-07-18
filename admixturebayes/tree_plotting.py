@@ -1,7 +1,5 @@
-from csv import writer
-from Rtree_operations import to_aarhus_admixture_graph, to_networkx_format, node_is_admixture, node_is_coalescence, node_is_leaf_node
+from Rtree_operations import to_networkx_format, node_is_admixture, node_is_coalescence, node_is_leaf_node
 from node_structure import node_structure_to_networkx
-from subprocess import call
 from graphviz import Digraph
 import os
 
@@ -18,15 +16,6 @@ file_suffix=[s+'.csv' for s in ['leaves', 'inner_nodes','edges','adm_props']]
 
 def plot_graph(*args, **kwargs):
     plot_as_directed_graph(*args, **kwargs)
-
-def plot_as_admixture_tree(tree, file_prefix='', drawing_name='tmp.png', popup=True):
-    aarhus_tree = to_aarhus_admixture_graph(tree)
-    file_names=[file_prefix+s for s in file_suffix]
-    write_aarhus_tree_to_files(aarhus_tree, file_names)
-    make_R_draw_from_files(drawing_name, file_names)
-    if popup and PIL_found:
-        img=Image.open(drawing_name)
-        img.show()
         
 def plot_node_structure_as_directed_graph(node_structure, file_prefix='', drawing_name='tmp_.png', popup=True, node_dic=None, verbose=True):
     pure_leaves, admix_leaves, pure_coalescence, admix_coalescence, root, edges, inner_node_colors= node_structure_to_networkx(node_structure, node_dic)
@@ -117,13 +106,6 @@ def plot_as_directed_graph(tree, file_prefix='', drawing_name='tmp.png', popup=T
             os.remove(filename)
         else:
             print("The file does not exist")
-    
-    
-def write_aarhus_tree_to_files(aarhus_tree, file_names):
-    for rows, name in zip(aarhus_tree, file_names):
-        with open(name, "wb") as f:
-            writer2 = writer(f)
-            writer2.writerows(rows)
             
 def pretty_print(tree):
     keys,vals=list(tree.keys()),list(tree.values())
@@ -159,10 +141,3 @@ def pretty_string(tree):
             res+='  '+key+': '+str(val)+'\n'
     res+='}'
     return res
-    
-    
-def make_R_draw_from_files(drawing_name, file_names):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    cmd=['Rscript', dir_path+os.path.sep+'make_drawing.R', drawing_name]+file_names
-    print(cmd)
-    call(cmd)

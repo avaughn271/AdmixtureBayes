@@ -2,21 +2,6 @@ from numpy.random import random
 from math import exp, log, fabs
 from summary import *
 from Rtree_operations import scale_tree_copy
-from Rtree_operations import make_consistency_checks
-
-def check(tree, pks={}):
-    result, fails = make_consistency_checks(tree)
-    if not result:
-        stringed_message=''
-        print(fails)
-        for test_key, (test_result, test_message) in list(fails.items()):
-            if test_result:
-                stringed_message+=test_key+": TRUE"+'\n'
-            else:
-                stringed_message+=test_key+": FALSE"+'\n'
-                stringed_message+="    "+test_message+'\n'
-        print(stringed_message)
-        assert result, "The tree was inconsistent :" + '\n'+stringed_message
 
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     check_old = False
@@ -69,8 +54,6 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
         proposal.wear_exportable_state(proposal_update)
     
     x=start_x
-    if check_trees:
-        check(x[0])
     if post is None:
         post=posterior_function(x)
     
@@ -113,8 +96,6 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
                     from_count=count
         x=new_x
         post=new_post
-        if check_trees:
-            check(x[0], proposal_knowledge_scraper)
     
     return x, post, list(zip(*iteration_summary)),proposal.get_exportable_state()
         

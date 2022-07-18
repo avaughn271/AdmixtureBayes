@@ -24,12 +24,9 @@ def make_proposal(deladmix,
                   sliding_regraft,
                   sliding_rescale,
                   MCMC_chains,
-                  cancel_preserve_root_distance=False,
                   no_add=False,
                   ):
     extras={}
-    if cancel_preserve_root_distance:
-        extras.update({'deladmix':{'preserve_root_distance':False}, 'addadmix':{'preserve_root_distance':False}})
     if no_add:
         extras['rescale_constrained']={'update_add':False}
         if rescale_add>0:
@@ -42,7 +39,7 @@ def make_proposal(deladmix,
                      'rescale_constrained', 'rescale_marginally',
                      'sliding_regraft', 'sliding_rescale']
     all_proportions = [deladmix, addadmix, rescale,
-                       regraft, rescale_add, rescale_admix,
+                       0, rescale_add, rescale_admix, #regraft is always 0
                        rescale_admix_correction,
                        rescale_constrained, rescale_marginally,
                        sliding_regraft, sliding_rescale]

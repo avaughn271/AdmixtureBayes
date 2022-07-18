@@ -71,25 +71,6 @@ def time_adjust_tree(tree):
         tree[key]=time_adjust_node(key, node, timed_events)
     return tree
 
-def create_trivial_equibranched_tree(size, height=1.0):
-    '''
-    constructs tree of the form (..((s1,s2),s3),s4)...)
-    '''
-    tree={'s1':['n1',None,None,height,None, None,None],
-          's2':['n1',None,None,height,None, None,None],
-          'n1':['n2',None,None,height,None, 's1','s2']}
-    nex_inner_node='n2'
-    new_inner_node='n1'
-    for k in range(3,size+1):
-        old_inner_node='n'+str(k-2)
-        new_inner_node='n'+str(k-1)
-        nex_inner_node='n'+str(k  )
-        new_leaf='s'+str(k)
-        tree[new_leaf]=[new_inner_node, None,None, height,None, None,None]
-        tree[new_inner_node]=[nex_inner_node, None,None, height, None, new_leaf,old_inner_node]
-    del tree[new_inner_node]
-    return rename_root(tree, new_inner_node)
-
 def add_outgroup(tree, inner_node_name='new', to_new_root_length=0.5, to_outgroup_length=0.5, outgroup_name=None):
     (child_key1, child_branch1,_),(child_key2, child_branch2, _)=find_rooted_nodes(tree)
     tree[inner_node_name]=['r', None, None, to_new_root_length, None, child_key1, child_key2]
@@ -117,19 +98,6 @@ def get_first_admixture_meeting(tree, key):
     parent_key=tree[key][0]
     return get_first_admixture_meeting(tree, parent_key)
 
-def get_all_admixture_meetings(tree, key):
-    if key=='r':
-        return []
-    parent_key = tree[key][0]
-    parent2_key=tree[key][1]
-    if node_is_admixture(tree[key]):
-        left_admixtures=get_all_admixture_meetings(tree, parent_key)
-        right_admixtures=get_all_admixture_meetings(tree, parent2_key)
-        uniq=list(set(left_admixtures+right_admixtures))
-        return uniq+[key]
-    return get_all_admixture_meetings(tree, parent_key)
-
-
 def get_branches_to_reverse(tree, key, so_far=None):
     if so_far is None:
         so_far=[]
@@ -144,7 +112,6 @@ def get_branches_to_reverse(tree, key, so_far=None):
         so_far.append((key,tree[key][3], tree[key][0]))
         return get_branches_to_reverse(tree, tree[key][0], so_far)
     
-            
 
 def rename_rootname(tree,old_name, new_name):
     for key,node in list(tree.items()):
@@ -199,34 +166,6 @@ def rearrange_root(tree, new_outgroup):
     tree[first_reverser_parent][0]='r'
     tree=insert_children_in_tree(tree)
     return tree
-    
-def reverse_node(tree, key, old_child, new_parent_key=None):
-    if new_parent_key is None:
-        new_parent_key=old_child
-    new_branch_length=get_branch_length_from_parent(tree, old_child, key)
-    forgetten_branch_length=get_branch_length(tree, key, branch=0) #we know that it is a non-admixture_node
-    
-    
-    
-def prune_double_nodes(tree):
-    '''
-    A double node is a node with two parents and two children
-    '''    
-    for key, node in list(tree.items()):
-        if len(get_real_children(node))!=1 and len(get_real_parents(node))==2:
-            tree=split_up_double_node(tree, key)
-    return tree
-
-def split_up_double_node(tree, key):
-    old_node=tree[key]
-    new_node=key+'pruned'
-    for parent in get_real_parents(old_node):
-        tree[parent]=_rename_child(tree[parent], old_name=key, new_name=new_node)
-    tree[new_node]=deepcopy(old_node)
-    tree[new_node][5]=key
-    tree[new_node][6]=None
-    tree[key]=[new_node,None,None,0,None,old_node[5], old_node[6]]
-    return tree
 
 def rename_key(tree, old_key_name, new_key_name):
     node=tree[old_key_name]
@@ -255,55 +194,6 @@ def remove_outgroup(tree, remove_key='s1', return_add_distance=False):
     if return_add_distance:
         return tree, length1+length2
     return tree
-
-
-def simple_reorder_the_leaves_after_removal_of_s1(tree):
-    no_leaves=get_number_of_leaves(tree)
-    for n in range(no_leaves):
-        tree=rename_key(tree, 's'+str(n+2), 's'+str(n+1))
-    return tree
-        
-
-
-def find_children(tree, parent_key):
-    res=[]
-    for key,node in list(tree.items()):
-        if node[0]==parent_key:
-            res.append(key)
-        if node[1]==parent_key:
-            res.append(key)
-    while len(res)<2:
-        res.append(None)
-    return res
-
-def create_balanced_tree(size, height=1.0):
-    return finish_tree_with_coalescences({}, get_trivial_nodes(size), height)
-        
-
-def finish_tree_with_coalescences(tree, keys_to_finish, height=1.0):
-    while len(keys_to_finish)>1:
-        key1,key2=keys_to_finish[:2]
-        if len(keys_to_finish)==2:
-            new_key='r'
-        else:
-            new_key=key1+key2
-        tree[key1]=[new_key,None,None,height,None]+find_children(tree,key1)
-        tree[key2]=[new_key,None,None,height,None]+find_children(tree,key2)
-        keys_to_finish=keys_to_finish[2:]
-        keys_to_finish.append(new_key)
-        #removedprin len(keys_to_finish)
-    return tree
-        
-
-def create_burled_leaved_tree(size, height):
-    res={}
-    for i in range(size):
-        res['s'+str(i+1)]=['a'+str(i+1), None, None, height, None,None,None]
-        res['a'+str(i+1)]=['b'+str(i+1), 'm'+str(i+1), 0.5, height, height,'s'+str(i+1),None]
-        res['b'+str(i+1)]=['n'+str(i+1), 'm'+str(i+1), 0.5, height, height,'a'+str(i+1),None]
-        res['m'+str(i+1)]=['n'+str(i+1),None ,None, height, None,'a'+str(i+1),'b'+str(i+1)]
-    return finish_tree_with_coalescences(res, ['n'+str(i+1) for i in range(size)], height)
-    
 
 def get_trivial_nodes(size):
     return ['s'+str(n+1) for n in range(size)]
@@ -675,9 +565,6 @@ def get_leaf_keys(tree):
         if node_is_leaf_node(node):
             res.append(key)
     return res
-
-def get_no_leaves(tree):
-    return len(get_leaf_keys(tree))
 
 def get_categories(tree):
     leaves=[]
@@ -1307,23 +1194,6 @@ def is_root(*keys):
     ad=[key=='r' for key in list(keys)]
     return any(ad)
 
-def to_aarhus_admixture_graph(tree):
-    leaves=[]
-    inner_nodes=[]
-    edges=[]
-    admixture_proportions=[]
-    for key,node in list(tree.items()):
-        if node_is_leaf_node(node):
-            leaves.append([key])
-        else:
-            inner_nodes.append([key])
-            if node_is_admixture(node):
-                admixture_proportions.append([key, node[0],node[1],node[2]])
-        ps=get_real_parents(node)
-        for p in ps:
-            edges.append([key,p])
-    return leaves, inner_nodes, edges, admixture_proportions
-
 def to_networkx_format(tree):
     edges=[]
     admixture_nodes=[]
@@ -1345,135 +1215,3 @@ def to_networkx_format(tree):
             branch=mother_or_father(tree, key, p)
             edge_lengths.append(get_branch_length(tree, key, branch))
     return leaves, admixture_nodes, coalescence_nodes, root, edges, edge_lengths
-    
-
-def make_consistency_checks(tree, leaf_nodes=None):
-    key_to_parents_by_def={key:[] for key in list(tree.keys())}
-    key_to_children_by_def={key:[] for key in list(tree.keys())}
-    key_to_children_by_family={key:[] for key in list(tree.keys())}
-    key_to_parents_by_family={key:[] for key in list(tree.keys())}
-    rooted_nodes=[]
-    doppel_bands=[]
-    pseudo_nodes=[]
-    child_is_parent=[]
-    recorded_leaf_nodes=[]
-    illegal_admixture_props=[]
-    illegal_branch_lengths=[]
-    for key,node in list(tree.items()):
-        parents=[r for r in get_parents(node) if r is not None]
-        children=[r for r in get_children(node) if r is not None]
-        key_to_parents_by_def[key]+=[r for r in parents if r!='r']
-        key_to_children_by_def[key]+=children
-        if len(children)==2 and children[0]==children[1]:
-            doppel_bands.append((key, ('children', children[0],children[1])))
-        if len(parents)==2 and parents[0]==parents[1]:
-            doppel_bands.append((key, ('parents', parents[0],parents[1])))
-        if len(children)==1 and len(parents)==1:
-            pseudo_nodes.append((key, ('child', children[0]), ('parent', parents[0])))
-        if len(children)==0 and len(parents)==1:
-            recorded_leaf_nodes.append(key)
-        for r in children:
-            key_to_parents_by_family[r]+=[key]
-        for r in parents:
-            if r!='r':
-                key_to_children_by_family[r]+=[key]
-            else:
-                rooted_nodes.append(key)   
-        if list(set(parents).intersection(children)):
-            child_is_parent.append((key, ('parents', str(parents)), ('children', str(children))))
-        if node_is_non_admixture(node):
-            if node[3]<0:
-                illegal_branch_lengths.append((key, (node[0], node[3])))
-        else:
-            if node[3]<0:
-                illegal_branch_lengths.append((key, (node[0], node[3])))
-            if node[4]<0:
-                illegal_branch_lengths.append((key, (node[1], node[4])))
-            if node[2]<0 or node[2]>1:
-                illegal_admixture_props.append((key, node[2]))
-                  
-    
-    def _transform_dic(dic):
-        for key in list(dic.keys()):
-            dic[key]=set(dic[key])
-        return dic
-    key_to_children_by_def=_transform_dic(key_to_children_by_def)
-    key_to_parents_by_def=_transform_dic(key_to_parents_by_def)
-    key_to_children_by_family=_transform_dic(key_to_children_by_family)
-    key_to_parents_by_family=_transform_dic(key_to_parents_by_family)
-    def _print_inconsistencies(dic_def,dic_fam, pref=''):
-        res=''
-        for key in list(dic_def.keys()):
-            if dic_def[key]!=dic_fam[key]:
-                res+=key+' '+pref +': '+str(dic_def[key])+'><'+str(dic_fam[key])+'  '
-        return res
-    
-    family1=_print_inconsistencies(key_to_children_by_def, key_to_children_by_family, 'ch')
-    family2=_print_inconsistencies(key_to_parents_by_def, key_to_parents_by_family, 'pa')
-    
-    bools=[]
-    names=[]
-    messages=[]
-    
-    
-    consensus_bool=(key_to_children_by_def == key_to_children_by_family and key_to_parents_by_def == key_to_parents_by_family)
-    consensus_message=family1+family2
-    bools.append(consensus_bool)
-    names.append('consensus')
-    messages.append(consensus_message)
-    
-    roots_bool=(len(rooted_nodes)==2)
-    roots_message=str(rooted_nodes)
-    bools.append(roots_bool)
-    names.append('roots')
-    messages.append(roots_message)
-    
-    doppel_bands_bool=(len(doppel_bands)==0)
-    doppel_bands_message=str(doppel_bands)
-    bools.append(doppel_bands_bool)
-    names.append('doppel_bands')
-    messages.append(doppel_bands_message)
-    
-    pseudo_nodes_bool=(len(pseudo_nodes)==0)
-    pseudo_nodes_message=str(pseudo_nodes)
-    bools.append(pseudo_nodes_bool)
-    names.append('pseudo_nodes')
-    messages.append(pseudo_nodes_message)
-    
-    child_is_parent_bool=(len(child_is_parent)==0)
-    child_is_parent_message=str(child_is_parent)
-    bools.append(child_is_parent_bool)
-    names.append('child_is_parent')
-    messages.append(child_is_parent_message)
- 
-    if leaf_nodes is not None:
-        leaf_nodes_bool=(set(leaf_nodes)==set(recorded_leaf_nodes))
-    else:
-        leaf_nodes_bool=True
-    if leaf_nodes_bool:
-        leaf_nodes_message=str(recorded_leaf_nodes)
-    else:
-        sl=set(leaf_nodes)
-        srl=set(recorded_leaf_nodes)
-        leaf_nodes_message=str(set(sl)-set(srl))+'><'+str(set(srl)-set(sl))
-    bools.append(leaf_nodes_bool)
-    names.append('leaf_nodes')
-    messages.append(leaf_nodes_message) 
-    
-    illegal_branch_lengths_bool=(len(illegal_branch_lengths)==0)
-    illegal_branch_lengths_message=str(illegal_branch_lengths)
-    bools.append(illegal_branch_lengths_bool)
-    names.append('illegal_branch_lengths')
-    messages.append(illegal_branch_lengths_message)
-    
-    illegal_admixture_props_bool=(len(illegal_admixture_props)==0)
-    illegal_admixture_props_message=str(illegal_admixture_props)
-    bools.append(illegal_admixture_props_bool)
-    names.append('illegal_admixture_props')
-    messages.append(illegal_admixture_props_message)
-
-    
-    res_bool=all(bools)
-    res_dic={name:(bool, message) for name,bool,message in zip(names,bools, messages)}
-    
-    return res_bool, res_dic

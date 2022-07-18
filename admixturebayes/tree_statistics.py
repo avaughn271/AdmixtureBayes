@@ -17,82 +17,6 @@ def node_count(tree):
     leaves, coalescence_nodes, admixture_nodes=get_categories(tree)
     
     return len(leaves), len(coalescence_nodes), len(admixture_nodes)
-
-def generation_counts(tree):
-    '''
-    returns a list of tuples of the form (no_admixtures, no_waiting_coalescences, no_sudden_coalescences, no_awaited_coalescences).
-    '''
-    leaves, coalescences_nodes, admixture_nodes=get_categories(tree)
-    ready_lineages=[(key,0) for key in leaves]
-    coalescences_on_hold=[]
-    
-    res=[]
-    
-    while True:
-        sames, single_coalescences, admixtures=get_destination_of_lineages(tree, ready_lineages)
-        waiting_coalescences, awaited_coalescences, still_on_hold = matchmake(single_coalescences, coalescences_on_hold)
-        #removedprin 'sames', sames
-        #removedprin 'single_coalescences', single_coalescences
-        #removedprin 'admixtures', admixtures
-        #removedprin 'waiting_coalescences', waiting_coalescences
-        #removedprin 'awaited_coalescences', awaited_coalescences
-        #removedprin 'still_on_hold', still_on_hold
-        res.append((len(sames), len(waiting_coalescences), len(awaited_coalescences), len(admixtures)))
-    
-        #updating lineages
-        coalescences_on_hold=still_on_hold+list(waiting_coalescences.values())
-        ready_lineages=propagate_married(tree, awaited_coalescences)
-        ready_lineages.extend(propagate_married(tree, sames))
-        ready_lineages.extend(propagate_admixtures(tree, admixtures))
-
-        #stop criteria
-        if len(ready_lineages)==1 and ready_lineages[0][0]=='r':
-            break
-    return res
-
-def get_timing(tree):
-    '''
-    returns a list of tuples of the form (no_admixtures, no_waiting_coalescences, no_sudden_coalescences, no_awaited_coalescences).
-    '''
-    leaves, coalescences_nodes, admixture_nodes=get_categories(tree)
-    ready_lineages=[(key,0) for key in leaves]
-    coalescences_on_hold=[]
-    
-    res={key:0.0 for key in leaves}
-    count=1
-    while True:
-        sames, single_coalescences, admixtures=get_destination_of_lineages(tree, ready_lineages)
-        waiting_coalescences, awaited_coalescences, still_on_hold = matchmake(single_coalescences, coalescences_on_hold)
-        #removedprin 'sames', sames
-        #removedprin 'single_coalescences', single_coalescences
-        #removedprin 'admixtures', admixtures
-        #removedprin 'waiting_coalescences', waiting_coalescences
-        #removedprin 'awaited_coalescences', awaited_coalescences
-        #removedprin 'still_on_hold', still_on_hold
-    
-        #updating lineages
-        coalescences_on_hold=still_on_hold+list(waiting_coalescences.values())
-        ready_lineages=propagate_married(tree, awaited_coalescences)
-        ready_lineages.extend(propagate_married(tree, sames))
-        ready_lineages.extend(propagate_admixtures(tree, admixtures))
-        
-        res.update({key:count for key,_ in ready_lineages})
-        
-        
-        #stop criteria
-        if len(ready_lineages)==1 and ready_lineages[0][0]=='r':
-            res['r']=count
-            break
-        
-        count+=1
-    return res
-
-
-def order_previously_unseparable(hierarchy, events):
-    '''
-    This function returns a sequence of the position of each of the events. If no ordering can be put, they are given the same number.
-    '''
-    pass
     
 
 def make_dics_first_and_second(double_list):
@@ -127,11 +51,7 @@ def unique_identifier(tree, leaf_order=None):
         
         sames_dic, first_sames, second_sames = make_dics_first_and_second(sames)
         awaited_dic, first_awaited, second_awaited = make_dics_first_and_second(awaited_coalescences)
-        waiting=list(waiting_coalescences.keys())
         gen=[]
-        #removedprin 'lineages',lineages
-        #removedprin 'sames', sames, sames_dic, first_sames, second_sames
-        #removedprin 'awaited', awaited_coalescences, awaited_dic, first_awaited, second_awaited
         for n,element in enumerate(lineages):
             if element in gone:
                 gen.append('_')
@@ -226,63 +146,7 @@ class uniform_generator(object):
     
     def __call__(self):
         return random()
-       
-    
-    
-class bifacturing_tree(object):
-    
-    def __init__(self, string, trace_lineages):
-        self.string=string
-        self.trace_lineages=trace_lineages
-        self.counter=0
-        self.old_count=-1
-        
-    def pop_symbol(self):
-        if self.string:
-            res=self.string[0]
-            if len(self.string)==1:
-                remover='-'
-            else:
-                remover=self.string[1]
-            self.string=self.string[2:]
-            self.old_count= self.counter
-            self.update_counter(remover)
-            if self.old_count in self.trace_lineages:
-                return res
-            else:
-                return False
-    
-    def update_counter(self, remover):
-        if remover=='.':
-            self.counter+=1
-        else:
-            self.counter=0
-        
-    def lineage_in_tracer(self):
-        return (n+1 in self.trace_lineages)
-    
-    def update_tracer(self, key, new_value):
-        self.trace_lineages[key]=new_value
-        
-    def remove_value_from_tracer(self, key):
-        del self.trace_lineages[key]
-        
-    def get_lineage_count(self, key):
-        return self.trace_lineages[key]
-    
-    def get_lineage_name(self):
-        return self.trace_lineages.inv[self.old_count]
-    
-    def update_current_lineage_count(self, new_val):
-        self.trace_lineages.forceupdate({new_val:self.old_count})
-    
-    def finished(self):
-        return (not self.string)
-    
-    def get_res(self):
-        assert len(self.trace_lineages)==1
-        return list(self.trace_lineages.values())[0]
-    
+         
 def non_admixture_to_newick(tree):
     leaves,_,_=get_categories(tree)
     keys_to_pops={l:l for l in leaves}
@@ -365,12 +229,6 @@ def tree_to_random_ntree(tree):
         if adm_key in pruned_tree:
             pruned_tree=remove_admixture(pruned_tree, adm_key, int(random()<0.5))
     return non_admixture_to_newick(pruned_tree)
-
-def majority_tree(tree):
-    
-    all_trees= tree_to_prop_newicks(tree)
-    sorted_trees=sorted(list(all_trees.items()), key=lambda x: x[1], reverse=True)
-    return sorted_trees[0][0]
         
 def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths=None, admixture_proportions=None):
     '''
@@ -499,7 +357,6 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
         leaves_ordered=sorted(leaves)
     ready_lineages=[(key,0) for key in leaves_ordered]
     lineages=deepcopy(ready_lineages)
-    gen_to_column=list(range(len(ready_lineages)))
     list_of_gens=[]
     coalescences_on_hold=[]
     gone=[]
@@ -546,7 +403,6 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
                 admixture_proportions.append(get_admixture_proportion(tree, child_key=element[0],child_branch=element[1]))
             else:
                 gen.append('w')
-        #removedprin 'gen',gen
         #removedprin 'gone', gone
         list_of_gens,gone, lineages =update_lineages(list_of_gens,gen,gone, lineages, tree)
         for gon in gone:

@@ -4,8 +4,7 @@ import tree_statistics
 import Rtree_to_covariance_matrix
 from copy import deepcopy
 
-def get_summary_scheme(majority_tree=False, 
-                       light_newick_tree_summaries=False,
+def get_summary_scheme(light_newick_tree_summaries=False,
                        full_tree=True, 
                        proposals=None, 
                        acceptance_rate_information=False,

@@ -30,20 +30,12 @@ class fixed_geometrical(object):
 
 
 from copy import deepcopy
-from Rtree_operations import get_trivial_nodes
 
 def get_nodes(arguments, input_file, outgroup_name, reduce_node, backup_number=8):
     ''' The outgroup_name is only used for simulation purposes and reduce_node is the important one
     that is used when analysing the admixture graphs.  '''
     if not arguments[0]:#this means that we should use the input file for nodes
-        if ';' in input_file:
-            nodes=get_trivial_nodes(len(input_file.split('-')[0].split('.')))
-        elif '.' in input_file:
-            nodes=read_one_line(input_file)
-        elif ',' in input_file:
-            nodes=get_trivial_nodes(int(input_file[1:].split(',')[0]))
-        else:
-            nodes=get_trivial_nodes(int(input_file))
+        nodes=read_one_line(input_file)
     else:
         nodes=arguments
     before_added_outgroup=deepcopy(nodes)
@@ -134,10 +126,6 @@ def main(args):
                         help='The type of adjustment used on the empirical covariance.')
     parser.add_argument('--unadmixed_populations', default=[], nargs='*',
                         help='This sets the prior to 0 for all graphs where the lineage of any of the supplied populations experience an admixture. WARNING: this will change the prior on the number of admixture events.')
-    parser.add_argument('--cov_estimation',
-                        choices=['None', 'Jade', 'outgroup_sum', 'outgroup_product', 'average_sum', 'average_product',
-                                 'Jade-o', 'EM'], default='average_sum',
-                        help=SUPPRESS)#'this is the way of estimating the empirical covariance matrix.')
     parser.add_argument('--Jade_cutoff', type=float, default=1e-5,
                         help=SUPPRESS)#'this will remove SNPs of low diversity in either the Jade or the Jade-o scheme.')
     parser.add_argument('--scale_goal', choices=['min', 'max'], default='max',
@@ -146,8 +134,6 @@ def main(args):
                         help='the geometrical parameter in the prior. The formula is p**x(1-p)')
     parser.add_argument('--sap_analysis', action='store_true', default=False,
                         help='skewed admixture proportion prior in the analysis')
-    parser.add_argument('--not_uniform_prior', action='store_true', default=False,
-                        help='If applied the uniform prior will not be used on the topology conditioned on the number of admixture events. Instead the ')
     #parser.add_argument('--no_add', action='store_true', default=False, help='this will remove the add contribution')
     parser.add_argument('--no_bootstrap_samples', type=int, default=100,
                         help='the number of bootstrap samples to make to estimate the degrees of freedom in the wishart distribution.')
@@ -158,7 +144,6 @@ def main(args):
     parser.add_argument('--deladmix', type=float, default=1, help='this states the frequency of the proposal type')
     parser.add_argument('--addadmix', type=float, default=1, help='this states the frequency of the proposal type')
     parser.add_argument('--rescale', type=float, default=1, help='this states the frequency of the proposal type')
-    parser.add_argument('--regraft', type=float, default=0, help='this states the frequency of the proposal type')
     parser.add_argument('--rescale_add', type=float, default=1, help='this states the frequency of the proposal type')
     parser.add_argument('--rescale_admix', type=float, default=1, help='this states the frequency of the proposal type')
     parser.add_argument('--rescale_admix_correction', type=float, default=0,
@@ -171,8 +156,6 @@ def main(args):
                         help='this states the frequency of the proposal type')
     parser.add_argument('--sliding_rescale', type=float, default=0,
                         help='this states the frequency of the proposal type')
-    parser.add_argument('--cancel_preserve_root_distance', default=False, action='store_true',
-                        help="if applied there will not be made correction for root distance when adding and deleting admixtures")
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start or the so-called trivial tree')
@@ -197,14 +180,10 @@ def main(args):
     #more obscure convenience arguments
     parser.add_argument('--save_df_file', type=str, default='DF.txt',
                         help=SUPPRESS)#'the prefix is put before this string and the degrees of freedom is saved to this file.')
-    parser.add_argument('--summary_majority_tree', action='store_true', default=False,
-                        help='this will calculate the majority (newick) tree based on the sampled tree')
     parser.add_argument('--summary_acceptance_rate', action='store_true', default=True,
                         help=SUPPRESS)#'This will calculate and store summaries related to the acceptance rate')
     parser.add_argument('--summary_admixture_proportion_string', action='store_true', default=True,
                         help=SUPPRESS)#'this will save a string in each step indicating names and values of all admixture proportions')
-    parser.add_argument('--store_permuts', action='store_true', default=False,
-                        help='If applied, the permutations from the MCMCMC flips are recorded in a file with a similar filename to the result_file')
     parser.add_argument('--save_after_hours', type=float, nargs='+', default=[],
                         help=SUPPRESS)#'This will save a copy of the output file after the number of hours specified here. One would do that to easily access how converged the chain is after certain number of hours.')
     parser.add_argument('--profile', action='store_true', default=False,
@@ -289,7 +268,7 @@ def main(args):
     mp = make_proposal(deladmix=options.deladmix,
                   addadmix=options.addadmix,
                   rescale=options.rescale,
-                  regraft=options.regraft,
+                  regraft=0,
                   rescale_add=options.rescale_add,
                   rescale_admix=options.rescale_admix,
                   rescale_admix_correction=options.rescale_admix_correction,
@@ -298,7 +277,6 @@ def main(args):
                   sliding_regraft=options.sliding_regraft,
                   sliding_rescale=options.sliding_rescale,
                   MCMC_chains=options.MCMC_chains,
-                  cancel_preserve_root_distance=options.cancel_preserve_root_distance,
                   no_add=no_add)
 
     before_added_outgroup, full_nodes, reduced_nodes=get_nodes(options.nodes, os.getcwd() + "/temp_input.txt", options.create_outgroup, options.outgroup)
@@ -325,7 +303,7 @@ def main(args):
 
     estimator_arguments=dict(reducer=options.outgroup, #options.reduce_node,
                              variance_correction=options.variance_correction,
-                             method_of_weighing_alleles=options.cov_estimation,
+                             method_of_weighing_alleles='average_sum',
                              arcsin_transform=options.arcsin,
                              jade_cutoff=options.Jade_cutoff,
                              bias_c_weight=options.bias_c_weight,
@@ -506,8 +484,7 @@ def main(args):
 
 
     make_topological_summaries = options.stop_criteria and (options.stop_criteria_threshold>=0)
-    summary_verbose_scheme, summaries=get_summary_scheme(majority_tree=options.summary_majority_tree,
-                                              light_newick_tree_summaries=make_topological_summaries,
+    summary_verbose_scheme, summaries=get_summary_scheme(light_newick_tree_summaries=make_topological_summaries,
                                               full_tree=True, #can not think of a moment where you don't want this.
                                               proposals=mp[0],
                                               acceptance_rate_information=options.summary_acceptance_rate,
@@ -535,7 +512,7 @@ def main(args):
                                 use_skewed_distr=options.sap_analysis,
                                 multiplier=covariance[1],
                                 nodes=likelihood_nodes,
-                                use_uniform_prior=not options.not_uniform_prior,
+                                use_uniform_prior=True,
                                 treemix=False,
                                 add_variance_correction_to_graph=(options.variance_correction != 'None' and
                                                                   options.add_variance_correction_to_graph),
@@ -546,7 +523,6 @@ def main(args):
                                 collapse_row=collapse_row)
 
     posterior_function_list=[]
-
 
     temperature_scheme=fixed_geometrical(options.max_temp,options.MCMC_chains)
 
@@ -595,7 +571,6 @@ def main(args):
                no_chains=options.MCMC_chains,
                multiplier=multiplier,  #numpy_seeds = random_seeds,
                result_file=options.result_file,
-               store_permuts=options.store_permuts,
                stop_criteria=sc,
                make_outfile_stills=options.save_after_hours,
                save_only_coldest_chain=not options.save_warm_chains,

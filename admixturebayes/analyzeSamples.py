@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, SUPPRESS
 from downstream_analysis_tool import (thinning, iterate_over_output_file, always_true, make_Rtree, make_full_tree, read_true_values,
                                       make_Rcovariance, cov_truecov, topology_identity,get_pops,compare_pops,extract_number_of_sadmixes, 
-                                      read_one_line,summarize_all_results, topology, float_mean,
+                                      read_one_line, topology,
                                        subgraph, subsets,
                                       make_string_tree, topology_without_outgroup)
 from find_true_trees import tree_unifier
@@ -78,13 +78,8 @@ def run_posterior_main(args):
                              'the reroot population and the graph root), this will either 1) "stop" the program'
                              'or 2) "force" the rerooting through by removing the problematic admixture events or '
                              '3) "ignore" rerooting by simply not doing the rerooting when not possible.')
-    parser.add_argument('--summarize_posterior_distributions', default=False,
-                        help='If set to true, the posterior distibutions will be summarized even further.')
     parser.add_argument('--min_w', default=0.0, type=float,
                         help='a lower threshold of which descendants matter when the consensus_method is descendant_frequencies.')
-    parser.add_argument('--constrain_number_of_admixes', default='', type=str,
-                        choices=['', 'true_val'] + list(map(str, list(range(21)))),
-                        help='The number of admixture events that there are constrained on in the data set. If negative there are no constraints')
     parser.add_argument('--constrain_number_of_effective_admixes', default='',
                         choices=['', 'true_val'] + list(map(str, list(range(21)))), type=str,
                         help='The number of effective(visible)_admixture events that there are constrained on in the data set. If negative there are no constraints.')
@@ -101,24 +96,12 @@ def run_posterior_main(args):
     parser.add_argument('--emp_covariance_and_multiplier', default='', type=str, help=SUPPRESS)
     parser.add_argument('--emp_covariance_reduced', default='', type=str, help=SUPPRESS)
 
-    parser.add_argument('--choice_if_no_thinned_graphs', default='error', choices=['error', 'nearest_admixture_events'],
-                        help='If the thinning leaves no graphs left, this is what will be done in stead. error will throw an error and nearest_admixture_events will expand the band of allowed number of admixture events(if the chain has been thinned on number of admixture events).')
-
     parser.add_argument('--summary_summaries', default=['mean'], nargs='*', type=str,
                         help=SUPPRESS)#'How each list is summarized as a single, numerical value. If it doesnt have the same length as save summaries the arguments will be repeated until it does')
-    parser.add_argument('--number_of_top_pops', default=10, type=int,
-                        help='if top_pops is added to summary_summaries this is the number of set topologies saved. negative values means all topologies are saved.')
     parser.add_argument('--true_scaled_tree',  type=str, default='',help=SUPPRESS)
     parser.add_argument('--true_tree',  type=str, default='',help=SUPPRESS)
     parser.add_argument('--true_add',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--true_covariance_reduced',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--true_covariance_and_multiplier',  type=str, default='',help=SUPPRESS)
     parser.add_argument('--true_no_admix',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--treemix_post_analysis', action='store_true', default=False,
-                        help=SUPPRESS)#'this will convert the treemix input fil ../../../../Dropbox/Bioinformatik/AdmixtureBayes/test_final_grid/ai_2_5true/_true_tree.txtes into a suitable csv file for ',help=SUPPRESS)
-    parser.add_argument('--treemix_tree', default='', type=str,help=SUPPRESS)
-    parser.add_argument('--treemix_add', default='', type=str, help=SUPPRESS)
-    parser.add_argument('--treemix_full_tree', default='',help=SUPPRESS)
     parser.add_argument('--treemix_csv_output', default='treemix.csv', type=str,help=SUPPRESS)
     parser.add_argument('--subgraph_file', default='', type=str,
                         help='file where each line has a space separated list of leaf labels to calculate subtrees from. If a double underscore(__) occurs, it means that the following two arguments are max number of sub topologies and total posterior probability.')
@@ -141,16 +124,7 @@ def run_posterior_main(args):
     else:
         subnodes_with_outgroup=[]
         subnodes_wo_outgroup=[]
-
-    outp=read_true_values(true_scaled_tree=options.true_scaled_tree,
-                          true_tree=options.true_tree,
-                          true_add=options.true_add,
-                          true_covariance_reduced=options.true_covariance_reduced,
-                          true_covariance_and_multiplier=options.true_covariance_and_multiplier,
-                          true_no_admix=options.true_no_admix,
-                          subnodes_with_outgroup=subnodes_with_outgroup,
-                          subnodes_wo_outgroup=subnodes_wo_outgroup)
-    true_scaled_tree, true_tree, true_add, true_covariance_reduced, (true_covariance_scaled,true_multiplier), true_no_admix, _, _, _=outp
+    
     outp=read_true_values(true_covariance_reduced=options.emp_covariance_reduced,
                           true_covariance_and_multiplier=options.covariance,
                           true_m_scale=options.emp_m_scale,
@@ -175,7 +149,6 @@ def run_posterior_main(args):
         subnodes_with_outgroup.sort()
         subnodes_wo_outgroup.sort()
 
-
     row_sums=[]
 
     class pointers(object):
@@ -192,7 +165,6 @@ def run_posterior_main(args):
             return self.dic[key]
 
     name_to_rowsum_index=pointers()
-    possible_summary_summaries={'mean':float_mean}
 
     special_summaries=['Rtree','full_tree','string_tree','subgraph','Rcov','cov_dist','topology','topology_without_outgroup','top_identity','pops','subsets', 'set_differences','no_admixes']
     if 'Rtree' in options.calculate_summaries:
@@ -252,7 +224,7 @@ def run_posterior_main(args):
                                              thinned_d_dic=save_thin_columns,
                                              full_summarize_functions=[])
 
-    if not options.summarize_posterior_distributions:
+    if True:
         summaries=list(all_results[0].keys())
         with open(options.result_file, 'w') as f:
             f.write(','.join(summaries)+'\n')
@@ -260,24 +232,6 @@ def run_posterior_main(args):
                 s_summs=[str(row[summ]) for summ in summaries]
                 f.write(','.join(s_summs)+ '\n')
         sys.exit()
-
-    n=len(options.save_summaries)
-    summary_summaries=options.summary_summaries
-    while len(summary_summaries)<n:#repeat arguments until the number of arguments is correct
-        summary_summaries+=options.summary_summaries
-
-    summary_summaries_functions=[possible_summary_summaries[summ] for summ in summary_summaries]
-
-
-    summ_results=summarize_all_results(all_results, options.save_summaries, summary_summaries_functions)
-    res=[]
-    header=[]
-    with open(options.result_file, 'w') as f:
-        for n,(summ_func_name, summ_name) in enumerate(zip(summary_summaries, options.save_summaries)):
-            res.append(summ_results[n])
-            header.append(summ_name+'_'+summ_func_name)
-        f.write(','.join(['mcmc_results']+header)+'\n')
-        f.write(','.join([options.mcmc_results]+list(map(str,res))))
     
 if __name__=='__main__':
     import sys

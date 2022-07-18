@@ -224,9 +224,6 @@ def get_covariance(stages_to_go_through, input, full_nodes=None,
                    estimator_arguments={},
                    verbose_level='normal'):
 
-    #if prefix[-1]!='_':
-    #    prefix+='_'
-
     if ms_file is None:
         ms_file=prefix+'ms.txt'
 

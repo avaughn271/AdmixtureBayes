@@ -1,4 +1,3 @@
-from scipy.stats import wishart
 import numpy as np
 
 #maximizes the function, function in the interval [lower_limit,\infty).

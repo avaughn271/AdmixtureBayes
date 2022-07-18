@@ -10,31 +10,12 @@ import pandas as pd
 from copy import deepcopy
 from tree_to_data import file_to_emp_cov
 
-from tree_statistics import admixture_sorted_unique_identifier, get_timing
-from Rtree_operations import get_leaf_keys, rearrange_root_foolproof, remove_outgroup, pretty_string, rearrange_root, remove_admix, get_all_admixture_meetings
+from tree_statistics import admixture_sorted_unique_identifier
+from Rtree_operations import get_leaf_keys, rearrange_root_foolproof, remove_outgroup, pretty_string, rearrange_root
 
 from collections import Counter
-from subgraphing import get_subtree,get_and_save_most_likely_substrees
+from subgraphing import get_subtree
 from find_true_trees import get_unique_plottable_tree
-
-
-
-
-def rearrange_root_force(tree, new_outgroup):
-    '''
-    Like rearrange_root this changes the outgroup by reversing branches. However, before doing so, all obstacles are removed.
-    '''
-    if tree[new_outgroup][0]=='r' or tree[new_outgroup][1]=='r':
-        #The root was already in the requested location so no rearranging performed
-        return tree
-    relevant_admixture_keys=get_all_admixture_meetings(tree, new_outgroup)
-    key_timings=get_timing(tree)
-    timed_admixtures=[(key, key_timings[key]) for key in relevant_admixture_keys]
-    s_adm=sorted(timed_admixtures, key=lambda  x: x[1], reverse=True)
-    for admixture_to_remove,_ in s_adm:
-        tree=remove_admix(tree, admixture_to_remove, 1)[0]
-    return rearrange_root(tree, new_outgroup)
-
 
 
 def get_list_of_turned_topologies(trees, true_tree):
@@ -170,8 +151,6 @@ class make_full_tree(object):
                     full_tree = rearrange_root(full_tree, self.reroot_population)
                 except AssertionError as e:
                     pass
-            elif self.reroot_method=='force':
-                full_tree=rearrange_root_force(full_tree, self.reroot_population)
         if self.subnodes:
             full_tree=get_subtree(full_tree, self.subnodes)
         return {'full_tree':full_tree}, False
@@ -185,7 +164,6 @@ class make_string_tree(object):
 
     def __call__(self, full_tree, **kwargs):
         #removedprin 'before streeing'
-        #removedprin pretty_string(full_tree)
         #removedprin self.nodes
         stree=unique_identifier_and_branch_lengths(full_tree, leaf_order=self.nodes)
         if self.tree_unifier is not None:
@@ -201,7 +179,6 @@ class make_Rcovariance(object):
         self.add_multiplier=add_multiplier
         
     def __call__(self, Rtree=None, add=None, **kwargs):
-        #removedprin kwargs['full_tree']
         #removedprin self.nodes
         if Rtree is None:
             full_tree=kwargs['full_tree']
@@ -209,8 +186,6 @@ class make_Rcovariance(object):
             cov=make_covariance(full_tree, node_keys=[outgroup_name]+self.nodes)
             Rcov=reduce_covariance(cov, 0)
             return {'Rcov':Rcov}, False
-        #removedprin pretty_string(Rtree)
-        #removedprin get_leaf_keys(Rtree)
         #removedprin self.nodes
         Rcov=make_covariance(Rtree, node_keys=self.nodes)+float(add)*self.add_multiplier
         
@@ -250,13 +225,6 @@ class topology(object):
             return {'topology':topology},False
         if Rtree is None:
             Rtree=kwargs['full_tree']
-            #outgroup=list(set(get_leaf_keys(full_tree))-set(self.nodes))[0]
-            #removedprin full_tree, outgroup
-            #cfull_tree=rearrange_root_foolproof(deepcopy(full_tree), outgroup) #this removes the admixtures between the outgroup and the root.
-            #Rtree=remove_outgroup(cfull_tree, outgroup)
-        #removedprin 'topology calculation'
-        #removedprin self.nodes
-        #removedprin Rtree
         top=admixture_sorted_unique_identifier(Rtree, leaf_order=self.nodes, not_opposite=True)
         return {'topology':top}, False
 
@@ -292,17 +260,7 @@ class subgraph(object):
         full_tree=deepcopy(full_tree)
         subgraph=get_subtree(Rtree, self.subgraph_keys)
         sub_stree=get_unique_plottable_tree(subgraph)
-        return {'subgraph_'+self.identifier:sub_stree}, False
-    
-    def summarise(self, sub_strees):
-        get_and_save_most_likely_substrees(sub_strees, 
-                                           self.subgraph_keys,
-                                           self.max_num,
-                                           self.total_probability,
-                                           self.prefix)
-        return 'check_accompanying_files'    
-
-
+        return {'subgraph_'+self.identifier:sub_stree}, False 
 
 class subsets(object):
     
@@ -315,24 +273,11 @@ class subsets(object):
     def __call__(self, pops, **kwargs):
         subsets=get_subpops(pops, self.subgraph_keys)
         return {'subsets_'+self.identifier:subsets}, False   
-    
-    def summarise(self, pops, prefix=''):
-        n=len(pops)
-        c=Counter(pops)
-        tops=c.most_common(self.max_num)
-        print('summarizing subsets..')
-        with open(prefix+'subsets_'+self.identifier+'_tops.txt', 'w') as f:
-            for i in range(min(len(tops),self.max_num)):    
-                f.write(','.join([str(i+1),str(float(tops[i][1])/n),tops[i][0]])+'\n')
-        return tops[0][0]
          
     
 class topology_identity(object):
     
     def __init__(self, true_Rtree, nodes):
-        #removedprin 'true tree'
-        #removedprin true_Rtree
-        #removedprin nodes
         self.full_scaled_turned_topology=admixture_sorted_unique_identifier(true_Rtree, leaf_order=nodes, not_opposite=True)
         
     def __call__(self, topology, **not_needed):
@@ -410,39 +355,6 @@ class thinning(object):
             print('Thinning every ' + str(stepsize) + ' samples complete. There are now ' + str(len(df)) + ' samples')
         return df
     
-def summarize_all_results(all_results, summ_names, summ_funcs):
-    lists={summ_name:[] for summ_name in summ_names}
-    for row_dic in all_results:
-        for summ_name, summ_val in list(row_dic.items()):
-            lists[summ_name].append(summ_val)  
-    res=[]
-    for summ_name, summ_func in zip(summ_names, summ_funcs):
-        res.append(summ_func(lists[summ_name]))
-    return res
-    
-
-def read_tree(filename):
-    with open(filename, 'r') as f:
-        nodes=f.readline().strip().split()
-        stree=f.readline().strip()
-        
-        
-        
-def read_covariance(filename, nodes):
-    cov=[]
-    with open(filename, 'r') as f:
-        nodes=f.readline().strip().split()
-        count=0
-        for lin in f.readlines():
-            if count==len(nodes):
-                break
-            cov.append(lin.split()[1:])
-            count+=1
-        if len(lin)>4:
-            multiplier=float(lin.split('=')[1])
-        else:
-            multiplier=None
-    
 def read_true_values(true_scaled_tree='', 
                       true_tree='',
                       true_add='',
@@ -455,31 +367,14 @@ def read_true_values(true_scaled_tree='',
                       subnodes_wo_outgroup=[],
                       subnodes_with_outgroup=[]):
     scaled_tree,tree,add,covariance_reduced,(Rcovariance,multiplier), no_admix,m_scale,vc,df=None,None,None,None,(None,None),None,None,None,None
-    if true_scaled_tree:
-        scaled_tree=identifier_file_to_tree_clean(true_scaled_tree)
-        if subnodes_with_outgroup:
-            scaled_tree=get_subtree(scaled_tree, subnodes_with_outgroup)
-    if true_tree:
-        tree=identifier_file_to_tree_clean(true_tree)
-        if subnodes_wo_outgroup:
-            tree=get_subtree(tree, subnodes_wo_outgroup)
-    if true_add:
-        add=float(read_one_line(true_add))
-    if true_covariance_reduced:
-        covariance_reduced=file_to_emp_cov(true_covariance_reduced, sort_nodes_alphabetically=True, return_only_covariance=False, subnodes=sorted(subnodes_wo_outgroup))
     if true_covariance_and_multiplier:
         Rcovariance,multiplier,vc=file_to_emp_cov(true_covariance_and_multiplier, sort_nodes_alphabetically=True, vc=true_variance_correction, return_only_covariance=False, subnodes=sorted(subnodes_wo_outgroup))
-    if true_no_admix:
-        no_admix=int(true_no_admix)
     if true_m_scale:
         m_scale=float(read_one_line(true_m_scale))
     if true_df:
         df=float(read_one_line(true_df))
     return scaled_tree,tree,add,covariance_reduced,(Rcovariance,multiplier), no_admix,m_scale,vc,df
-            
-    
-def float_mean(v):
-    return np.mean(list(map(float,v)))
+
 def mode(lst):
     data = Counter(lst)
     return data.most_common(1)[0][0]
