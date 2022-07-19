@@ -97,47 +97,8 @@ def plot_as_directed_graph(tree, file_prefix='', drawing_name='tmp.png', popup=T
             numm = (drawing_name[16:(strlength-4)]) #ANDREWDEBUG
             print("written branch lengths to file branch_estimates_" + numm + ".txt")
             print("written admixture proportions to file admixture_estimates_" + numm + ".txt")
-        #with open("topology_labels_2_old") as f: contents = f.readlines()
-        #contents[0] = contents[0] + "graph [ dpi = 300 ]; \n"
-        #f = open("demofile2.txt", "a")
-        #f.write("Now the file has more content!")
-        #f.close()
         if os.path.exists(filename):
             os.remove(filename)
         else:
             print("The file does not exist")
             
-def pretty_print(tree):
-    keys,vals=list(tree.keys()),list(tree.values())
-    chosen_indexes=[]
-    print('{ ')
-    for key,val in zip(keys,vals):
-        if node_is_leaf_node(val):
-            print('  '+key+': '+str(val))
-    print('  ,')
-    for key,val in zip(keys,vals):
-        if node_is_admixture(val):
-            print('  '+key+': '+str(val))
-    print('  ,')
-    for key,val in zip(keys,vals):
-        if node_is_coalescence(val):
-            print('  '+key+': '+str(val))
-    print('}')
-    
-def pretty_string(tree):
-    keys,vals=list(tree.keys()),list(tree.values())
-    res=''
-    res+='{ '+'\n'
-    for key,val in zip(keys,vals):
-        if node_is_leaf_node(val):
-            res+='  '+key+': '+str(val)+'\n'
-    res+='  ,'+'\n'
-    for key,val in zip(keys,vals):
-        if node_is_admixture(val):
-            res+='  '+key+': '+str(val)+'\n'
-    res+='  ,'+'\n'
-    for key,val in zip(keys,vals):
-        if node_is_coalescence(val):
-            res+='  '+key+': '+str(val)+'\n'
-    res+='}'
-    return res

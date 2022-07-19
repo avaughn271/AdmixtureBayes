@@ -10,7 +10,6 @@ def rvss(fro=0.0, to=1.0):
         guess=uniform.rvs(fro, to-fro)
     return guess
 
-
 def set_outgoing_branch(node, parent_name, branch, length):
     node[branch]=parent_name
     node[branch+3]=length
@@ -37,11 +36,9 @@ def generate_admix_topology(size, admixes, leaf_nodes=None):
         leaf_nodes = [ 's'+str(i+1) for i in range(size)]
     free_admixes=admixes
     no_totally_free_coalescences=size-1+admixes
-    no_halfly_free_coalescences=0
     
     ready_lineages=[(leaf_node,0) for leaf_node in leaf_nodes]
     tree={key:[None]*7 for key in leaf_nodes}
-    admixture_node_counter=[]
     halfly_free_coalescences=[]
     
     node_name=_get_node_name()
@@ -95,7 +92,6 @@ def _resimulate(node, factor=1.0, skewed_admixture_prior=False):
     return node
 
 def _allowed_generation(chosen_indexes, no_totally_free, no_halfly_frees, no_admixes, illegal_indexes):
-    #removedprin 'deciding allowance of:', chosen_indexes, no_totally_free
     
     #checking if there are double bands
     for i1,i2 in illegal_indexes:
@@ -119,7 +115,6 @@ def _allowed_generation(chosen_indexes, no_totally_free, no_halfly_frees, no_adm
                                                (no_halfly_frees==1 and no_totally_free==2 and no_singles==1)):
         return False
     
-    #all_choosing_frees=all(chosen_index<no_totally_free for chosen_index in chosen_indexes)
     return True
 
 class _get_node_name(object):
@@ -165,35 +160,21 @@ def _pair_everyhting_up_nicely(indexes, no_totally_free, halfly_frees, no_admixe
 def _get_illegal_indexes(lineages):
     keys, _ =list(zip(*lineages))
     dic= Counter(keys)
-    #removedprin dic
     res=[]
     for key in keys:
         if dic[key]==2:
            res.append((lineages.index((key,0)), lineages.index((key,1))))
     return res 
             
-
 def simulate_generation(no_totally_free, halfly_frees, no_admixes, lineages, tree, node_name):
     no_halfly_frees=len(halfly_frees)
     new_lineages=[]
-    #removedprin 'lineages', lineages
-    #removedprin 'no_totally_free', no_totally_free
-    #removedprin 'no_halfly_frees',no_halfly_frees
-    #removedprin 'no_admixes', no_admixes
     indexes=choice(no_totally_free*2+no_halfly_frees+no_admixes, size = len(lineages), replace=False )
     illegal_indexes=_get_illegal_indexes(lineages)
     COUNT=0
     while (not _allowed_generation(indexes, no_totally_free*2, no_halfly_frees, no_admixes, illegal_indexes) and COUNT<100):
-        #removedprin 'denied', indexes
         indexes=choice(no_totally_free*2+no_halfly_frees+no_admixes, size = len(lineages), replace=False)
-        #COUNT+=1
-        #removedprin 'trying', indexes
-    #removedprin 'tot','hlf','adm',no_totally_free*2, no_halfly_frees, no_admixes
-    #removedprin 'illegal_indexes', illegal_indexes
-    #removedprin 'indexes', indexes
-    #indexes=[1, 4, 6, 8, 9, 11]
     parent_keys, types= _pair_everyhting_up_nicely(indexes, no_totally_free, halfly_frees, no_admixes, node_name)
-    #removedprin zip(parent_keys, types)
     new_lineages=[]
     for (key,branch), parent_key, typ in zip(lineages, parent_keys, types):
         if typ=='first_coalescence':
@@ -215,37 +196,8 @@ def simulate_generation(no_totally_free, halfly_frees, no_admixes, lineages, tre
     return new_lineages, tree, no_totally_free, halfly_frees, no_admixes
                     
 def _classify_type(index, n_frees, n_halfs, n_admixs):
-    #removedprin index,n_frees,n_halfs,n_admixs
     if index<n_frees:
         return 'free'
     elif index<n_halfs+n_frees:
         return 'half'
     return 'admix'
-
-def _has_partner(index, indexes):
-    #removedprin index,indexes
-    if len(indexes)>0:
-        print(indexes[-1])
-    if len(indexes)>0 and indexes[-1]==index-1 and indexes[-1]%2==0:
-        return True
-    return False
-
-
-def get_distribution_under_prior(leaves,admixes=None,sim_length=1000, list_of_summaries=[], thinning_criteria=None, skewed_admixture_prior=False):
-    if admixes is None:
-        admix_sim=True
-    else:
-        admix_sim=False
-    res={summ.name:[] for summ in list_of_summaries}
-    for _ in range(sim_length):
-        if admix_sim:
-            admixes=geom.rvs(p=0.5)-1
-        tree=generate_phylogeny(leaves, admixes, skewed_admixture_prior=skewed_admixture_prior)
-        if thinning_criteria is None or thinning_criteria(tree):
-            for n, summary in enumerate(list_of_summaries):
-                res[summary.name].append(summary.summary_of_phylogeny(tree))
-    return res
-    
-    
-    
-    

@@ -1,80 +1,16 @@
 from tree_statistics import identifier_to_tree_clean, unique_identifier_and_branch_lengths, generate_predefined_list_string
-from tree_to_data import (file_to_emp_cov, reduce_covariance,
+from tree_to_data import (file_to_emp_cov,
                          emp_cov_to_file,
-                           get_xs_and_ns_from_freqs,
-                          get_xs_and_ns_from_treemix_file, order_covariance, reorder_covariance, reorder_reduced_covariance)
-from generate_prior_trees import simulate_number_of_admixture_events, generate_phylogeny
-from generate_sadmix_trees import generate_sadmix_tree
-from Rtree_operations import add_outgroup, scale_tree, time_adjust_tree
-from scipy.stats import expon, wishart
-from Rtree_to_covariance_matrix import make_covariance
+                          get_xs_and_ns_from_treemix_file, order_covariance, reorder_reduced_covariance)
+from scipy.stats import wishart
 from copy import deepcopy
 from reduce_covariance import rescale_empirical_covariance
-import time
 from numpy import loadtxt, savetxt
 from construct_estimator_choices import make_estimator
-
-def simulate_tree_wrapper(nk_tuple, **kwargs):
-    if kwargs['sadmix']:
-        return generate_sadmix_tree(nk_tuple[0], no_sadmixes=nk_tuple[1], nodes=kwargs['before_added_outgroup_nodes'], starting_admixes=0)
-    return generate_phylogeny(size= nk_tuple[0],
-                              admixes=nk_tuple[1],
-                              leaf_nodes= kwargs['before_added_outgroup_nodes'],
-                              skewed_admixture_prior=kwargs['skewed_admixture_prior_sim'])
-
-def add_outgroup_wrapper(tree_without_outgroup, **kwargs):
-    v=expon.rvs()
-    new_length_1, new_length_2= v/2, v/2
-    with open(kwargs['add_file'], 'w') as f:
-        f.write(str(v))
-    tree_with_outgroup= add_outgroup(tree_without_outgroup,  inner_node_name='new_node', to_new_root_length=new_length_1, to_outgroup_length=new_length_2, outgroup_name=kwargs['outgroup_name'])
-    return tree_with_outgroup
-
-def simulate_number_of_admixture_events_wrapper(n, **kwargs):
-    nk_tuple=(n, simulate_number_of_admixture_events(kwargs['p']))
-    return nk_tuple
-
-def theoretical_covariance_wrapper(tree, **kwargs):
-    covariance= make_covariance(tree, node_keys= kwargs['full_nodes'])
-    if kwargs['add_wishart_noise_to_covariance']:
-        covariance=add_wishart_noise(covariance, kwargs['df_of_wishart_noise_to_covariance'])
-    return covariance
-
-def empirical_covariance_wrapper(snp_data_file, **kwargs):
-    xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file, kwargs['locus_filter'])
-    return xnn_to_covariance_wrapper(xnn_tuple, **kwargs)
-
-def alleles_to_cov_wrapper(ps, **kwargs):
-    xnn_tuple=get_xs_and_ns_from_freqs(ps, kwargs['sample_per_pop'], kwargs['locus_filter'])
-    return xnn_to_covariance_wrapper(xnn_tuple, **kwargs)
 
 def empirical_covariance_wrapper_directly(snp_data_file, **kwargs):
     xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file, kwargs['locus_filter'])
     return xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs)
-
-def alleles_to_cov_wrapper_directly(ps, **kwargs):
-    xnn_tuple=get_xs_and_ns_from_freqs(ps, kwargs['sample_per_pop'], kwargs['locus_filter'])
-    return xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs)
-
-def xnn_to_covariance_wrapper(xnn_tuple, **kwargs):
-    est_args=kwargs['est']
-    xnn_tuple=order_covariance(xnn_tuple, outgroup=est_args['reducer'])
-    xs,ns,names=xnn_tuple
-    est= make_estimator(reduce_method='outgroup',
-                   reduce_also=False,
-                   ns=ns,**est_args)
-    cov=est(xs,ns)
-    cov=reorder_covariance(cov, names, kwargs['full_nodes'])
-    if ('add_variance_correction_to_graph' in est_args and
-        est_args['add_variance_correction_to_graph']):
-        filename=est_args['prefix']+'variance_correction.txt'
-        vc=loadtxt(filename)
-        vc=reorder_covariance(vc, names, kwargs['full_nodes'])
-        savetxt(filename, vc)
-
-
-    return cov
-
 
 def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
     est_args=kwargs['est']
@@ -105,46 +41,16 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
             return cov, extra_info_dic['m_scale']
     return cov
 
-
 def add_wishart_noise(matrix, df):
     r=matrix.shape[0]
     m=wishart.rvs(df=df, scale=matrix/df)
     return m
 
-def reduce_covariance_wrapper(full_covariance, **kwargs):
-    reduce_node_index=next((i for i,s in enumerate(kwargs['full_nodes']) if s==kwargs['reduce_covariance_node']))
-    return reduce_covariance(full_covariance, reduce_node_index)
-
-def scale_tree_wrapper(tree, **kwargs):
-    if kwargs['time_adjust']:
-        tree=time_adjust_tree(tree)
-    return scale_tree(tree, kwargs['scale_tree_factor'])
-
 def normaliser_wrapper(covariance, **kwargs):
     return rescale_empirical_covariance(covariance, normalizer=kwargs['scale_goal'])
 
-
-
-
 dictionary_of_transformations={
-    (1,2):simulate_number_of_admixture_events_wrapper,
-    (2,3):simulate_tree_wrapper,
-    (3,4):add_outgroup_wrapper,
-    (4,5):scale_tree_wrapper,
-    (3,5):scale_tree_wrapper,
-    (3,7):theoretical_covariance_wrapper,
-    (4,7):theoretical_covariance_wrapper,
-    (5,7):theoretical_covariance_wrapper,
-    (21,7):alleles_to_cov_wrapper,
-    (21,8):alleles_to_cov_wrapper_directly,
-    (22,7): alleles_to_cov_wrapper,
-    (22,8): alleles_to_cov_wrapper_directly,
-    (23,7): alleles_to_cov_wrapper,
-    (23,8): alleles_to_cov_wrapper_directly,
-    (6,7):empirical_covariance_wrapper,
     (6,8):empirical_covariance_wrapper_directly,
-    (7,8):reduce_covariance_wrapper,
-    (7,9):normaliser_wrapper,
     (8,9):normaliser_wrapper
     }
 
@@ -193,8 +99,6 @@ def save_stage(value, stage_number, prefix, full_nodes, before_added_outgroup_no
         emp_cov_to_file(value[0], filename, after_reduce_nodes)
         with open(filename, 'a') as f:
             f.write('multiplier='+str(value[1]))
-
-
 
 
 def get_covariance(stages_to_go_through, input, full_nodes=None,
@@ -269,22 +173,17 @@ def get_covariance(stages_to_go_through, input, full_nodes=None,
     kwargs['est']=estimator_arguments
     kwargs['locus_filter']=locus_filter
 
-    start=time.time()
     #makes a necessary transformation of the input(if the input is a filename or something).
     statistic=read_input(stages_to_go_through[0], input, full_nodes, before_added_outgroup_nodes, after_reduce_nodes)
 
     if stages_to_go_through[0] in save_stages:
         save_stage(statistic, stages_to_go_through[0], prefix, full_nodes, before_added_outgroup_nodes, after_reduce_nodes)
-
     for stage_from, stage_to in zip(stages_to_go_through[:-1], stages_to_go_through[1:]):
-        #removedprin (stage_from, stage_to)
+        print(stage_from, stage_to)
         transformer_function=dictionary_of_transformations[(stage_from, stage_to)]
         statistic=transformer_function(statistic, **kwargs)
         if stage_to in save_stages:
             save_stage(statistic, stage_to, prefix, full_nodes, before_added_outgroup_nodes, after_reduce_nodes)
-        #removedprin statistic
-
-    end=time.time()
 
     return statistic
 

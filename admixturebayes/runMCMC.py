@@ -1,6 +1,5 @@
 from argparse import ArgumentParser, SUPPRESS
 
-from construct_proposal_choices import make_proposal
 from construct_starting_trees_choices import get_starting_trees
 from construct_covariance_choices import get_covariance
 from construct_summary_choices import get_summary_scheme
@@ -13,6 +12,7 @@ from stop_criteria import stop_criteria
 import os
 from numpy import random
 import pandas
+from meta_proposal import simple_adaptive_proposal
 
 class fixed_geometrical(object):
 
@@ -116,12 +116,6 @@ def main(args):
                         help='The type of outgroup in the model. If non_admixed, there will be no admixture events'
                              'into the outgroup. If Free there may be admixtures into the outgroup. '
                              'The outgroup still need to be specified to place the root.')
-    parser.add_argument('--covariance_pipeline', nargs='+', type=int, default=[6, 8, 9],
-                        help='The list of steps the data should go through to become a covariance matrix. For the simulation data steps 1-5 I refer to the script construct_covariance_choices.py.'
-                             '6=data in treemix format (see Readme.md), '
-                             '7=raw covariance with outgroup, '
-                             '8=raw covariance without outgroup (or with respect to the outgroup).'
-                             '9=scaled covariance without outgroup and the scaling factor.')
     parser.add_argument('--variance_correction', default='unbiased', choices=['None', 'unbiased', 'mle'],
                         help='The type of adjustment used on the empirical covariance.')
     parser.add_argument('--unadmixed_populations', default=[], nargs='*',
@@ -134,28 +128,11 @@ def main(args):
                         help='the geometrical parameter in the prior. The formula is p**x(1-p)')
     parser.add_argument('--sap_analysis', action='store_true', default=False,
                         help='skewed admixture proportion prior in the analysis')
-    #parser.add_argument('--no_add', action='store_true', default=False, help='this will remove the add contribution')
     parser.add_argument('--no_bootstrap_samples', type=int, default=100,
                         help='the number of bootstrap samples to make to estimate the degrees of freedom in the wishart distribution.')
     parser.add_argument('--save_bootstrap_covariances', type=str, default='', help='if provided the bootstrapped covariance matrices will be saved to numbered files starting with {prefix}+_+{save_covariances}+{num}+.txt')
     parser.add_argument('--bootstrap_type_of_estimation', choices=['mle_opt','var_opt'], default='var_opt', help='This is the way the bootstrap wishart estimate is estimated.')
     parser.add_argument('--load_bootstrapped_covariances', type=str, default=[], nargs='+', help='if supplied, this will load covariance matrices from the specified files instead of bootstrapping new ones.')
-    # proposal frequency options
-    parser.add_argument('--deladmix', type=float, default=1, help='this states the frequency of the proposal type')
-    parser.add_argument('--addadmix', type=float, default=1, help='this states the frequency of the proposal type')
-    parser.add_argument('--rescale', type=float, default=1, help='this states the frequency of the proposal type')
-    parser.add_argument('--rescale_add', type=float, default=1, help='this states the frequency of the proposal type')
-    parser.add_argument('--rescale_admix', type=float, default=1, help='this states the frequency of the proposal type')
-    parser.add_argument('--rescale_admix_correction', type=float, default=0,
-                        help='this states the frequency of the proposal type')
-    parser.add_argument('--rescale_constrained', type=float, default=1,
-                        help='this states the frequency of the proposal type')
-    parser.add_argument('--rescale_marginally', type=float, default=0,
-                        help='this states the frequency of the proposal type')
-    parser.add_argument('--sliding_regraft', type=float, default=1,
-                        help='this states the frequency of the proposal type')
-    parser.add_argument('--sliding_rescale', type=float, default=0,
-                        help='this states the frequency of the proposal type')
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start or the so-called trivial tree')
@@ -249,12 +226,10 @@ def main(args):
                         help=SUPPRESS)#'This means that ')
     parser.add_argument('--filter_type', choices=['snp','none', 'outgroup_other','outgroup','all_pops'], default='snp',
                         help=SUPPRESS)#'This will apply a filter to positions based on their value.')
-    parser.add_argument('--filter_on_simulated', choices=['same', 'none', 'outgroup_other', 'outgroup', 'snp', 'all_pops'], default='same',
-                        help=SUPPRESS)#'In indirect inference, whole datasets are simulated under ')
 
     options=parser.parse_args(args)
 
-    assert not (any((i < 8 for i in options.covariance_pipeline)) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
+    assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
     #Here is the only thing we should be chaning.
     temp = pandas.read_csv(options.input_file, sep =" ")
@@ -262,46 +237,25 @@ def main(args):
     temp = temp[sorted(colnames)]
     temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
 
-
-    no_add=options.outgroup_type=='None' or options.outgroup_type=='Free'
-
-    mp = make_proposal(deladmix=options.deladmix,
-                  addadmix=options.addadmix,
-                  rescale=options.rescale,
-                  regraft=0,
-                  rescale_add=options.rescale_add,
-                  rescale_admix=options.rescale_admix,
-                  rescale_admix_correction=options.rescale_admix_correction,
-                  rescale_constrained=options.rescale_constrained,
-                  rescale_marginally=options.rescale_marginally,
-                  sliding_regraft=options.sliding_regraft,
-                  sliding_rescale=options.sliding_rescale,
-                  MCMC_chains=options.MCMC_chains,
-                  no_add=no_add)
+    mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
+     [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
 
     before_added_outgroup, full_nodes, reduced_nodes=get_nodes(options.nodes, os.getcwd() + "/temp_input.txt", options.create_outgroup, options.outgroup)
 
     prefix=options.prefix
 
-    if options.covariance_pipeline[0]==6:
-        treemix_in_file=os.getcwd() + "/temp_input.txt"
-        treemix_file=os.getcwd() + "/temp_input.txt"
-    else:
-        treemix_file=prefix+"treemix_in.txt"
-        treemix_in_file=treemix_file+'.gz'
+    treemix_in_file=os.getcwd() + "/temp_input.txt"
+    treemix_file = os.getcwd() + "/temp_input.txt"
 
     preliminary_starting_trees=[None]
     assert options.initial_Sigma!='start', 'to make the filter start somewhere specific it should also be specified specifically'
 
     locus_filter=make_filter(options.filter_type,
-                             outgroup_name=options.outgroup, #options.reduce_node,
-                             covariance_pipeline=options.covariance_pipeline)
-    if options.filter_on_simulated=='same':
-        locus_filter_on_simulated=make_filter(options.filter_type)
-    else:
-        locus_filter_on_simulated=make_filter(options.filter_on_simulated)
+                             outgroup_name=options.outgroup,  
+                             covariance_pipeline=[6,8,9])
+    locus_filter_on_simulated=make_filter(options.filter_type)
 
-    estimator_arguments=dict(reducer=options.outgroup, #options.reduce_node,
+    estimator_arguments=dict(reducer=options.outgroup, 
                              variance_correction=options.variance_correction,
                              method_of_weighing_alleles='average_sum',
                              arcsin_transform=options.arcsin,
@@ -321,7 +275,7 @@ def main(args):
                              save_variance_correction=True,
                              prefix=prefix)
 
-    covariance=get_covariance(options.covariance_pipeline,
+    covariance=get_covariance([6,8,9] , 
                               os.getcwd() + "/temp_input.txt",
                               full_nodes=full_nodes,
                               skewed_admixture_prior_sim=options.skewed_admixture_prior_sim,
@@ -365,7 +319,7 @@ def main(args):
                                                load_bootstrapped_covariances=options.load_bootstrapped_covariances,
                                                verbose_level=options.verbose_level)
 
-    if 9 not in options.covariance_pipeline:
+    if 9 not in [6,8,9]:
         multiplier=None
         covariance=(covariance, multiplier)
     else:
@@ -421,15 +375,11 @@ def main(args):
                     splitbranches.pop(i + 1)
                     break
             break
-        print(splitbranches)
         for i in range(len(splitbranches)):
             splitbranches[i] = "{:.9f}".format(float(splitbranches[i]))
-        print(splitbranches)
-        #End of new part
 
         for i in splitbranches:
             FinalString = FinalString + "{:.12f}".format(float(i) * multiplier) + "-"
-            #FinalString = FinalString + str(float(i) * multiplier) + "-"
 
         FinalString = FinalString[0:(len(FinalString)-1)]
         FinalString = FinalString + ";" + splitted[2]
@@ -453,7 +403,7 @@ def main(args):
                                         options.MCMC_chains,
                                         adds=[os.getcwd() + "/" + "temp_add.txt"],
                                         nodes=tree_nodes,
-                                        pipeline=options.covariance_pipeline,
+                                        pipeline=[6,8,9],
                                         multiplier=multiplier,
                                         scale_tree_factor=options.scale_tree_factor,
                                         start=options.start,
@@ -462,13 +412,13 @@ def main(args):
                                         starting_tree_use_scale_tree_factor=options.starting_tree_use_scale_tree_factor,
                                         scale_goal=options.scale_goal,
                                         mscale_file=mscale_file,
-                                        no_add=no_add)
+                                        no_add=False)
     else:
         starting_trees=get_starting_trees(options.continue_samples,
                                       options.MCMC_chains,
                                       adds=options.starting_adds,
                                       nodes=tree_nodes,
-                                      pipeline=options.covariance_pipeline,
+                                      pipeline=[6,8,9],
                                       multiplier=multiplier,
                                       scale_tree_factor=options.scale_tree_factor,
                                       start=options.start,
@@ -477,7 +427,7 @@ def main(args):
                                       starting_tree_use_scale_tree_factor=options.starting_tree_use_scale_tree_factor,
                                       scale_goal=options.scale_goal,
                                       mscale_file=mscale_file,
-                                      no_add=no_add)
+                                      no_add=False)
 
     with open(prefix+options.save_df_file, 'w') as f:
         f.write(str(df))

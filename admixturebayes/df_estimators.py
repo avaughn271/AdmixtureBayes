@@ -36,7 +36,6 @@ def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
     return new_x
 
 def variance_mean_based(sample_of_matrices, divisor=None, verbose_level='normal'):
-    #removedprin len(sample_of_matrices), sample_of_matrices[0].shape
     mean_wishart=  np.mean(sample_of_matrices, axis=0)
     var_wishart= np.var(sample_of_matrices, axis=0)
     r=mean_wishart.shape[0]
@@ -45,9 +44,6 @@ def variance_mean_based(sample_of_matrices, divisor=None, verbose_level='normal'
         df=df_l
         val=np.linalg.norm(var_wishart-var_rom_mean_wishart/df)**2
         return np.log(val)
-    
-
-    
     
     rval=I_cant_believe_I_have_to_write_this_function_myself(penalty_function, r)
     return rval

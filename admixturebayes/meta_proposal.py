@@ -1,12 +1,8 @@
 from Rproposal_admix import addadmix_class, deladmix_class
-from Rproposal_regraft import regraft_class
 from Rproposal_rescale import rescale_class
-from Rproposal_sliding_regraft import sliding_regraft_class, sliding_regraft_class_resimulate
-from Rproposal_rescale_marginally import rescale_marginally_class
-from Rproposal_sliding_rescale import sliding_rescale_class
+from Rproposal_sliding_regraft import sliding_regraft_class_resimulate
 from Rproposal_rescale_constrained import rescale_constrained_class
 from Rproposal_rescale_admix import rescale_admixtures_class, rescale_add_class
-from Rproposal_rescale_admix_correction import rescale_admix_correction_class
 from numpy.random import choice
 from Rtree_operations import get_number_of_admixes
 from math import exp
@@ -17,7 +13,6 @@ class new_node_naming_policy(object):
         self.n=0
         
     def next_nodes(self, no_nodes):
-        #removedprin self.n
         if no_nodes==2:
             self.n+=1 
             return ['x'+str(self.n)+a for a in ['a','b']]
@@ -57,22 +52,16 @@ class simple_adaption(object):
                                                 self.value, 
                                                 mhr, 
                                                 desired_mhr=self.desired_mhr, 
-                                                verbose=False,
                                                 name=self.name)
     
-def initialize_proposals(proposals, extras={}):
-    all_props=[addadmix_class, deladmix_class, regraft_class, 
-               rescale_class, sliding_regraft_class, sliding_regraft_class_resimulate,
-               rescale_marginally_class, sliding_rescale_class, rescale_add_class,
-               rescale_constrained_class,  rescale_admixtures_class, rescale_admix_correction_class]
+def initialize_proposals(proposals):
+    all_props=[addadmix_class, deladmix_class, 
+               rescale_class, sliding_regraft_class_resimulate, rescale_add_class,
+               rescale_constrained_class,  rescale_admixtures_class]
     all_props_dic={cl.proposal_name:cl for cl in all_props}
-    #removedprin all_props_dic
     res=[]
     for proposal in proposals:
-        if proposal in extras:
-            res.append(all_props_dic[proposal](**extras[proposal]))
-        else:
-            res.append(all_props_dic[proposal]())
+        res.append(all_props_dic[proposal]())
     return res
     
 def draw_proposal(props, k, proportions):
@@ -106,12 +95,8 @@ def get_args2(names, adap_object):
 
 class simple_adaptive_proposal(object):
     
-    def __init__(self, proposals, proportions, extras={}):
-        '''
-        extras is of the form {proposal_name: {parameter1:argument1, parameter2:argument2, ...,},...} and is used
-        to set any extra parameters in the proposals.
-        '''
-        self.props=initialize_proposals(proposals, extras)
+    def __init__(self, proposals, proportions):
+        self.props=initialize_proposals(proposals)
         self.proportions=proportions
         self.adaps=[simple_adaption() if prop.adaption else None for prop in self.props]
         self.node_naming=new_node_naming_policy()
@@ -152,7 +137,7 @@ class simple_adaptive_proposal(object):
     def wear_exportable_state(self, information):
         self.node_naming.n=information['n']
 
-def standard_update(count, multiplier, alpha, old_value, mhr, desired_mhr=0.234, verbose=False, max_val=float('inf'), name='value'):
+def standard_update(count, multiplier, alpha, old_value, mhr, desired_mhr=0.234, max_val=float('inf'), name='value'):
     count+=1
     gamma=multiplier/count**alpha
     change=exp(gamma*(min(1.0,mhr)-desired_mhr))

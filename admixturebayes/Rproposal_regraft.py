@@ -10,10 +10,7 @@ def get_possible_regrafters(tree):
     res=[]
     for key in tree:
         parents=get_real_parents(tree[key])
-        #removedprin parents
         for branch, parent in enumerate(parents):
-            #removedprin key,(not is_root(parent)),node_is_non_admixture(tree[parent]),(not has_child_admixture(tree, parent))
-            #if (not is_root(parent)) and node_is_non_admixture(tree[parent]) and (not has_child_admixture(tree, parent)):
             if parent=='r' or (node_is_non_admixture(tree[parent]) and not halfbrother_is_uncle(tree, key, parent)):
                 res.append((key,branch))
     return res

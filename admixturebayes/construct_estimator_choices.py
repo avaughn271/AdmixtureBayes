@@ -1,33 +1,20 @@
 from covariance_estimator import initor
-from covariance_EM import EmEstimator
 from covariance_scaled import ScaledEstimator
 from covariance_estimator import RepeatEstimator
 
 from Rtree_to_covariance_matrix import make_covariance
 
 from generate_prior_trees import generate_phylogeny
-from scipy.stats import uniform, beta
+from scipy.stats import beta
 from Rtree_operations import scale_tree
 
 def generate_covariance(size, scale_metod='beta', return_tree=False):
     tree= generate_phylogeny(size)
     cov=make_covariance(tree)
-    s=calc_s(scale_metod)
+    s = beta.rvs(a=1, b=5)
     if return_tree:
         return cov*s, scale_tree(tree, s)
     return cov*s
-
-def calc_s(scale_method):
-    if scale_method=='uniform':
-        return uniform.rvs()
-    elif scale_method=='beta':
-        return beta.rvs(a=1, b=5)
-    elif scale_method=='None':
-        return 1
-    else:
-        assert False, 'unexpected scale_method: '+str(scale_method)
-
-
 
 def create_initial_Sigma_generator(n, streng):
     key=list(streng.keys())[0]
@@ -77,18 +64,12 @@ def make_estimator(reduce_method,
 
     n=len(nodes)-int(reduce_also)
     initial_Sigma_generator=create_initial_Sigma_generator(n, initial_Sigma_generator)
-        
 
     variance_correction=initor(variance_correction)
     
     method_of_weighing_alleles=initor(method_of_weighing_alleles)
     
-    if method_of_weighing_alleles=='EM':
-        est=EmEstimator(maxiter=EM_maxits,
-                        alpha=EM_alpha,
-                        initial_Sigma_generator=initial_Sigma_generator)
-    else:
-        est=ScaledEstimator(reduce_method=reduce_method,
+    est=ScaledEstimator(reduce_method=reduce_method,
                  scaling=method_of_weighing_alleles,
                  reduce_also=reduce_also,
                  variance_correction=variance_correction,

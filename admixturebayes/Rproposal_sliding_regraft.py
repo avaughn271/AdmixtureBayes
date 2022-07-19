@@ -7,15 +7,6 @@ from copy import deepcopy
 from random import getrandbits
 from math import exp
 import gamma_restricted
-
-class sliding_regraft_class(object):
-    
-    new_nodes=1
-    proposal_name='sliding_regraft'
-    adaption=True
-    
-    def __call__(self,*args, **kwargs):
-        return make_sliding_regraft(*args, **kwargs)
     
 class sliding_regraft_class_resimulate(object):
     new_nodes=1

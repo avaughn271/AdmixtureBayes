@@ -97,9 +97,6 @@ def reduced_covariance_bias_correction(p,n,n_outgroup=0, type_of_scaling='unbias
     outgroup_b=Bs.pop(n_outgroup)
     return diag(array(Bs))+outgroup_b
     
-    
-    
-
 def bias_correction(m, p, pop_sizes, n_outgroup=None, type_of_scaling='unbiased'):
     Bs=[B(prow, pop_size, type_of_scaling=type_of_scaling) for prow, pop_size in zip(p, pop_sizes)]
     adjusting_matrix=adjuster(Bs)
@@ -135,7 +132,6 @@ class ScaledEstimator(Estimator):
     def subtract_ancestral_and_get_outgroup(self,p):
         if self.reduce_method=='outgroup':
             n_outgroup=self.get_reduce_index()
-            #removedprin n_outgroup
             return p-p[n_outgroup,:], n_outgroup
         elif self.reduce_method=='average':
             n_outgroup=self.get_reduce_index()
@@ -154,7 +150,6 @@ class ScaledEstimator(Estimator):
     
         
     def estimate_from_p(self, p, ns=None, extra_info={}):
-        #p=reorder_rows(p, self.names, self.full_nodes)
         
         p2,n_outgroup = self.subtract_ancestral_and_get_outgroup(p)
         
@@ -169,7 +164,6 @@ class ScaledEstimator(Estimator):
             mu=p[n_outgroup,:]
             
             i=array([v > self.jade_cutoff and v<1.0-self.jade_cutoff for v in mu ])
-            #p=p[:,i]
             p2=p2[:,i]/sqrt(mu[i]*(1.0-mu[i]))
         if npsum(isnan(p2))>0:
             warnings.warn('Nans found in the allele frequency differences matrix => slower execution', UserWarning)

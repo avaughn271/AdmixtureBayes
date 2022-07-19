@@ -24,7 +24,6 @@ class tree_unifier(object):
                 self.seen_trees[topology]=update_dic[topology]
             else:
                 self.seen_trees.update(update_dic)
-            #removedprin self.seen_trees
             target_topology, branch_permutation, admixture_permutation=self.seen_trees[topology]
         #removedprin len(self.seen_trees)
         new_branch_string=make_branch_string(branches, branch_permutation)
@@ -116,7 +115,6 @@ def get_possible_permutation_strees(tree):
     for i in range(2**k):
         pruned_tree = deepcopy(tree)
         bina= format_code.format(i)
-        prop=1.0
         for adm_key,str_bin in zip(admixture_keys, list(bina)):
             int_bin=int(str_bin)
             if int_bin==1:

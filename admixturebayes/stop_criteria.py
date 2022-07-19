@@ -5,7 +5,6 @@ import os
 class stop_criteria(object):
     
 
-    
     def __init__(self, 
                         frequency=20000, 
                         summaries=['no_admixes','average_branch_length','add','descendant_sets'], 
@@ -44,8 +43,6 @@ class stop_criteria(object):
     def stop_yet(self, filename):
         dir = os.path.dirname(__file__)
         command=[self.Rscript_path,os.path.join(dir, 'ESS.R'), filename, str(self.burn_in), self.outfile,  str(self.verbose_level)]+self.summaries
-        #if self.verbose_level=='normal':
-        #    print(command)
         call(command)
         return self.check_outfile()
     
@@ -54,9 +51,6 @@ class stop_criteria(object):
             f.readline()
             for n,lin in enumerate(f.readlines()):
                 ess=float(lin.split()[-1])
-                name=lin.split()[0]
-                #if self.verbose_level=='normal':
-                #    print(n, name, ess)
                 if n<self.non_topological_summaries:
                     if ess < self.continuous_threshold:
                         return False

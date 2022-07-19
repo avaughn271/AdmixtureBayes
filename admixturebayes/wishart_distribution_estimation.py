@@ -106,8 +106,5 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
     else:
         covs=[loadtxt(bcov) for bcov in load_bootstrapped_covariances]
     summarization=initor(summarization)
-    if summarization=='var':
-        res=estimate(covs)
-    elif summarization=='var_opt':
-        res=variance_mean_based(covs, verbose_level=verbose_level)
+    res=variance_mean_based(covs, verbose_level=verbose_level)
     return res, covs

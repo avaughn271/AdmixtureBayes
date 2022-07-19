@@ -1,13 +1,12 @@
 from Rtree_operations import (get_categories, get_destination_of_lineages, propagate_married, 
                               propagate_admixtures, get_branch_length,update_parent_and_branch_length, 
-                              get_trivial_nodes, pretty_string, insert_children_in_tree, rename_root,
+                              get_trivial_nodes, insert_children_in_tree, rename_root,
                               get_admixture_proportion, remove_admixture, get_admixture_proportion_from_key,
                               get_admixture_keys_and_proportions, tree_to_0tree,
                               direct_all_admixtures)
 from copy import deepcopy
 from prior import matchmake
 from numpy.random import random
-import warnings
 
 def node_count(tree):
     '''
@@ -26,7 +25,6 @@ def make_dics_first_and_second(double_list):
         return dic, firsts, seconds
     else:
         return {},[],[]
-    
     
 def unique_identifier(tree, leaf_order=None):
     leaves, coalescences_nodes, admixture_nodes=get_categories(tree)
@@ -294,7 +292,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
                     print('new_key', new_key)
                     print('parent_index', parent_index)
                     print('identifier_lineage', identifier_lineage)
-                    print(pretty_string(insert_children_in_tree(tree)))
                 
                 old_key,old_branch=trace_lineages[n]
                 new_branch_length=branch_lengths()
@@ -315,30 +312,6 @@ def identifier_to_tree_clean(identifier, **kwargs):
                                    branch_lengths=string_to_generator(branch_lengths), 
                                    admixture_proportions=string_to_generator(admixture_proportions),
                                    **kwargs)
-    return tree_good2
-
-def identifier_file_to_tree_clean(filename, **kwargs):
-    with open(filename, 'r') as f:
-        ls=f.readlines()
-        if len(ls)>1 and len(ls[1])>5:
-            leaves=generate_predefined_list_string(ls[0].rstrip().split())
-            identifier=ls[1].rstrip()
-        else:
-            identifier=ls[0].rstrip()
-            leaves=None
-    try:
-        ad2, branch_lengths, admixture_proportions=divide_triple_string(identifier)
-        branch_lengths=string_to_generator(branch_lengths)
-        admixture_proportions=string_to_generator(admixture_proportions)
-    except ValueError as e:
-        warnings.warn('Branch lengths and admixture proportions not supplied, assuming topological identifier..', UserWarning)
-        ad2=identifier
-        branch_lengths=uniform_generator()
-        admixture_proportions=uniform_generator()
-    tree_good2= identifier_to_tree(ad2, 
-                                   branch_lengths=branch_lengths, 
-                                   admixture_proportions=admixture_proportions,
-                                   leaves=leaves, **kwargs)
     return tree_good2
 
 def topological_identifier_to_tree_clean(identifier, **kwargs):
@@ -434,8 +407,6 @@ def string_to_generator(stringi, floats=True):
 def divide_triple_string(stringbig):
     return stringbig.split(';')
     
-
-
 def update_lineages(lists, new, gone, lineages, tree):
     for n,element in enumerate(new):
         if element=='a':

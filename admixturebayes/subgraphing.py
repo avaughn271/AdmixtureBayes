@@ -2,7 +2,6 @@ from Rtree_to_covariance_matrix import leave_node, _thin_out_dic, Population, _a
 from Rtree_operations import (node_is_non_admixture, get_leaf_keys, get_real_parents, get_real_children, rename_root, 
                               screen_and_prune_one_in_one_out, remove_non_mixing_admixtures)
 from copy import deepcopy
-from collections import Counter
 
 def leave_node(key, node, population, target_nodes, follow_branch):
     if node_is_non_admixture(node): 
@@ -49,15 +48,10 @@ def get_branches_to_keep(tree, subgraph_keys):
             taken_nodes.append(key)
         waiting_nodes,ready_nodes=_thin_out_dic(waiting_nodes, taken_nodes[:])
         #removedprin 'waiting_nodes', waiting_nodes
-        #removedprin 'ready_nodes', ready_nodes
-        #removedprin 'taken_nodes', taken_nodes
         if len(ready_nodes)==0:
             return None
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
-            #big_pop=ready_nodes[0][1]
-            #pop_strings.append(big_pop.get_population_string(min_w))
             break
-    #removedprin 'finished tree'
 
     return target_nodes
 
@@ -103,60 +97,3 @@ def remove_empty_children(tree):
             for n in range(n+1,2):
                 tree[k][5+n]=None
     return tree
-
-def thin_based_on_probs(N, top_keys, total_probs):
-    if total_probs>=1:
-        return [tk[0] for tk in top_keys]
-    
-    prob=0
-    return_keys=[]
-    for top_key, count in top_keys:
-        return_keys.append(top_keys)
-        prob+=float(count)/N
-        if prob>=total_probs:
-            return return_keys
-    print('The subtrees doesnt sum to (requested) total posterior probability')
-    return return_keys
-
-
-def save_to_file(topology, nodes, proportion, filename, param_val):
-    snodes=sorted(nodes)
-    with open(filename, 'w') as f:
-        f.write(str(proportion[0])+'/'+ str(proportion[1])+' = '+str(float(proportion[0])/proportion[1])+'\n')
-        f.write('\n')
-        f.write(' '.join(snodes)+'\n')
-        f.write(topology+'\n')
-        f.write('\n')
-        for row in param_val[0]:
-            f.write(' '.join(map(str, row))+'\n')
-        f.write('\n')
-        for row in param_val[1]:
-            if len(row)>0:
-                f.write(' '.join(map(str, row))+'\n')
-    
-    
-        
-
-def save_top_subgraphs(topologies, nodes, max_num=10, total_probability=1.0, prefix='',**not_needed):
-    freq_table={topology:len(nums[0]) for topology, nums in list(topologies.items())}
-    freq_counter=Counter(freq_table)
-    top_keys=freq_counter.most_common(max_num)
-    N=float(sum(freq_table.values()))
-    top_keys=thin_based_on_probs(N=N, 
-                                 top_keys=top_keys, 
-                                 total_probs=total_probability)
-    for n,topology in enumerate(top_keys):
-        save_to_file(topology, 
-                     nodes, 
-                     proportion=(freq_table[topology],N),
-                     filename=prefix+'subgraph_'+'_'.join(nodes)+'-'+str(n)+'.txt', 
-                     param_val=topologies[topology])
-        
-
-
-
-def prune_subtree(tree):
-    keys=list(tree.keys())
-    for key in keys:
-        if key in tree:
-            remove_one_in_one_out

@@ -1,5 +1,4 @@
 from copy import deepcopy
-import warnings
 
 def create_trivial_tree(size, total_height=1.0):
     '''
@@ -49,27 +48,6 @@ def max_distance_to_leaf(tree,key, parent_key=None):
     if node_is_admixture(node):
         return add+max_distance_to_leaf(tree, node[5], key)
     assert False, 'strange node caused no exit.'
-    
-def time_adjust_node(key, node, timed_events):
-    p1,p2=node[:2]
-    t1=timed_events[p1]-timed_events[key]
-    node[3]=t1
-    if p2 is not None:
-        t2=timed_events[p2]-timed_events[key]
-        node[4]=t2
-    return node
-
-def get_max_timing(tree):
-    timed_events={'r':get_max_distance_to_root(tree)}
-    for key in tree:
-        timed_events[key]=max_distance_to_leaf(tree, key)
-    return timed_events    
-    
-def time_adjust_tree(tree):
-    timed_events=get_max_timing(tree)
-    for key, node in list(tree.items()):
-        tree[key]=time_adjust_node(key, node, timed_events)
-    return tree
 
 def add_outgroup(tree, inner_node_name='new', to_new_root_length=0.5, to_outgroup_length=0.5, outgroup_name=None):
     (child_key1, child_branch1,_),(child_key2, child_branch2, _)=find_rooted_nodes(tree)
@@ -112,7 +90,6 @@ def get_branches_to_reverse(tree, key, so_far=None):
         so_far.append((key,tree[key][3], tree[key][0]))
         return get_branches_to_reverse(tree, tree[key][0], so_far)
     
-
 def rename_rootname(tree,old_name, new_name):
     for key,node in list(tree.items()):
         if node[0]==old_name:
@@ -126,47 +103,6 @@ def remove_children(tree):
         tree[key]=tree[key][:5]
     return tree
 
-def rearrange_root_foolproof(tree, new_outgroup):
-    '''
-    Like rearrange_root this changes the outgroup by reversing branches. When the 
-    '''
-    if tree[new_outgroup][0]=='r' or tree[new_outgroup][1]=='r':
-        warnings.warn('The root was already in the requested location so no rearranging performed', UserWarning)
-        return tree
-    while True:
-        admixture_to_remove=get_first_admixture_meeting(tree, new_outgroup)
-        print('tryna remove', admixture_to_remove)
-        if admixture_to_remove is None:
-            break
-        pretty_print(tree)
-        tree=remove_admix(tree, admixture_to_remove, 1)[0]
-    return rearrange_root(tree, new_outgroup)
-
-def rearrange_root(tree, new_outgroup):
-    if tree[new_outgroup][0]=='r':
-        warnings.warn('The root was already in the requested location so no rearranging performed', UserWarning)
-        return tree
-    assert non_admixture_path(tree, new_outgroup), 'There were admixtures on the path from the requested outgroup to the old root.'
-    reversers=get_branches_to_reverse(tree, new_outgroup)
-    #removedprin reversers[:-2]
-    for child_key,length,parent_key in reversers[:-2]:
-        #removedprin 'child,length,parent',(child_key,length,parent_key)
-        tree[parent_key][0]=child_key
-        tree[parent_key][3]=length
-    (before_root, length1, _),(after_root,length2,_)=reversers[-2:]
-    if is_root(tree[after_root][0]):
-        tree[after_root][0]=before_root
-        tree[after_root][3+0]=length1+length2
-    else:
-        tree[after_root][1]=before_root
-        tree[after_root][3+1]=length1+length2
-    tree[new_outgroup][0]='r'
-    tree[new_outgroup][0+3]=0.0
-    first_reverser_parent=reversers[0][2]
-    tree[first_reverser_parent][0]='r'
-    tree=insert_children_in_tree(tree)
-    return tree
-
 def rename_key(tree, old_key_name, new_key_name):
     node=tree[old_key_name]
     tree[new_key_name]=node
@@ -178,21 +114,6 @@ def rename_key(tree, old_key_name, new_key_name):
     for c in cs:
         tree[c]=rename_parent(tree[c], old_key_name, new_key_name)
     del tree[old_key_name]
-    return tree
-
-def remove_outgroup(tree, remove_key='s1', return_add_distance=False):
-    (child_key1, child_branch1,length1),(child_key2, child_branch2, length2)=find_rooted_nodes(tree)
-    if remove_key==child_key1:
-        root_key=child_key2
-    elif remove_key== child_key2:
-        root_key= child_key1
-    else:
-        assert remove_key==child_key1 or remove_key==child_key2, 'the removed key is not an outgroup'
-    del tree[remove_key]
-    del tree[root_key]
-    tree= rename_root(tree, root_key)
-    if return_add_distance:
-        return tree, length1+length2
     return tree
 
 def get_trivial_nodes(size):
@@ -653,30 +574,7 @@ def get_destination_of_lineages(tree, ready_lineages):
             assert False, 'the parent of a node was neither admixture nor coalescence'
     return double_coalescences, single_coalescences, admixtures
 
-def pretty_string(tree):
-    keys,vals=list(tree.keys()),list(tree.values())
-    res=''
-    res+='{ '+'\n'
-    for key,val in zip(keys,vals):
-        if node_is_leaf_node(val):
-            res+='  '+key+': '+str(val)+'\n'
-    res+='  ,'+'\n'
-    for key,val in zip(keys,vals):
-        if node_is_admixture(val):
-            res+='  '+key+': '+str(val)+'\n'
-    res+='  ,'+'\n'
-    for key,val in zip(keys,vals):
-        if node_is_coalescence(val):
-            res+='  '+key+': '+str(val)+'\n'
-    res+='}'
-    return res
-
-def pretty_print(tree):
-    print(pretty_string(tree))
-
 def get_sister_branch(tree, parent, key, branch):
-    #removedprin parent,key
-    #removedprin pretty_string(tree)
     if parent[5]==parent[6]:
         return key, other_branch(branch)
     else:
@@ -684,10 +582,6 @@ def get_sister_branch(tree, parent, key, branch):
             return parent[6], mother_or_father(tree, parent[6], tree[key][branch])
         elif parent[6]==key:
             return parent[5], mother_or_father(tree, parent[5], tree[key][branch])
-        else:
-            assert False, "the parent was not really a parent"+'\n'+pretty_string(tree)+'\n'+'parent,key,branch='+str(parent)+','+str(key)+','+str(branch)
-        
-        
 
 def propagate_married(tree, list_of_pairs):
     res=[]
@@ -710,10 +604,6 @@ def mother_or_father(tree, child_key, parent_key):
         return 0
     elif tree[child_key][1]==parent_key:
         return 1
-    assert False, 'The child did not match its parent'+\
-                  '\n'+pretty_string(tree)+'\n\n'+\
-                  'child_key,parent_key='+str(child_key)+\
-                  ','+str(parent_key)
     
 def insert_children_in_tree(tree):
     children={key:[] for key in tree}

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, SUPPRESS
 from downstream_analysis_tool import (thinning, iterate_over_output_file, always_true, make_Rtree, make_full_tree, read_true_values,
-                                      make_Rcovariance, cov_truecov, topology_identity,get_pops,compare_pops,extract_number_of_sadmixes, 
+                                      make_Rcovariance, cov_truecov, topology_identity,get_pops,compare_pops, 
                                       read_one_line, topology,
                                        subgraph, subsets,
                                       make_string_tree, topology_without_outgroup)
@@ -41,7 +41,6 @@ def run_posterior_main(args):
                         'top_identity':topology_identity,
                         'pops':get_pops,
                         'set_differences':compare_pops,
-                        'no_sadmixes':extract_number_of_sadmixes
                         }
     possible_summaries.update(all_custom_summaries())
 
@@ -69,10 +68,6 @@ def run_posterior_main(args):
                         help='The list of summaries to save')
     parser.add_argument('--custom_summaries', default=[], nargs='*', choices=list(possible_summaries.keys()),
                         help='This will add summaries (to both calculate_summaries and save_summaries). They are defined in the class custom_summary.py.')
-    parser.add_argument('--reroot', default='', type=str,
-                        help='If a population is given, this will reroot all graphs to the population given. '
-                             'Supplying this flag will often result in error because some graphs can not be rerooted'
-                             ' without becoming cyclic. See flag --reroot_erro to remedy this.')
     parser.add_argument('--reroot_error', default='stop', choices=['stop','force','ignore'],
                         help='If a rerooting can not be performed (due to admixture events with a sink in a path between '
                              'the reroot population and the graph root), this will either 1) "stop" the program'
@@ -180,7 +175,7 @@ def run_posterior_main(args):
                                                         outgroup_name=options.outgroup_name,
                                                         remove_sadtrees=options.constrain_sadmix_trees,
                                                         subnodes=options.subnodes,
-                                                        reroot_population=options.reroot,
+                                                        reroot_population='',
                                                         reroot_method=options.reroot_error))
         name_to_rowsum_index('full_tree')
 

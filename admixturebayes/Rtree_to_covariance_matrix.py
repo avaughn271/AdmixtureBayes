@@ -23,7 +23,6 @@ class Covariance_Matrix():
         return self.covmat
     
 Covariance_Matrix2=Covariance_Matrix
-#warnings.warn('Using the slow covariance matrix implemented in numpy. If possible, run setup.py and restart.', RuntimeWarning)
 
 class Population:
     
@@ -62,9 +61,6 @@ class Population:
             self.members.extend(x_m)
         return self
 
-
-
-    
 def leave_node(key, node, population, covmat):
     if node_is_non_admixture(node): 
         return [follow_branch(parent_key=node[0],branch_length=node[3], population=population, covmat=covmat)]
@@ -110,14 +106,11 @@ def _merge_pops(pops):
     if len(pops)==1:
         return pops[0]
     else:
-        #removedprin pops
         return pops[0].merge_with_other(pops[1])
 
 def _thin_out_dic(dic, taken):
     ready_nodes=[]
-    #removedprin dic
     for key,[pops, deps] in list(dic.items()):
-        #removedprin pops, deps
         full_node=True
         for dep in deps:
             if dep is None or not (dep=="none" or _full_node(dep,dic) or dep in taken):

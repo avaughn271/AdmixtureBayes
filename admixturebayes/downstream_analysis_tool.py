@@ -1,22 +1,19 @@
 from reduce_covariance import reduce_covariance
 from Rtree_operations import add_outgroup
-from tree_statistics import (identifier_to_tree_clean, generate_predefined_list_string, 
-                             identifier_file_to_tree_clean, unique_identifier_and_branch_lengths)
+from tree_statistics import (identifier_to_tree_clean, generate_predefined_list_string, unique_identifier_and_branch_lengths)
 from Rtree_to_covariance_matrix import make_covariance, get_populations
 import numpy as np
-from generate_sadmix_trees import effective_number_of_admixes, admixes_are_sadmixes
 from construct_covariance_choices import read_one_line
 import pandas as pd
 from copy import deepcopy
 from tree_to_data import file_to_emp_cov
 
 from tree_statistics import admixture_sorted_unique_identifier
-from Rtree_operations import get_leaf_keys, rearrange_root_foolproof, remove_outgroup, pretty_string, rearrange_root
+from Rtree_operations import get_leaf_keys
 
 from collections import Counter
 from subgraphing import get_subtree
 from find_true_trees import get_unique_plottable_tree
-
 
 def get_list_of_turned_topologies(trees, true_tree):
     nodes=get_leaf_keys(true_tree)
@@ -45,9 +42,6 @@ def iterate_over_output_file(outfile,
     all_results=[]
     
     for n,(i,r) in enumerate(df.iterrows()):
-        #if n%5==0: #ANDREW DEBUG
-        #    prignt(float(100*n)/len(df),'%')
-        #    prgint("mmmmm")
         cont=False
         d_dic={colname:r[k] for k, colname in enumerate(cols)}
         d_dic.update(constant_kwargs)
@@ -93,21 +87,16 @@ class make_Rtree(object):
             assert False, 'Either the outgroup name was not specified or something is seriously wrong because' \
                           ' the number of nodes did not match the size of the trees'
 
-        #removedprin pretty_string(Rtree)
         if self.subnodes:#DETTE TAGER IKKE ORDENTLIG HOJDE FOR KOVARIANSMATRICERNE SOM BLIVER FORKERTE
             try:
                 Rtree=get_subtree(Rtree, self.subnodes)
             except AssertionError:
-                print(pretty_string(Rtree))
                 from tree_plotting import plot_as_directed_graph
                 plot_as_directed_graph(Rtree)
                 print('input_tree', tree)
                 print('nodes', self.nodes)
                 print('subnodes', self.subnodes)
                 assert False
-        if self.remove_sadtrees and (not admixes_are_sadmixes(Rtree)):
-            print('returned true because adtrees are not sad')
-            return {'Rtree':Rtree}, True
         return {'Rtree':Rtree}, False
     
 class make_full_tree(object):
@@ -129,8 +118,6 @@ class make_full_tree(object):
             full_tree=identifier_to_tree_clean(sfull_tree, leaves=generate_predefined_list_string(deepcopy(nodes)))
             if self.subnodes:
                 full_tree=get_subtree(full_tree, self.subnodes)
-            if self.remove_sadtrees and (not admixes_are_sadmixes(full_tree)):
-                return {'full_tree':full_tree}, True
             return {'full_tree':full_tree}, False
         if self.outgroup_name and self.outgroup_name not in Rtree:
             full_tree= add_outgroup(deepcopy(Rtree),
@@ -140,17 +127,6 @@ class make_full_tree(object):
                                     outgroup_name=self.outgroup_name)
         else:
             full_tree=deepcopy(Rtree)
-        if self.reroot_population:
-            if self.reroot_method=='stop':
-                try:
-                    full_tree = rearrange_root(full_tree, self.reroot_population)
-                except AssertionError as e:
-                    assert False, "The rerooting was impossible. Set the --reroot_error argument."
-            elif self.reroot_method=='ignore':
-                try:
-                    full_tree = rearrange_root(full_tree, self.reroot_population)
-                except AssertionError as e:
-                    pass
         if self.subnodes:
             full_tree=get_subtree(full_tree, self.subnodes)
         return {'full_tree':full_tree}, False
@@ -163,8 +139,6 @@ class make_string_tree(object):
         self.node_string='='.join(self.nodes)+'='
 
     def __call__(self, full_tree, **kwargs):
-        #removedprin 'before streeing'
-        #removedprin self.nodes
         stree=unique_identifier_and_branch_lengths(full_tree, leaf_order=self.nodes)
         if self.tree_unifier is not None:
             stree=self.tree_unifier(stree)
@@ -179,7 +153,6 @@ class make_Rcovariance(object):
         self.add_multiplier=add_multiplier
         
     def __call__(self, Rtree=None, add=None, **kwargs):
-        #removedprin self.nodes
         if Rtree is None:
             full_tree=kwargs['full_tree']
             outgroup_name=list(set(get_leaf_keys(full_tree))-set(self.nodes))[0]
@@ -198,8 +171,6 @@ class cov_truecov(object):
         
     def __call__(self, Rcov, **not_needed):
         dist=np.linalg.norm(Rcov-self.true_covariance)
-        #removedprin 'Rcov', Rcov
-        #removedprin 'true_cov', self.true_covariance
         return {'cov_dist':dist}, False
     
 def get_subpops(pops, sub_graph_keys):
@@ -211,8 +182,6 @@ def get_subpops(pops, sub_graph_keys):
     if '' in new_pops:
         new_pops.remove('')
     return '_'.join(sorted(list(set(new_pops))))
-        
-
 
 class topology(object):
     
@@ -237,9 +206,7 @@ class topology_without_outgroup(object):
     def __call__(self, Rtree=None, **kwargs):
         if Rtree is None:
             Rtree = kwargs['full_tree']
-
-        cfull_tree=rearrange_root_foolproof(deepcopy(Rtree), self.outgroup_to_remove_) #this removes the admixtures between the outgroup and the root.
-        tmp_tree=remove_outgroup(cfull_tree, self.outgroup_to_remove)
+        print("SEVERE ERROR HAS OCCURRED")
         top = admixture_sorted_unique_identifier(tmp_tree, leaf_order=self.nodes, not_opposite=True)
         return {'topology': top}, False
 
@@ -314,20 +281,6 @@ class set_identity(object):
     def __call__(self, set_differences,**not_needed):
         ident=(set_differences==0)
         return {'set_identity':ident}
-    
-class extract_number_of_sadmixes(object):
-    
-    def __init__(self, filter_on_sadmixes=None):
-        self.filter_on_sadmixes=filter_on_sadmixes
-    
-    def __call__(self, Rtree=None, **kwargs):
-        if Rtree is None:
-            Rtree=kwargs['full_tree']
-        no_sadmixes=effective_number_of_admixes(Rtree)
-        if self.filter_on_sadmixes is not None and no_sadmixes!= self.filter_on_sadmixes:
-            #removedprin 'returns true from sadmixes'
-            return {}, True
-        return {'no_sadmixes':no_sadmixes}, False
 
 class thinning(object):
     

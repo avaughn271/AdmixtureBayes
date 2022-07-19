@@ -1,4 +1,4 @@
-from numpy import insert, identity,ones, ix_, log
+from numpy import insert, identity, ix_, log
 
 def reduce_covariance(covmat, subtracted_population_index):
     reducer=insert(identity(covmat.shape[0]-1), subtracted_population_index, -1, axis=1)

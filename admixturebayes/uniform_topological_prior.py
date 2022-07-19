@@ -23,27 +23,6 @@ class uniform_prior(object):
     def get_new_probability(self, A):
         return(1.0/(self.dic_of_counts[self.leaves])[A])
 
-    def get_specific_count(self,tuple_of_interest):
-        if tuple_of_interest in self.dic_of_counts:
-            return self.dic_of_counts[tuple_of_interest]
-        L,P,A,E=tuple_of_interest
-        if L<=0 or A<0 or E<0 or P<0 or E>A or 2*P>L:
-            return 0
-        #print("evaluate")
-        #print(tuple_of_interest)
-        term1 = 2 * (E+1) * self.get_specific_count((L-1,P,A,E+1))
-        term2=(L-2*P+1)*self.get_specific_count((L-1,P-1,A,E))
-        term3=(L+2*P+3*A-2*E-2)*self.get_specific_count((L-1,P,A,E))
-        term4=2*(P+1)/float(L*(L+1))*self.get_specific_count((L+1,P+1,A-1,E-1))
-        term5=4*(P+1)*(P+2)/float(L*(L+1))*self.get_specific_count((L+1,P+2,A-1,E))
-        term6=4*(P+1)*(L-2*P-1)/float(L*(L+1))*self.get_specific_count((L+1,P+1,A-1,E))
-        term7=(L-2*P)*(L-2*P+1)/float(L*(L+1))*self.get_specific_count((L+1,P,A-1,E))
-
-
-        s=term1+term2+term3+term4+term5+term6+term7
-        self.dic_of_counts[tuple_of_interest]=s
-        return s
-
 
 def uniform_topological_prior_function(tree):
     up=uniform_prior(get_number_of_leaves(tree))

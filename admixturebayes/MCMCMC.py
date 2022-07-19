@@ -63,13 +63,10 @@ def MCMCMC(starting_trees,
     if len(printing_schemes)==1:
         printing_schemes=[printing_schemes[0]]*no_chains
         
-
     
     df_result=None
     total_permutation=list(range(no_chains))
-    permuts=[]
     xs = starting_trees
-
 
     freeze_support()
     

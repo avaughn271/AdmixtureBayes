@@ -29,7 +29,6 @@ def logpdf(x,t,delta_L, shape=20):
         return clean_gamma_logpdf(simulated_part, mean=delta_L, shape=shape)
         
     
-    
 def clean_gamma_rvs(mean, shape):
     shape,scale=transform_to_shape_scale(mean, shape=shape)
     return gamma.rvs(a=shape, scale=scale)
@@ -37,7 +36,6 @@ def clean_gamma_rvs(mean, shape):
 def clean_gamma_logpdf(value, mean, shape):
     shape,scale=transform_to_shape_scale(mean, shape=shape)
     return gamma.logpdf(value, a=shape, scale=scale)
-
     
 def transform_to_shape_scale(mean, variance=None, shape=None):
     if shape is None:

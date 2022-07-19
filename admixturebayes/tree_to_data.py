@@ -1,7 +1,7 @@
 from Rtree_operations import get_trivial_nodes
 from reduce_covariance import reduce_covariance, thin_covariance
 
-from numpy import loadtxt, array, insert, amin, delete, ix_, ones,nan, dtype
+from numpy import loadtxt, array, insert, amin, delete, ix_,nan, dtype
 from copy import deepcopy
 import subprocess
 import os
@@ -32,19 +32,6 @@ def read_freqs(new_filename, locus_filter):
                 pop_sizes.append(pop_sizes_SNP)
                 allele_counts.append(freqs)
     return allele_counts, names, pop_sizes, minors, total_sum
-
-
-def get_xs_and_ns_from_freqs(ps, npop, locus_filter):
-    mat=[]
-    names=[]
-    for k,p in list(ps.items()):
-        mat.append(p)
-        names.append(k)
-    mat=array(mat)
-    ns=npop*ones(mat.shape)
-    mat, ns= locus_filter.apply_filter(mat, ns, names)
-    xs=mat*npop
-    return xs,ns,names
 
 def get_xs_and_ns_from_treemix_file(snp_file, locus_filter):
     if snp_file.endswith('.gz'):
@@ -77,10 +64,6 @@ def _get_permutation(actual, target):
     val_to_index={val:key for key, val in enumerate(actual)}
     indices_to_get_target=[val_to_index[val] for val in target]
     return indices_to_get_target
-
-def reorder_covariance(cov, names, full_nodes):
-    indices=_get_permutation(names, full_nodes)
-    return cov[ix_(indices,indices)]
 
 def reorder_reduced_covariance(cov, names, full_nodes, outgroup=''):
     n1=len(names)
@@ -152,7 +135,6 @@ def emp_cov_to_file(m, filename='emp_covimport', nodes=None):
         f.write(' '.join(nodes)+'\n')
         for i, node in enumerate(nodes):
             f.write(node+ ' '+ ' '.join(map(str, m[i]))+'\n')
-    #removedprin 'wrote matrix to file', filename
 
 def unzip(filename, overwrite=False, new_filename=None):
     original_filename=filename[:]
@@ -168,7 +150,6 @@ def unzip(filename, overwrite=False, new_filename=None):
     return new_filename
 
 def gzip(filename, overwrite=False, new_filename=None):
-    original_filename = filename[:]
     assert not filename.endswith('.gz'), 'file with zipped ending was passed to the zip function'
     if new_filename is None:
         new_filename=filename+'.gz'

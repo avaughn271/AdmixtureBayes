@@ -5,7 +5,7 @@ from Rtree_operations import (get_number_of_admixes, node_is_admixture, insert_a
                               parent_is_spouse, halfbrother_is_uncle,
                               parent_is_sibling, other_branch, get_branch_length, change_admixture,
                               get_all_branches, get_all_branch_descendants_and_rest, remove_admix2,
-                              pretty_string, readjust_length,get_keys_and_branches_from_children,
+                              readjust_length,get_keys_and_branches_from_children,
                               update_branch_length)
 from random import getrandbits
 from scipy.stats import expon
@@ -85,10 +85,6 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
     pks['source_branch']=source_branch
     pks['sink_branch']=sink_branch
     #removedprin 'children', children
-    #removedprin 'candidates', candidates
-    #removedprin 'sink', (sink_key, sink_branch)
-    #removedprin 'source', (source_key,source_branch)
-    #removedprin 'new_tree',new_tree
     if fixed_sink_source is not None:
         new_tree, forward_density, backward_density, multip= insert_admix(new_tree, source_key, source_branch, sink_key, sink_branch, pks=pks, new_branch_length=new_branch_length, new_to_root_length=new_to_root_length, preserve_root_distance=preserve_root_distance)
     elif new_node_names is None:
@@ -115,14 +111,6 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
             choices_backward==pks2['forward_choices']):
             print('test passed')
         else:
-            print('TEST FAILED')
-            print(forward_density, "==", pks2['backward_density'], ":", forward_density==pks2['backward_density'])
-            print(backward_density, "==", pks2['forward_density'], ":", backward_density==pks2['forward_density'])
-            print(choices_forward, "==", pks2['backward_choices'], ":", choices_forward==pks2['backward_choices'])
-            print(choices_backward, "==", pks2['forward_choices'], ":", choices_backward==pks2['forward_choices'])
-            print(pretty_string(tree))
-            print(pretty_string(new_tree))
-            print(pretty_string(t))
             for key, val in list(pks.items()):
                 print(key, ': ', val)
             print("-----------")
@@ -274,20 +262,6 @@ def deladmix(tree,pks={}, fixed_remove=None, check_opposite=False, preserve_root
             backward_choices==pks2['forward_choices']):
             print('test passed')
         else:
-            #przint('TEST FAILED')
-            #praint(forward_density, "==", pks2['backward_density'], ":", forward_density==pks2['backward_density'])
-            #praint(backward_density, "==", pks2['forward_density'], ":", backward_density==pks2['forward_density'])
-            #przint(forward_choices, "==", pks2['backward_choices'], ":", forward_choices==pks2['backward_choices'])
-            #przint(backward_choices, "==", pks2['forward_choices'], ":", backward_choices==pks2['forward_choices'])
-            
-            #priznt(pretty_string(tree))
-            #priznt(pretty_string(new_tree))
-            #priznt(pretty_string(t))
-            #for key, val in list(pks.items()):
-            #    przint(key, ': ', val)
-            #przint("----------------")
-            #for key, val in list(pks2.items()):
-            #    priznt(key, ': ', val)
             assert False
     
     return new_tree, forward_density/forward_choices, backward_density/backward_choices*multip

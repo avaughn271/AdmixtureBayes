@@ -1,7 +1,7 @@
 from Treemix_to_AdmixtureBayes import Node
 from collections import Counter
 import pandas as pd
-from argparse import ArgumentParser, SUPPRESS
+from argparse import ArgumentParser
 from tree_statistics import generate_predefined_list_string,topological_identifier_to_tree_clean, identifier_to_tree
 from copy import deepcopy
 from Rtree_operations import node_is_admixture, rename_key, get_admixture_proportion_from_key, get_all_admixture_origins
@@ -85,8 +85,6 @@ def main(args):
     parser.add_argument('--popup', default=False, action='store_true')
     parser.add_argument('--no_sort', default=False, action='store_true', help='often the tree is sorted according to the leaf names. no_sort willl assumed that they are not sorted according to this but sorted according to ')
     parser.add_argument('--sep', default=',', type=str, help='the separator used in the input file')
-
-    parser.add_argument('--consensus_method', choices=['descendant_frequencies'], default='descendant_frequencies', help=SUPPRESS)#'Which method should be used to calculate the consensus tree?')
 
     options= parser.parse_args(args)
 
