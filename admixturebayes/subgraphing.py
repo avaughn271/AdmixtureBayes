@@ -20,13 +20,12 @@ class follow_branch_class(object):
     def __call__(self, parent_key, branch, population, target_nodes, child_key, dependent='none'):
         if self.seen_merging:
             return parent_key, population, dependent
-        #removedprin population.members, population.weights
         subset=population.subset_of_the_candidates(self.sub_graph_nodes)
         if subset=='partly':
             target_nodes.append((child_key, branch))
         elif subset=='all':
             self.seen_merging=True
-        return parent_key, population, dependent    
+        return parent_key, population, dependent
 
 def get_branches_to_keep(tree, subgraph_keys):
     node_keys=get_leaf_keys(tree)
@@ -36,18 +35,14 @@ def get_branches_to_keep(tree, subgraph_keys):
     waiting_nodes={}
     taken_nodes=[]
     target_nodes=[]
-    #removedprin tree
     while True:
-        #removedprin ready_nodes
         for key,pop in ready_nodes:
         
-            #pop_strings.append(pop.get_population_string(min_w))
             upds=leave_node(key, tree[key], pop, target_nodes, follow_branch)
             for upd in upds:
                 waiting_nodes=_add_to_waiting(waiting_nodes, upd,tree)
             taken_nodes.append(key)
         waiting_nodes,ready_nodes=_thin_out_dic(waiting_nodes, taken_nodes[:])
-        #removedprin 'waiting_nodes', waiting_nodes
         if len(ready_nodes)==0:
             return None
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
@@ -62,20 +57,15 @@ def find_root_name(tree):
         for p in ps:
             parents_seen.add(p)
     rootset=parents_seen-set(tree.keys())
-    assert len(rootset)==1, 'wrong size of set'+str(rootset)
     return next(iter(rootset))
 
 def prune_to_subtree(tree,branches_to_keep):
     sub_tree={}
     for key,b in branches_to_keep:
         sub_tree[key]=tree[key]
-    #removedprin 'finding root name'
     root_name=find_root_name(sub_tree)
-    #removedprin 'renaming root'
     sub_tree=rename_root(sub_tree, root_name)
-    #removedprin 'removing children'
     sub_tree=remove_empty_children(sub_tree)
-    #removedprin 'pruning'
     sub_tree=screen_and_prune_one_in_one_out(sub_tree)
     return sub_tree
 

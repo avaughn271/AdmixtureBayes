@@ -16,13 +16,7 @@ def calculate_branch_prior(branches, n):
     
     return -sum(branches)*rate+log(rate)*len(branches)
 
-def illegal_admixtures(unadmixed_populations, tree):
-    admixed_populations= get_admixtured_populations(tree)
-    if set(admixed_populations).intersection(unadmixed_populations):
-        return True
-    return False
-
-def prior(x, p=0.5, use_skewed_distr=False, pks={}, use_uniform_prior=False, unadmixed_populations=[], r=0):
+def prior(x, p=0.5, pks={}, r=0):
     tree, add=x
     no_leaves=get_number_of_leaves(tree)
     admixtures=get_all_admixture_proportions(tree)
@@ -33,15 +27,8 @@ def prior(x, p=0.5, use_skewed_distr=False, pks={}, use_uniform_prior=False, una
         return -float('inf')
     branch_prior=calculate_branch_prior(branches, no_leaves)
     no_admix_prior=no_admixes(p, len(admixtures), r=r)
-    if use_skewed_distr:
-        admix_prop_prior=linear_admixture_proportions(admixtures)
-    else:
-        admix_prop_prior=0
-    if use_uniform_prior:
-        top_prior=uniform_topological_prior_function(tree)
-    if unadmixed_populations:
-        if illegal_admixtures(unadmixed_populations, tree):
-            return -float('inf')
+    admix_prop_prior=0
+    top_prior=uniform_topological_prior_function(tree)
     logsum=branch_prior+no_admix_prior+admix_prop_prior+top_prior-add
     pks['branch_prior']= branch_prior
     pks['no_admix_prior']=no_admix_prior

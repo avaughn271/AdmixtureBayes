@@ -1,16 +1,7 @@
-from Rtree_operations import to_networkx_format, node_is_admixture, node_is_coalescence, node_is_leaf_node
+from Rtree_operations import to_networkx_format
 from node_structure import node_structure_to_networkx
 from graphviz import Digraph
 import os
-
-import imp
-
-try:
-    imp.find_module('PIL')
-    PIL_found = True
-    from PIL import Image
-except ImportError:
-    PIL_found = False
 
 file_suffix=[s+'.csv' for s in ['leaves', 'inner_nodes','edges','adm_props']]
 

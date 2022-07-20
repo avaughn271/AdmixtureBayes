@@ -73,7 +73,6 @@ def regraft(tree, remove_key,remove_branch, add_to_branch, new_node=None,which_b
         insertion_spot, q=simulate_and_forward_density('r')
     else:
         branch_length=get_branch_length(tree, add_to_branch,which_branch)
-        #removedprin branch_length
         insertion_spot, q=simulate_and_forward_density('u', branch_length)
     if new_node is None:
         new_node=str(getrandbits(68)).strip()

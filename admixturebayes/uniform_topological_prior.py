@@ -23,7 +23,6 @@ class uniform_prior(object):
     def get_new_probability(self, A):
         return(1.0/(self.dic_of_counts[self.leaves])[A])
 
-
 def uniform_topological_prior_function(tree):
     up=uniform_prior(get_number_of_leaves(tree))
     return up.probability(tree=tree)

@@ -54,7 +54,7 @@ class deladmix_class(object):
 def float_equal(x,y):
     return float((x-y)**2)<1e-5
 
-def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch_length=None, new_to_root_length=None, check_opposite=False, preserve_root_distance=True):
+def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch_length=None, new_to_root_length=None, preserve_root_distance=True):
     '''
     This proposal adds an admixture to the tree. There are a lot of free parameters but only 5 are in play here:
         c1: the branch length of the source population
@@ -93,7 +93,6 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
         new_tree, forward_density ,backward_density, multip= insert_admix(new_tree, source_key, source_branch, sink_key, sink_branch, pks=pks, source_name=new_node_names[0], sink_name=new_node_names[1], preserve_root_distance=preserve_root_distance)
     
     
-    
     choices_forward=float(len(possible_nodes)*len(candidates))*2
     choices_backward=float(len(_get_removable_admixture_branches(new_tree)))
     
@@ -101,22 +100,6 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
     pks['backward_density']=backward_density
     pks['forward_choices']=choices_forward
     pks['backward_choices']=choices_backward
-    
-    if check_opposite:
-        pks2={}
-        t,f,b=deladmix(new_tree,pks=pks2, fixed_remove=(pks['sink_new_name'], pks['sink_new_branch']), check_opposite=False, preserve_root_distance=preserve_root_distance)
-        if (float_equal(forward_density,pks2['backward_density']) and 
-            choices_forward==pks2['backward_choices'] and
-            float_equal(backward_density, pks2['forward_density']) and
-            choices_backward==pks2['forward_choices']):
-            print('test passed')
-        else:
-            for key, val in list(pks.items()):
-                print(key, ': ', val)
-            print("-----------")
-            for key, val in list(pks2.items()):
-                print(key, ': ', val)
-            assert False
 
     return new_tree,forward_density/choices_forward, backward_density/choices_backward*multip 
 
@@ -191,7 +174,7 @@ def insert_admix(tree, source_key, source_branch, sink_key, sink_branch, source_
     return tree,q1*q2*q3*q4,1, multip
 
 
-def deladmix(tree,pks={}, fixed_remove=None, check_opposite=False, preserve_root_distance=True):
+def deladmix(tree,pks={}, fixed_remove=None, preserve_root_distance=True):
     '''
     Reversible Jump MCMC transition which removes a random admixture branch. This is the reverse of the other proposal in this file. 
     '''
@@ -241,28 +224,6 @@ def deladmix(tree,pks={}, fixed_remove=None, check_opposite=False, preserve_root
     pks['backward_choices']=backward_choices
     pks['forward_density']=forward_density
     pks['backward_density']=backward_density
-    
-    
-    
-    if check_opposite:
-        pks2={}
-        if t4 is None:
-            new_to_root_length=t3
-        else:
-            new_to_root_length=None
-        t,f,b=addadmix(new_tree,pks=pks2, fixed_sink_source=(pks['orphanota_key'],
-                                                             pks['orphanota_branch'],
-                                                             pks['sorphanota_key'],
-                                                             pks['sorphanota_branch']), 
-                       new_branch_length=t5, new_to_root_length=new_to_root_length, check_opposite=False,
-                       preserve_root_distance=preserve_root_distance)
-        if (float_equal(forward_density,pks2['backward_density']) and 
-            forward_choices==pks2['backward_choices'] and
-            float_equal(backward_density,pks2['forward_density']) and
-            backward_choices==pks2['forward_choices']):
-            print('test passed')
-        else:
-            assert False
     
     return new_tree, forward_density/forward_choices, backward_density/backward_choices*multip
 

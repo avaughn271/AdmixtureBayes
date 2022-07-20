@@ -1,10 +1,8 @@
 from subprocess import call
 import os
 
-
 class stop_criteria(object):
     
-
     def __init__(self, 
                         frequency=20000, 
                         summaries=['no_admixes','average_branch_length','add','descendant_sets'], 
@@ -27,7 +25,6 @@ class stop_criteria(object):
         self.verbose_level=verbose_level
         if not topological_threshold<0:
             self.summaries.extend(['Zero_Ntree','random_Ntree','mode_Ntree'])
-        
         
     def __call__(self, cum_iterations, filename):
         if self.check_yet(cum_iterations):

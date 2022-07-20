@@ -1,17 +1,9 @@
 from numpy.random import random
-from math import exp, log, fabs
+from math import exp, log
 from summary import *
 from Rtree_operations import scale_tree_copy
 
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
-    check_old = False
-    if check_old:
-        # pass
-        post_old = posterior_function(x)
-
-        if fabs(post_old[1] - post[1]) > 0.00001 :
-            print('The likelihood to the old tree is not correct: ' + str(fabs(post_old[1] - post[1])))
-            print(posterior_function.base_r)
     
     newx,g1,g2,Jh,j1,j2=proposal(x,pks)
     pks['proposed_tree']=newx[0]
@@ -45,10 +37,9 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
         return newx,post_new
     return x,post
 
-
 def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=10000, 
                 sample_verbose_scheme=None, overall_thinning=1, i_start_from=0, 
-                temperature=1.0, proposal_update=None, multiplier=None, check_trees=False, 
+                temperature=1.0, proposal_update=None, multiplier=None, 
                 appending_result_file=None, appending_result_frequency=10):
     if proposal_update is not None:
         proposal.wear_exportable_state(proposal_update)
@@ -69,17 +60,7 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
         proposal_knowledge_scraper={}
         new_x,new_post=one_jump(x, post, temperature, posterior_function, proposal, proposal_knowledge_scraper)
         if overall_thinning!=0 and i%overall_thinning==0:
-            if multiplier is None:
-                iteration_summary.append(_calc_and_print_summaries(sample_verbose_scheme,
-                                                               summaries,
-                                                               tree=new_x[0],
-                                                               add=new_x[1],
-                                                               posterior=new_post,
-                                                               old_post=post,
-                                                               old_tree=x[0],
-                                                               iteration_number=i,**proposal_knowledge_scraper))
-            else:
-                iteration_summary.append(_calc_and_print_summaries(sample_verbose_scheme,
+            iteration_summary.append(_calc_and_print_summaries(sample_verbose_scheme,
                                                                summaries,
                                                                tree=scale_tree_copy(new_x[0], 1.0/multiplier),
                                                                add=new_x[1],

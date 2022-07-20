@@ -7,13 +7,10 @@ from copy import deepcopy
 def get_summary_scheme(light_newick_tree_summaries=False,
                        full_tree=True, 
                        proposals=None, 
-                       acceptance_rate_information=False,
-                       admixture_proportion_string=False,
                        priors=False,
                        no_chains=1,
                        nodes=None, 
-                       verbose_level='normal', 
-                       only_coldest_chain=True):
+                       verbose_level='normal'):
     
     if proposals is not None:
         props=proposals.props
@@ -34,13 +31,12 @@ def get_summary_scheme(light_newick_tree_summaries=False,
                summary.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
     if full_tree:
         summaries.append(summary.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
-    if admixture_proportion_string:
-        summaries.append(summary.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
+    summaries.append(summary.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
     if light_newick_tree_summaries:
         summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_0ntree, 'Zero_Ntree',output='string'))
         summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_random_ntree, 'random_Ntree',output='string'))
         summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_mode_ntree, 'mode_Ntree',output='string'))
-    if acceptance_rate_information:
+    if True:
         summaries.append(summary.s_variable('mhr', output='double_missing'))
         summaries.append(summary.s_variable('proposal_type', output='string'))
         if proposals is not None:
@@ -51,7 +47,5 @@ def get_summary_scheme(light_newick_tree_summaries=False,
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
     if no_chains==1:
         return [sample_verbose_scheme_first], summaries
-    elif only_coldest_chain:
-        return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
     else:
-        return [sample_verbose_scheme_first]+[sample_verbose_scheme]*(no_chains-1), summaries
+        return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries

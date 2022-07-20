@@ -1,49 +1,19 @@
 from argparse import ArgumentParser, SUPPRESS
-from downstream_analysis_tool import (thinning, iterate_over_output_file, always_true, make_Rtree, make_full_tree, read_true_values,
-                                      make_Rcovariance, cov_truecov, topology_identity,get_pops,compare_pops, 
-                                      read_one_line, topology,
-                                       subgraph, subsets,
-                                      make_string_tree, topology_without_outgroup)
+from downstream_analysis_tool import (thinning, iterate_over_output_file, make_Rtree, make_full_tree, read_true_values,
+                                    get_pops, topology, make_string_tree)
 from find_true_trees import tree_unifier
+from construct_covariance_choices import read_one_line
 from copy import deepcopy
 import sys
-
-##Wrap functions
-def wrap_function(func, func_name):
-    def class_initialization_wrap():
-        def new_function(**kwargs):
-            return_val= func(**kwargs)
-            return {func_name:return_val},False
-        return new_function
-    return class_initialization_wrap
-
-##wraps all functions ending in _custom_summary to return to downstream analysis parser for making custom functions.
-def all_custom_summaries():
-    commands = {}
-    for name, value in list(globals().items()):
-        if callable(value) and name.endswith("_custom_summary"):
-            command_name = name.rsplit("_custom_summary", 1)[0]
-            commands[command_name] = wrap_function(value, command_name)
-    return commands
-
 
 def run_posterior_main(args):
 
     possible_summaries={'Rtree': make_Rtree,
                         'full_tree':make_full_tree,
                         'string_tree':make_string_tree,
-                        'Rcov':make_Rcovariance,
-                        'cov_dist':cov_truecov,
                         'topology':topology,
-                        'topology_without_outgroup':topology_without_outgroup,
-                        'subgraph':subgraph,
-                        'subsets':subsets,
-                        'top_identity':topology_identity,
                         'pops':get_pops,
-                        'set_differences':compare_pops,
                         }
-    possible_summaries.update(all_custom_summaries())
-
     parser = ArgumentParser(usage='pipeline for post analysis')
 
     parser.add_argument('--mcmc_results', required=True, type=str, help='The output file from an AdmixtureBayes run.')
@@ -66,44 +36,13 @@ def run_posterior_main(args):
                         nargs='*', type=str, help='The summaries to calculate')
     parser.add_argument('--save_summaries', default=['no_admixes', 'topology', 'pops','string_tree'], nargs='*', type=str,
                         help='The list of summaries to save')
-    parser.add_argument('--custom_summaries', default=[], nargs='*', choices=list(possible_summaries.keys()),
-                        help='This will add summaries (to both calculate_summaries and save_summaries). They are defined in the class custom_summary.py.')
-    parser.add_argument('--reroot_error', default='stop', choices=['stop','force','ignore'],
-                        help='If a rerooting can not be performed (due to admixture events with a sink in a path between '
-                             'the reroot population and the graph root), this will either 1) "stop" the program'
-                             'or 2) "force" the rerooting through by removing the problematic admixture events or '
-                             '3) "ignore" rerooting by simply not doing the rerooting when not possible.')
     parser.add_argument('--min_w', default=0.0, type=float,
                         help='a lower threshold of which descendants matter when the consensus_method is descendant_frequencies.')
-    parser.add_argument('--constrain_number_of_effective_admixes', default='',
-                        choices=['', 'true_val'] + list(map(str, list(range(21)))), type=str,
-                        help='The number of effective(visible)_admixture events that there are constrained on in the data set. If negative there are no constraints.')
-    parser.add_argument('--constrain_sadmix_trees', default=False, action='store_true',
-                        help='this will remove the graphs which has invisible admixtures. This will produce worse, but perhaps more easily interpretable results.')
-    parser.add_argument('--no_sort', default=False, action='store_true',
-                        help='often the tree is sorted according to the leaf names. no_sort willl assumed that they are not sorted according to this but sorted according to ')
     parser.add_argument('--use_cols', default=['tree', 'add', 'layer', 'no_admixes'], type=str, nargs='+',
                         help='The columns to load from the input file')
     parser.add_argument('--outgroup_name', default='', type=str, help='Name of the outgroup. By default this is argument is empty meaning that the outgroup will not be included in any summary.')
-    parser.add_argument('--emp_m_scale', type=str, default='', help=SUPPRESS)
-    parser.add_argument('--emp_variance_correction', type=str, default='', help=SUPPRESS)
-    parser.add_argument('--emp_df', type=str, default='', help=SUPPRESS)
-    parser.add_argument('--emp_covariance_and_multiplier', default='', type=str, help=SUPPRESS)
-    parser.add_argument('--emp_covariance_reduced', default='', type=str, help=SUPPRESS)
-
-    parser.add_argument('--summary_summaries', default=['mean'], nargs='*', type=str,
-                        help=SUPPRESS)#'How each list is summarized as a single, numerical value. If it doesnt have the same length as save summaries the arguments will be repeated until it does')
-    parser.add_argument('--true_scaled_tree',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--true_tree',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--true_add',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--true_no_admix',  type=str, default='',help=SUPPRESS)
-    parser.add_argument('--treemix_csv_output', default='treemix.csv', type=str,help=SUPPRESS)
-    parser.add_argument('--subgraph_file', default='', type=str,
-                        help='file where each line has a space separated list of leaf labels to calculate subtrees from. If a double underscore(__) occurs, it means that the following two arguments are max number of sub topologies and total posterior probability.')
 
     options= parser.parse_args(args)
-
-    assert not ('string_tree' in options.calculate_summaries and not 'full_tree' in options.calculate_summaries), 'The full tree flag is needed for the string tree'
 
     if options.subnodes:
         if not options.outgroup_name:
@@ -120,16 +59,11 @@ def run_posterior_main(args):
         subnodes_with_outgroup=[]
         subnodes_wo_outgroup=[]
     
-    outp=read_true_values(true_covariance_reduced=options.emp_covariance_reduced,
-                          true_covariance_and_multiplier=options.covariance,
-                          true_m_scale=options.emp_m_scale,
-                          subnodes_with_outgroup=subnodes_with_outgroup,
+    outp=read_true_values(true_covariance_and_multiplier=options.covariance,
                           subnodes_wo_outgroup=subnodes_wo_outgroup)
-    _, _, _, emp_covariance_reduced, (emp_covariance_scaled,multiplier), _, emp_m_scale, vc, df=outp
-
+    (emp_covariance_scaled,multiplier)=outp
 
     thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
-
 
     nodes=read_one_line(options.covariance).split() #this will not include any outgroup.
     nodes_wo_outgroup = deepcopy(nodes)
@@ -138,11 +72,10 @@ def run_posterior_main(args):
         nodes_with_outgroup = nodes_wo_outgroup + [options.outgroup_name]
     else:
         nodes_with_outgroup = deepcopy(nodes_wo_outgroup)
-    if not options.no_sort:
-        nodes_with_outgroup.sort()
-        nodes_wo_outgroup.sort()
-        subnodes_with_outgroup.sort()
-        subnodes_wo_outgroup.sort()
+    nodes_with_outgroup.sort()
+    nodes_wo_outgroup.sort()
+    subnodes_with_outgroup.sort()
+    subnodes_wo_outgroup.sort()
 
     row_sums=[]
 
@@ -161,9 +94,8 @@ def run_posterior_main(args):
 
     name_to_rowsum_index=pointers()
 
-    special_summaries=['Rtree','full_tree','string_tree','subgraph','Rcov','cov_dist','topology','topology_without_outgroup','top_identity','pops','subsets', 'set_differences','no_admixes']
     if 'Rtree' in options.calculate_summaries:
-        row_sums.append(possible_summaries['Rtree'](deepcopy(nodes_wo_outgroup),options.constrain_sadmix_trees, subnodes=subnodes_wo_outgroup, outgroup_name=options.outgroup_name))
+        row_sums.append(possible_summaries['Rtree'](deepcopy(nodes_wo_outgroup),False, subnodes=subnodes_wo_outgroup, outgroup_name=options.outgroup_name))
         name_to_rowsum_index('Rtree')
     if 'full_tree' in options.calculate_summaries:
         if multiplier is None:
@@ -173,10 +105,10 @@ def run_posterior_main(args):
 
         row_sums.append(possible_summaries['full_tree'](add_multiplier=add_multiplier,
                                                         outgroup_name=options.outgroup_name,
-                                                        remove_sadtrees=options.constrain_sadmix_trees,
+                                                        remove_sadtrees=False,
                                                         subnodes=options.subnodes,
                                                         reroot_population='',
-                                                        reroot_method=options.reroot_error))
+                                                        reroot_method='stop'))
         name_to_rowsum_index('full_tree')
 
     if options.subnodes:
@@ -198,26 +130,17 @@ def run_posterior_main(args):
     if 'topology' in options.calculate_summaries:
         row_sums.append(possible_summaries['topology'](nodes=nodes))
         name_to_rowsum_index('topology')
-        assert  'topology_without_outgroup' not in options.calculate_summaries, 'not possible to have both topology_without_outgroup and topology'
     if 'pops' in options.calculate_summaries:
         row_sums.append(possible_summaries['pops'](min_w=options.min_w, keys_to_include=nodes))
         name_to_rowsum_index('pops')
 
-    for summary in possible_summaries:
-        if summary not in special_summaries:
-            if summary in options.calculate_summaries or summary in options.custom_summaries:
-                row_sums.append(possible_summaries[summary]())
-                name_to_rowsum_index(summary)
-
     def save_thin_columns(d_dic):
-        return {summ:d_dic[summ] for summ in list(set(options.save_summaries+options.custom_summaries))}
-    all_results,_=iterate_over_output_file(options.mcmc_results,
+        return {summ:d_dic[summ] for summ in list(set(options.save_summaries+[]))}
+    all_results=iterate_over_output_file(options.mcmc_results,
                                              cols=options.use_cols,
                                              pre_thin_data_set_function=thinner,
-                                             while_thin_data_set_function=always_true,
                                              row_summarize_functions=row_sums,
-                                             thinned_d_dic=save_thin_columns,
-                                             full_summarize_functions=[])
+                                             thinned_d_dic=save_thin_columns)
 
     if True:
         summaries=list(all_results[0].keys())
@@ -226,7 +149,6 @@ def run_posterior_main(args):
             for row in all_results:
                 s_summs=[str(row[summ]) for summ in summaries]
                 f.write(','.join(s_summs)+ '\n')
-        sys.exit()
     
 if __name__=='__main__':
     import sys

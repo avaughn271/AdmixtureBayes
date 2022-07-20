@@ -65,22 +65,6 @@ def get_rank(tree, add_one_column=True):
     n=get_number_of_leaves(tree)
     r=matrix_rank(coef)
     return r
-
-def get_numbers(tree, add_one_column=True):
-    '''
-    the rank of a tree is the rank of the coefficient matrix
-    '''
-    n=get_number_of_leaves(tree)
-    max_rank=n*(n+1)/2
-    min_rank=2*n-1
-    coef,_,_=make_coefficient_matrix(tree)
-    if add_one_column:
-        coef=insert(coef, coef.shape[1], 1, axis=1)
-    r=matrix_rank(coef)
-    return min_rank, r, max_rank
-    
-    
-    
     
 def make_coefficient_matrix(tree, node_keys=None, branch_keys=None):
     '''

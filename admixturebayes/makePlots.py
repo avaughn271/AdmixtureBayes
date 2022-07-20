@@ -1,4 +1,4 @@
-from Treemix_to_AdmixtureBayes import Node
+from node_structure import Node
 from collections import Counter
 import pandas as pd
 from argparse import ArgumentParser
@@ -83,12 +83,9 @@ def main(args):
     parser.add_argument('--nodes', default='', type=str, help='file where the first line is the leaf nodes')
     parser.add_argument('--suppress_plot', default=False, action='store_true')
     parser.add_argument('--popup', default=False, action='store_true')
-    parser.add_argument('--no_sort', default=False, action='store_true', help='often the tree is sorted according to the leaf names. no_sort willl assumed that they are not sorted according to this but sorted according to ')
     parser.add_argument('--sep', default=',', type=str, help='the separator used in the input file')
 
     options= parser.parse_args(args)
-
-
 
     def combine_nodes(node_structure, new_node, seen_sets):
         candidate=new_node.name
@@ -188,16 +185,13 @@ def main(args):
             if len(leaves)==no_leaves:
                 pass #everything is good
             elif len(leaves)==no_leaves-1:
-                #adding outgroup
                 leaves.append(options.outgroup)
             else:
                 assert False, 'The number of leaves could not be obtained'
-            assert not options.no_sort, 'When nodes are not specified, they will always be sorted'
             leaves=sorted(leaves)
         else:
             leaves=read_one_line(options.nodes)
-            if not options.no_sort:
-                leaves=sorted(leaves)
+            leaves=sorted(leaves)
 
         if options.write_rankings:
             with open(options.prefix+options.write_rankings, 'w') as f:
@@ -236,12 +230,10 @@ def main(args):
                 leaves.append(options.outgroup)
             else:
                 assert False, 'The number of leaves could not be obtained'
-            assert not options.no_sort, 'When nodes are not specified, they will always be sorted'
             leaves=sorted(leaves)
         else:
             leaves=read_one_line(options.nodes)
-            if not options.no_sort:
-                leaves=sorted(leaves)
+            leaves=sorted(leaves)
 
 
         if not options.suppress_plot:

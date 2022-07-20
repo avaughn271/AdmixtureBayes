@@ -1,8 +1,13 @@
-from covariance_estimator import Estimator, initor
-from numpy import array, mean, zeros, diag, sum, sqrt, savetxt,nan, isnan, nanmean
+from estimators import Estimator, initor
+from numpy import array, mean, zeros, diag, sum, savetxt,nan, isnan, nanmean
 from numpy import sum as npsum
-from reduce_covariance import reduce_covariance
 import warnings
+
+from numpy import insert, identity
+
+def reduce_covariance(covmat, subtracted_population_index):
+    reducer=insert(identity(covmat.shape[0]-1), subtracted_population_index, -1, axis=1)
+    return reducer.dot(covmat).dot(reducer.T)
 
 default_scale_dic={'None':'None',
                    'Jade-o':'outgroup_sum', 
@@ -58,7 +63,6 @@ def m_scaler(scale_type, allele_freqs, n_outgroup=None):
         scaler=mu*(1.0-mu)
     elif scale_type.endswith('sum'):
         scaler=nanmean(s*(1.0-s))
-    #removedprin 'm_scale', scaler
     return scaler
 
 def avg_var(ps):
@@ -109,8 +113,6 @@ class ScaledEstimator(Estimator):
                  scaling=['None','outgroup_sum', 'outgroup_product', 'average_outgroup', 'average_product','Jade','Jade-o'],
                  reduce_also=True,
                  variance_correction=['None','unbiased','mle'],
-                 jade_cutoff=1e-5,
-                 bias_c_weight='default',
                  add_variance_correction_to_graph=False,
                  prefix_for_saving_variance_correction='',
                  save_variance_correction=True,
@@ -118,15 +120,11 @@ class ScaledEstimator(Estimator):
         super(ScaledEstimator, self).__init__(reduce_also=reduce_also)
         self.scaling=initor(scaling)
         self.variance_correction=initor(variance_correction)
-        self.jade_cutoff=jade_cutoff
         self.add_variance_correction_to_graph=add_variance_correction_to_graph
         self.prefix_for_saving_variance_correction=prefix_for_saving_variance_correction
         self.nodes=nodes
         self.save_variance_correction=save_variance_correction
-        if bias_c_weight=='default':
-            self.bias_c_weight=default_scale_dic[scaling]
-        else:
-            self.bias_c_weight=bias_c_weight
+        self.bias_c_weight=default_scale_dic[scaling]
         self.reduce_method=reduce_method
         
     def subtract_ancestral_and_get_outgroup(self,p):
@@ -153,18 +151,6 @@ class ScaledEstimator(Estimator):
         
         p2,n_outgroup = self.subtract_ancestral_and_get_outgroup(p)
         
-        
-    
-        if self.scaling=='Jade':
-            mu=mean(p, axis=0)
-            
-            i=array([v > self.jade_cutoff and v<1.0-self.jade_cutoff for v in mu ])
-            p2=p2[:,i]/sqrt(mu[i]*(1.0-mu[i]))
-        elif self.scaling=='Jade-o':
-            mu=p[n_outgroup,:]
-            
-            i=array([v > self.jade_cutoff and v<1.0-self.jade_cutoff for v in mu ])
-            p2=p2[:,i]/sqrt(mu[i]*(1.0-mu[i]))
         if npsum(isnan(p2))>0:
             warnings.warn('Nans found in the allele frequency differences matrix => slower execution', UserWarning)
             m=nan_product(p2, p2.T)

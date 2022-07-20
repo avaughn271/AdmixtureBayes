@@ -1,16 +1,13 @@
 from numpy import var, savetxt, loadtxt
 from numpy.random import choice
 from tree_to_data import unzip, gzip
-from covariance_estimator import initor
+from estimators import initor
 import warnings
 
 from construct_covariance_choices import empirical_covariance_wrapper_directly
 from pathos.multiprocessing import Pool
-from df_estimators import variance_mean_based
+from estimators import variance_mean_based
 import os
-    
-def estimate(sample_of_matrices):
-    return var(sample_of_matrices, axis=0)
 
 def get_partitions(lines, blocksize):
     list_of_lists=[]
@@ -87,7 +84,6 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
                                             no_bootstrap_samples=10,
                                             summarization=['mle_opt','var_opt','opt'],
                                             cores=1,
-                                            save_covs='',
                                             prefix='',
                                             load_bootstrapped_covariances=[],
                                             verbose_level='normal',
@@ -99,10 +95,6 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
             warnings.warn('There are only '+str(len(single_files))+' bootstrap blocks. Consider lowering the --bootstrap_blocksize or add more data.', UserWarning)
         single_covs=make_covariances(single_files, cores=cores, return_also_mscale=True, **kwargs)
         covs=bootsrap_combine_covs(single_covs, cores=cores, bootstrap_samples=no_bootstrap_samples)
-        if save_covs:
-            for i,cov in enumerate(covs):
-                filn=prefix+save_covs+str(i)+'import'
-                savetxt(filn, cov)
     else:
         covs=[loadtxt(bcov) for bcov in load_bootstrapped_covariances]
     summarization=initor(summarization)

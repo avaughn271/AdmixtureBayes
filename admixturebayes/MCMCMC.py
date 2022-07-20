@@ -10,12 +10,10 @@ from numpy.random import choice, random
 from math import exp
 from itertools import chain
 import time
-import subprocess
 import os
 
 def _basic_chain_unpacker(args):
     return basic_chain(*args)
-
 
 def MCMCMC(starting_trees, 
            posterior_function,
@@ -31,8 +29,6 @@ def MCMCMC(starting_trees,
            multiplier= None,
            result_file=None,
            stop_criteria=None,
-           make_outfile_stills=[],
-           save_only_coldest_chain=False,
            posterior_function_list=[]):
     '''
     this function runs a MC3 using the basic_chain_unpacker. Let no_chains=number of chains. The inputs are
@@ -63,7 +59,6 @@ def MCMCMC(starting_trees,
     if len(printing_schemes)==1:
         printing_schemes=[printing_schemes[0]]*no_chains
         
-    
     df_result=None
     total_permutation=list(range(no_chains))
     xs = starting_trees
@@ -96,16 +91,15 @@ def MCMCMC(starting_trees,
         df_result=_update_results(df_result, df_add)
         if result_file is not None:
             if cum_iterations==0:
-                start_data_frame(df_result, result_file, save_only_coldest_chain=save_only_coldest_chain)
+                start_data_frame(df_result, result_file)
             elif df_result.shape[0]>1000:
-                add_to_data_frame(df_result, result_file, save_only_coldest_chain=save_only_coldest_chain)
+                add_to_data_frame(df_result, result_file)
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
         if not posterior_function_list:
             xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates,
                                                                 rs, ps,
                                                                 [posterior_function])  # trees, posteriors, range(len(trees)),[None]*len(trees)#
-        temperature_scheme.update_temps(permut)
         total_permutation=_update_permutation(total_permutation, permut)
         cum_iterations+=no_iterations
         if stop_criteria is not None:
@@ -116,11 +110,6 @@ def MCMCMC(starting_trees,
                 if os.path.exists("stop_criteria.txt"):
                     os.remove("stop_criteria.txt")
                 break
-        if make_outfile_stills:
-            if make_outfile_stills[0]*60*60<time.time()-start_time:
-                cp_command=['cp', result_file, result_file+str(make_outfile_stills[0])]
-                subprocess.call(cp_command)
-                make_outfile_stills.pop(0)
             
     pool.terminate()
     if result_file is None:
@@ -129,14 +118,12 @@ def MCMCMC(starting_trees,
 def _update_permutation(config, permut):
     return [config[n] for n in permut]
 
-def start_data_frame(df, result_file, save_only_coldest_chain):
-    if save_only_coldest_chain:
-        df=df.loc[df.layer==0,:]
+def start_data_frame(df, result_file):
+    df=df.loc[df.layer==0,:]
     df.to_csv(result_file, header=True)
 
-def add_to_data_frame(df_add, result_file, save_only_coldest_chain):
-    if save_only_coldest_chain:
-        df_add=df_add.loc[df_add.layer==0,:]
+def add_to_data_frame(df_add, result_file):
+    df_add=df_add.loc[df_add.layer==0,:]
     with open(result_file, 'a') as f:
         df_add.to_csv(f, header=False)
 

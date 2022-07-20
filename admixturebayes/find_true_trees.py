@@ -1,5 +1,5 @@
 from tree_statistics import identifier_to_tree_clean, unique_identifier_and_branch_lengths
-from Rtree_operations import change_admixture, get_categories, get_leaf_keys
+from Rtree_operations import change_admixture, get_categories
 from copy import deepcopy
 
 class tree_unifier(object):
@@ -25,7 +25,6 @@ class tree_unifier(object):
             else:
                 self.seen_trees.update(update_dic)
             target_topology, branch_permutation, admixture_permutation=self.seen_trees[topology]
-        #removedprin len(self.seen_trees)
         new_branch_string=make_branch_string(branches, branch_permutation)
         new_admixtures_string=make_admixture_string(admixtures, admixture_permutation)
         return ';'.join([target_topology, new_branch_string, new_admixtures_string])
@@ -46,12 +45,6 @@ def make_admixture_string(admixes, admixture_permutations):
         else:
             res.append(float(admixture_pieces[abs(target_admixture)-1]))
     return '-'.join(map(str,res))
-            
-def get_unique_plottable_tree(tree, nodes=None):
-    if nodes is None:
-        nodes=sorted(get_leaf_keys(tree))
-    possible_strees=sorted(get_possible_strees(tree, nodes))
-    return possible_strees[0]
     
 def get_possible_strees(tree, nodes):
     

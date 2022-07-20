@@ -165,40 +165,6 @@ def non_admixture_to_newick(tree):
             del keys_to_pops[c1]
             del keys_to_pops[c2]
     return list(keys_to_pops.values())[0]
-    
-def tree_to_prop_newicks(tree, leaves=None):
-    '''
-    Transforms a tree in the admixture identifier format into a dictionary of newick trees where the keys are the trees and the values are the proportion of trees of that form.
-    '''      
-    
-    leaves,_,admixture_keys=get_categories(tree)
-    
-    k=len(admixture_keys)
-    format_code='{0:0'+str(k)+'b}'
-    
-    
-    n_trees={}
-    max_count=65
-    for i in range(2**k):
-        pruned_tree = deepcopy(tree)
-        bina= format_code.format(i)
-        prop=1.0
-        for adm_key,str_bin in zip(admixture_keys, list(bina)):
-            int_bin=int(str_bin)
-            if int_bin==0:
-                prop*=1.0-get_admixture_proportion_from_key(tree, adm_key)
-            else:
-                prop*=get_admixture_proportion_from_key(tree, adm_key)
-            if adm_key in pruned_tree:
-                pruned_tree=remove_admixture(pruned_tree, adm_key, int_bin)
-        n_tree= non_admixture_to_newick(pruned_tree)
-        if n_tree in n_trees:
-            n_trees[n_tree]+=prop
-        else:
-            n_trees[n_tree]=prop
-        if i>max_count:
-            break
-    return n_trees
 
 def tree_to_mode_ntree(tree):
     '''
@@ -289,9 +255,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
                     new_key=parent_index[int(identifier_lineage)]
                 except KeyError as e:
                     print(e)
-                    print('new_key', new_key)
-                    print('parent_index', parent_index)
-                    print('identifier_lineage', identifier_lineage)
                 
                 old_key,old_branch=trace_lineages[n]
                 new_branch_length=branch_lengths()
@@ -345,11 +308,7 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
         
         sames_dic, first_sames, second_sames = make_dics_first_and_second(sames)
         awaited_dic, first_awaited, second_awaited = make_dics_first_and_second(awaited_coalescences)
-        waiting=list(waiting_coalescences.keys())
         gen=[]
-        #removedprin 'lineages',lineages
-        #removedprin 'sames', sames, sames_dic, first_sames, second_sames
-        #removedprin 'awaited', awaited_coalescences, awaited_dic, first_awaited, second_awaited
         for n,element in enumerate(lineages):
             if element in gone:
                 print('entered gone!')
@@ -394,7 +353,6 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
     return ';'.join([_list_identifier_to_string(list_of_gens),
                      _list_double_to_string(branch_lengths, 9),
                      _list_double_to_string(admixture_proportions, 3)])
-
 
 def list_to_generator(listi):
     return generate_predefined_list(listi)

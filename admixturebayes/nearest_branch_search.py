@@ -52,16 +52,12 @@ class piece(object):
         else:
             return self.start_lattitude+distance
 
-
-def topological_branch_length(*args, **kwargs):
-    return 1
-    
 class lineage(object):
     
     def __init__(self, key,  distance=0, lattitude=0, topological_distance=False):
         self.key,self.distance, self.lattitude= key, distance, lattitude
         if topological_distance:
-            self.get_branch_length=topological_branch_length
+            self.get_branch_length=1
         else:
             self.get_branch_length=get_branch_length
         self.topological_distance=topological_distance
@@ -97,7 +93,6 @@ def insert_root_in_tree(tree):
 def remove_root_from_tree(tree):
     del tree['r']
     
-
 def distanced_branch_lengths(tree, start_key, visited_keys=[], upper_cap=float('inf'), topological_distance=False):
     insert_root_in_tree(tree)
     pieces=[]

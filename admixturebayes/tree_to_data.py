@@ -1,10 +1,15 @@
 from Rtree_operations import get_trivial_nodes
-from reduce_covariance import reduce_covariance, thin_covariance
+from covariance_scaled import reduce_covariance
 
 from numpy import loadtxt, array, insert, amin, delete, ix_,nan, dtype
 from copy import deepcopy
 import subprocess
 import os
+
+def thin_covariance(covmat, nodes_order, specified_nodes):
+    ni={node:i for i,node in enumerate(nodes_order)}
+    take_out_indices=[ni[s] for s in specified_nodes]
+    return covmat[ix_(take_out_indices,take_out_indices)]
 
 def read_freqs(new_filename, locus_filter):
     with open(new_filename, 'r') as f:
@@ -137,7 +142,6 @@ def emp_cov_to_file(m, filename='emp_covimport', nodes=None):
             f.write(node+ ' '+ ' '.join(map(str, m[i]))+'\n')
 
 def unzip(filename, overwrite=False, new_filename=None):
-    original_filename=filename[:]
     assert filename.endswith('.gz'), 'file with non-zipped ending was passed to the unzip function'
     if new_filename is None:
         new_filename=filename[:-3]

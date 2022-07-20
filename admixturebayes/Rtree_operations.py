@@ -1027,14 +1027,6 @@ def remove_admixture(tree, key, branch):
         
     return remove_admix2(tree, key,branch)[0]
 
-def scale_tree(tree, factor):
-    for key,node in list(tree.items()):
-        node[3]*=factor
-        if node_is_admixture(node):
-            node[4]*=factor
-        tree[key]=node
-    return tree
-
 def scale_tree_copy(tree, factor):        
     cop=deepcopy(tree)
     for key,node in list(cop.items()):
