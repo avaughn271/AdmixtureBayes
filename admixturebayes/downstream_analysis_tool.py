@@ -75,9 +75,8 @@ class make_Rtree(object):
     
 class make_full_tree(object):
     
-    def __init__(self, add_multiplier=1, outgroup_name='out', remove_sadtrees=False, subnodes=[], reroot_population='',
+    def __init__(self, outgroup_name='out', remove_sadtrees=False, subnodes=[], reroot_population='',
                  reroot_method='stop'):
-        self.add_multiplier=add_multiplier
         self.outgroup_name=outgroup_name
         self.remove_sadtrees=remove_sadtrees
         self.subnodes=subnodes
@@ -85,22 +84,7 @@ class make_full_tree(object):
         self.reroot_method=reroot_method
         
     def __call__(self, Rtree=None, add=None, **kwargs):
-        if Rtree is None:
-            assert 'sfull_tree' in kwargs, 'sfull_tree not specified'
-            nodes=sorted(kwargs['full_nodes'])
-            sfull_tree=kwargs['sfull_tree']
-            full_tree=identifier_to_tree_clean(sfull_tree, leaves=generate_predefined_list_string(deepcopy(nodes)))
-            if self.subnodes:
-                full_tree=get_subtree(full_tree, self.subnodes)
-            return {'full_tree':full_tree}, False
-        if self.outgroup_name and self.outgroup_name not in Rtree:
-            full_tree= add_outgroup(deepcopy(Rtree),
-                                    inner_node_name='new_node',
-                                    to_new_root_length=float(add)*self.add_multiplier,
-                                    to_outgroup_length=0,
-                                    outgroup_name=self.outgroup_name)
-        else:
-            full_tree=deepcopy(Rtree)
+        full_tree=deepcopy(Rtree)
         if self.subnodes:
             full_tree=get_subtree(full_tree, self.subnodes)
         return {'full_tree':full_tree}, False
@@ -181,12 +165,6 @@ class thinning(object):
             df=df[::stepsize]
             print('Thinning every ' + str(stepsize) + ' samples complete. There are now ' + str(len(df)) + ' samples')
         return df
-    
-def read_true_values(true_covariance_and_multiplier='',
-                      true_variance_correction=None,
-                      subnodes_wo_outgroup=[]):
-    Rcovariance,multiplier,vc=file_to_emp_cov(true_covariance_and_multiplier, sort_nodes_alphabetically=True, vc=true_variance_correction, return_only_covariance=False, subnodes=sorted(subnodes_wo_outgroup))
-    return (Rcovariance,multiplier)
 
 def mode(lst):
     data = Counter(lst)

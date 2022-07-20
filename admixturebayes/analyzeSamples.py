@@ -1,10 +1,10 @@
 from argparse import ArgumentParser, SUPPRESS
-from downstream_analysis_tool import (thinning, iterate_over_output_file, make_Rtree, make_full_tree, read_true_values,
+from downstream_analysis_tool import (thinning, iterate_over_output_file, make_Rtree, make_full_tree,
                                     get_pops, topology, make_string_tree)
 from find_true_trees import tree_unifier
-from construct_covariance_choices import read_one_line
 from copy import deepcopy
 import sys
+import pandas as pd
 
 def run_posterior_main(args):
 
@@ -17,8 +17,6 @@ def run_posterior_main(args):
     parser = ArgumentParser(usage='pipeline for post analysis')
 
     parser.add_argument('--mcmc_results', required=True, type=str, help='The output file from an AdmixtureBayes run.')
-    parser.add_argument('--covariance', required=True, type=str,
-                        help='file containing the covariance matrix with a header with all the population names and a line with the multiplier. It has the ending covariance_and_multiplier.txt.')
     parser.add_argument('--subnodes', default=[], type=str, nargs='+',
                         help='The subset of populations to perform the analysis on. If not declared, the analysis will be done on the full dataset.')
     parser.add_argument('--result_file', default='thinned_samples.csv', type=str,
@@ -58,14 +56,21 @@ def run_posterior_main(args):
     else:
         subnodes_with_outgroup=[]
         subnodes_wo_outgroup=[]
-    
-    outp=read_true_values(true_covariance_and_multiplier=options.covariance,
-                          subnodes_wo_outgroup=subnodes_wo_outgroup)
-    (emp_covariance_scaled,multiplier)=outp
 
     thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
 
-    nodes=read_one_line(options.covariance).split() #this will not include any outgroup.
+    totallist = []
+    a = pd.read_csv(options.mcmc_results, nrows=3)
+    stringg = (a.loc[0,["descendant_sets"]])[0]
+    stringg = (stringg.split('-'))
+    for i in stringg:
+        totallist.extend(i.split('.'))
+    nodes = []
+    for i in totallist:
+        if i not in nodes:
+            nodes.append(i)
+    nodes.sort()
+
     nodes_wo_outgroup = deepcopy(nodes)
     if options.outgroup_name:
         assert options.outgroup_name not in nodes_wo_outgroup, 'The outgroup_name=' + options.outgroup_name + ' occured in the covariance which an outgroup should not.'
@@ -98,13 +103,8 @@ def run_posterior_main(args):
         row_sums.append(possible_summaries['Rtree'](deepcopy(nodes_wo_outgroup),False, subnodes=subnodes_wo_outgroup, outgroup_name=options.outgroup_name))
         name_to_rowsum_index('Rtree')
     if 'full_tree' in options.calculate_summaries:
-        if multiplier is None:
-            add_multiplier=1.0
-        else:
-            add_multiplier=1.0/multiplier
 
-        row_sums.append(possible_summaries['full_tree'](add_multiplier=add_multiplier,
-                                                        outgroup_name=options.outgroup_name,
+        row_sums.append(possible_summaries['full_tree'](outgroup_name=options.outgroup_name,
                                                         remove_sadtrees=False,
                                                         subnodes=options.subnodes,
                                                         reroot_population='',
