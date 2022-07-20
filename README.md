@@ -69,7 +69,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 ## This step takes as input:
 
-**--input-file** The input file of allele counts as described above.
+**--input_file** The input file of allele counts as described above.
 
 **--outgroup** The name of the population that will serve as the outgroup. For example, in the above file, "out" could be the outgroup.
 
