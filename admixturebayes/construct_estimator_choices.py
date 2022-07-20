@@ -5,7 +5,6 @@ def make_estimator(reduce_method,
                    variance_correction, 
                    nodes, 
                    reducer,
-                   Simulator_fixed_sxeed,
                    add_variance_correction_to_graph=False,
                    prefix='',
                    save_variance_correction=True):

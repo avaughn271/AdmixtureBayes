@@ -1,31 +1,18 @@
-from tree_statistics import identifier_to_tree_clean, generate_predefined_list_string
-from tree_to_data import (file_to_emp_cov,
-                         emp_cov_to_file,
+from tree_to_data import (emp_cov_to_file,
                           get_xs_and_ns_from_treemix_file, order_covariance, reorder_reduced_covariance)
 from copy import deepcopy
 from numpy import loadtxt, savetxt
 from construct_estimator_choices import make_estimator
-from math import log
-def rescale_empirical_covariance(m, normalizer= ['min', 'max']):    
-    if not isinstance(normalizer, str):
-        normalizer=normalizer[0]
-    
+def rescale_empirical_covariance(m):    
     n=m.shape[0]
     actual_trace=m.trace()
-    min_expected_trace=log(n)/log(2)*n
     max_expected_trace=n*(n+1)/2-1
-    
-    if normalizer=='min':
-        multiplier= min_expected_trace/actual_trace
-    elif normalizer=='max':
-        multiplier= max_expected_trace/actual_trace
-    else:
-        assert False, 'normalizer not set properly. normalizer= '+str(normalizer)
+    multiplier= max_expected_trace/actual_trace
     
     return m*multiplier, multiplier
 
 def empirical_covariance_wrapper_directly(snp_data_file, **kwargs):
-    xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file, kwargs['locus_filter'])
+    xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file)
     return xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs)
 
 def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
@@ -56,7 +43,7 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
     return cov
 
 def normaliser_wrapper(covariance, **kwargs):
-    return rescale_empirical_covariance(covariance, normalizer=kwargs['scale_goal'])
+    return rescale_empirical_covariance(covariance)
 
 dictionary_of_transformations={
     (6,8):empirical_covariance_wrapper_directly,
@@ -96,47 +83,31 @@ def save_stage(value, stage_number, prefix, full_nodes, before_added_outgroup_no
 
 def get_covariance(input, full_nodes=None,
                    p=0.5,
-                   outgroup_name=None,
                    reduce_covariance_node=None,
-                   theta=0.4, sites=500000,
-                   treemix_file=None,
                    blocksize_empirical_covariance=100,
                    save_stages=list(range(1,6))+list(range(7,10)),
                    prefix='tmp',
-                   final_pop_size=100.0,
-                   filter_on_outgroup=False,
-                   locus_filter=None,
-                   estimator_arguments={},
-                   verbose_level='normal'):
-
-    if treemix_file is None:
-        treemix_file=prefix+'treemix'
+                   estimator_arguments={}):
 
     kwargs={}
     kwargs['p']=p
-    kwargs['outgroup_name']=outgroup_name
     kwargs['full_nodes']=full_nodes
     before_added_outgroup_nodes=deepcopy(full_nodes)
     after_reduce_nodes=deepcopy(full_nodes)
-    if outgroup_name is not None and outgroup_name in before_added_outgroup_nodes:
-        before_added_outgroup_nodes.remove(outgroup_name)
-    if reduce_covariance_node is not None and reduce_covariance_node in after_reduce_nodes:
-        after_reduce_nodes.remove(reduce_covariance_node)
+    after_reduce_nodes.remove(reduce_covariance_node)
+    print(before_added_outgroup_nodes)
+    print(after_reduce_nodes)
+
+    print(reduce_covariance_node)
+
     kwargs['reduce_covariance_node']=reduce_covariance_node
     kwargs['after_reduce_nodes']=after_reduce_nodes
     kwargs['before_added_outgroup_nodes']=before_added_outgroup_nodes
-    kwargs['theta']=theta
-    kwargs['sites']=sites
-    kwargs['treemix_file']=treemix_file
     kwargs['blocksize_empirical_covariance']=blocksize_empirical_covariance
     kwargs['pks']={}
-    kwargs['final_pop_size']=final_pop_size
     kwargs['add_file']=prefix+'true_add.txt'
     kwargs['import']=prefix+'m_scale.txt'
-    kwargs['scale_goal']='max'
-    kwargs['filter_on_outgroup']=filter_on_outgroup
     kwargs['est']=estimator_arguments
-    kwargs['locus_filter']=locus_filter
 
     stages_to_go_through = [6,8,9]
     #makes a necessary transformation of the input(if the input is a filename or something).
@@ -148,35 +119,6 @@ def get_covariance(input, full_nodes=None,
             save_stage(statistic, stage_to, prefix, full_nodes, before_added_outgroup_nodes, after_reduce_nodes)
 
     return statistic
-
-def read_multiplier(input):
-    with open(input, 'r') as f:
-        last_line=f.readlines()[-1]
-        return float(last_line.split("=")[1])
-
-def read_covariance_matrix(input, nodes):
-    if isinstance(input, str):
-        return file_to_emp_cov(input, nodes=nodes)
-    else:
-        return input
-
-def read_tree(input, nodes):
-    if isinstance(input, str):
-        if not ';' in input:
-            input=read_one_line_skip(filename=input)
-            return identifier_to_tree_clean(input, leaves=generate_predefined_list_string(deepcopy(nodes)))
-        else:
-            return identifier_to_tree_clean(input, leaves=generate_predefined_list_string(deepcopy(nodes)))
-    else:
-        return input
-
-def read_one_line_skip(filename):
-    with open(filename, 'r') as f:
-        lines=f.readlines()
-        if len(lines[-1])>3:
-            return lines[-1].rstrip()
-        else:
-            return lines[-2].rstrip()
 
 def read_one_line(filename):
     with open(filename, 'r') as f:

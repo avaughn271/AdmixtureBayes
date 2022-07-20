@@ -7,10 +7,8 @@ def get_starting_trees(inputs,
                        no_chains, 
                        adds=[], 
                        nodes=None, 
-                       multiplier=None,
                        start='trivial',
-                       add_start=None,
-                       prefix=''):
+                       add_start=None):
     add_vals=[]
     if adds:
         for add in adds:
@@ -61,7 +59,7 @@ def match_trees_and_adds(list_of_trees, list_of_adds):
     else:
         assert False, 'couldnt match adds and trees in starting_trees'
  
-def input_to_tree(input, nodes, skewed_admixture_prior=False):
+def input_to_tree(input, nodes):
     with open(input, 'r') as f:
         f.readline() #removing empty file
         return identifier_to_tree_clean(f.readline().rstrip(), leaves=generate_predefined_list_string(deepcopy(nodes)))

@@ -47,22 +47,11 @@ def nan_product(A,B):
     for i in range(A.shape[0]):
         for j in range(B.shape[1]):
             res[i,j]=nan_inner_product(A[i,:], B[:,j])
-    return res 
+    return res
 
-def m_scaler(scale_type, allele_freqs, n_outgroup=None):
-    if scale_type=='None' or scale_type=='Jade' or scale_type=='Jade-o':
-        return 1.0
-    if scale_type.startswith('outgroup'):
-        s=allele_freqs[n_outgroup,:]
-    elif scale_type.startswith('average'):
-        s=nanmean(allele_freqs, axis=0)
-    else:
-        scaler=1.0
-    if scale_type.endswith('product'):
-        mu=nanmean(s)
-        scaler=mu*(1.0-mu)
-    elif scale_type.endswith('sum'):
-        scaler=nanmean(s*(1.0-s))
+def m_scaler(allele_freqs):
+    s=nanmean(allele_freqs, axis=0)
+    scaler=nanmean(s*(1.0-s))
     return scaler
 
 def avg_var(ps):
@@ -78,14 +67,6 @@ def heterogeneity(allele_frequency, pop_size, type_of_scaling='unbiased'):
 def B(allele_frequency, pop_size, type_of_scaling='unbiased'):
     return heterogeneity(allele_frequency, pop_size, type_of_scaling)/2.0/float(pop_size)
 
-def adjuster(Bs):
-    m=len(Bs)
-    res=diag(array(Bs))
-    res=res-array(Bs)/m
-    res=(res.T-array(Bs)/m).T
-    res=res+sum(Bs)/m**2
-    return res
-
 def var(p,n, type_of_scaling='unbiased'):
     if type_of_scaling=='mle':
         subtract=0
@@ -100,11 +81,6 @@ def reduced_covariance_bias_correction(p,n,n_outgroup=0, type_of_scaling='unbias
         Bs.append(var(pi,ni, type_of_scaling))
     outgroup_b=Bs.pop(n_outgroup)
     return diag(array(Bs))+outgroup_b
-    
-def bias_correction(m, p, pop_sizes, n_outgroup=None, type_of_scaling='unbiased'):
-    Bs=[B(prow, pop_size, type_of_scaling=type_of_scaling) for prow, pop_size in zip(p, pop_sizes)]
-    adjusting_matrix=adjuster(Bs)
-    return adjusting_matrix
 
 class ScaledEstimator(Estimator):
     
@@ -127,15 +103,8 @@ class ScaledEstimator(Estimator):
         self.reduce_method=reduce_method
         
     def subtract_ancestral_and_get_outgroup(self,p):
-        if self.reduce_method=='outgroup':
-            n_outgroup=self.get_reduce_index()
-            return p-p[n_outgroup,:], n_outgroup
-        elif self.reduce_method=='average':
-            n_outgroup=self.get_reduce_index()
-            total_mean2=nanmean(p, axis=0)
-            return p-total_mean2, n_outgroup
-        else:
-            return p, None
+        n_outgroup=self.get_reduce_index()
+        return p-p[n_outgroup,:], n_outgroup
         
     def __call__(self, xs, ns, extra_info={}):
         if 0 in ns:
@@ -157,7 +126,7 @@ class ScaledEstimator(Estimator):
             m=p2.dot(p2.T)/p2.shape[1]
         assert m.shape[0]<1000, 'sanity check failed, because of wrongly transposed matrices'
         
-        scaling_factor=m_scaler(self.scaling, p, n_outgroup)
+        scaling_factor=m_scaler( p)
         extra_info['m_scale']=scaling_factor
         m=m/scaling_factor
         if self.reduce_also:

@@ -13,17 +13,6 @@ from numpy import random
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
-
-class filter(object):
-    def __init__(self, outgroup_name=''):
-        self.outgroup_name=outgroup_name
-        
-    def __call__(self, freqs, pop_sizes, names=None):
-        return True
-    
-def make_filter():
-    return filter()
-
 class fixed_geometrical(object):
 
     def __init__(self, maxT, no_chains):
@@ -37,23 +26,12 @@ class fixed_geometrical(object):
 
 from copy import deepcopy
 
-def get_nodes(arguments, input_file, outgroup_name, reduce_node, backup_number=8):
+def get_nodes(input_file, reduce_node):
     ''' The outgroup_name is only used for simulation purposes and reduce_node is the important one
     that is used when analysing the admixture graphs.  '''
-    if not arguments[0]:#this means that we should use the input file for nodes
-        nodes=read_one_line(input_file)
-    else:
-        nodes=arguments
-    before_added_outgroup=deepcopy(nodes)
+    nodes=read_one_line(input_file)
     reduced_nodes=deepcopy(nodes)
-    if outgroup_name in nodes:
-        before_added_outgroup.remove(outgroup_name)
-    elif outgroup_name:
-        nodes.append(outgroup_name)
-    if reduce_node in reduced_nodes:
-        reduced_nodes.remove(reduce_node)
-    if reduce_node and reduce_node not in nodes:
-        nodes.append(reduce_node)
+    reduced_nodes.remove(reduce_node)
     return nodes, reduced_nodes
 
 from tree_to_data import unzip
@@ -81,8 +59,6 @@ def main(args):
     parser.add_argument('--MCMC_chains', type=int, default=8,
                         help='The number of chains to run the MCMCMC with. Optimally, the number of cores matches the number of chains.')
     parser.add_argument('--n', type=int, default=200, help='the number of MCMCMC flips throughout the chain.')
-    parser.add_argument('--df_file', type=str, default='',
-                        help='By default, the degrees of freedom will be estimated with bootstrap. If this flag is used, it will cancel the bootstrap estimation of the degrees of freedom. The degrees of freedom represents the number of effectively independent SNPs in the dataset.')
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
@@ -100,8 +76,6 @@ def main(args):
     #convenience arguments
     parser.add_argument('--prefix', type=str, default='',
                         help='this directory will be the beginning of every temporary file created in the covariance pipeline and in the estimation of the degrees of freedom in the wishart distribution.')
-    parser.add_argument('--nodes', type=str, nargs='+', default=[''],
-                        help='list of nodes of the populations or the filename of a file where the first line contains all population names. If unspecified the first line of the input_file will be used. If no input file is found, there will be used standard s1,..,sn.')
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
     parser.add_argument('--Rscript_command', default='Rscript', type=str,
@@ -121,20 +95,11 @@ def main(args):
     parser.add_argument('--start', choices=['trivial', 'random', 'perfect'], default='trivial',
                         help='Where to start the chain - works only if starting trees are not specified.')
 
-    #more obscure convenience arguments
-    parser.add_argument('--save_df_file', type=str, default='DF.txt',
-                        help=SUPPRESS)#'the prefix is put before this string and the degrees of freedom is saved to this file.')
-
-    #Very obscure arguments
-    # tree simulation
-    parser.add_argument('--p_sim', type=float, default=.5,
-                        help=SUPPRESS)#'the parameter of the geometric distribution in the distribution to simulate the true tree from.')
-
     options=parser.parse_args(args)
 
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
-    #Here is the only thing we should be changing.
+    #Here, we resort the columns of the input file to be alphabetical
     temp = pandas.read_csv(options.input_file, sep =" ")
     colnames = list(temp.columns.values)
     temp = temp[sorted(colnames)]
@@ -143,48 +108,36 @@ def main(args):
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
      [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
 
-    full_nodes, reduced_nodes=get_nodes(options.nodes, os.getcwd() + "/temp_input.txt", '', options.outgroup)
+    full_nodes, reduced_nodes=get_nodes(os.getcwd() + "/temp_input.txt", options.outgroup)
 
     prefix=options.prefix
 
     treemix_in_file=os.getcwd() + "/temp_input.txt"
-    treemix_file = os.getcwd() + "/temp_input.txt"
-
-    locus_filter=make_filter()
 
     estimator_arguments=dict(reducer=options.outgroup, 
                              variance_correction='unbiased',
                              nodes=full_nodes,
-                             Simulator_fixed_sxeed=True,
                              add_variance_correction_to_graph=True,
                              save_variance_correction=True,
                              prefix=prefix)
 
     covariance=get_covariance(os.getcwd() + "/temp_input.txt",
                               full_nodes=full_nodes,
-                              p=options.p_sim,
-                              outgroup_name='',
                               reduce_covariance_node=options.outgroup,
-                              treemix_file=treemix_file,
                               prefix=prefix,
-                              locus_filter=locus_filter,
                               estimator_arguments=estimator_arguments,
-                              verbose_level=options.verbose_level
                               )
 
-    if options.df_file:
-        with open(options.df_file, 'r') as f:
-            df = float(f.readline().rstrip())
-    else:
-        estimator_arguments['save_variance_correction']=False
-        summarization=options.bootstrap_type_of_estimation
-        df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
+
+    estimator_arguments['save_variance_correction']=False
+    summarization=options.bootstrap_type_of_estimation
+    df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
                                                bootstrap_blocksize=options.bootstrap_blocksize,
                                                no_bootstrap_samples=options.no_bootstrap_samples,
                                                summarization=summarization,
                                                cores=options.MCMC_chains,
                                                prefix=prefix,
-                                               est=estimator_arguments, locus_filter=locus_filter,
+                                               est=estimator_arguments,
                                                load_bootstrapped_covariances=[],
                                                verbose_level=options.verbose_level)
 
@@ -267,19 +220,15 @@ def main(args):
                                         options.MCMC_chains,
                                         adds=[os.getcwd() + "/" + "temp_add.txt"],
                                         nodes=tree_nodes,
-                                        multiplier=multiplier,
-                                        start=options.start,
-                                        prefix=prefix)
+                                        start=options.start)
     else:
         starting_trees=get_starting_trees(options.continue_samples,
                                       options.MCMC_chains,
                                       adds=[],
                                       nodes=tree_nodes,
-                                      multiplier=multiplier,
-                                      start=options.start,
-                                      prefix=prefix)
+                                      start=options.start)
 
-    with open(prefix+options.save_df_file, 'w') as f:
+    with open(prefix+'DF.txt', 'w') as f:
         f.write(str(df))
 
     make_topological_summaries = options.stop_criteria and (options.stop_criteria_threshold>=0)
