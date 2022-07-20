@@ -23,13 +23,13 @@ python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgr
 #Step 2:
 
 #This is the basic workflow
-python admixturebayes/analyzeSamples.py   --mcmc_results  mcmc_samples.csv --covariance covariance_and_multiplier.txt
+python admixturebayes/analyzeSamples.py   --mcmc_results  mcmc_samples.csv 
 
 #We could also change the burn-in fraction and thinning rate
-python admixturebayes/analyzeSamples.py --mcmc_results  mcmc_samples.csv --covariance covariance_and_multiplier.txt --burn_in_fraction 0.2  --thinning_rate 5
+python admixturebayes/analyzeSamples.py --mcmc_results  mcmc_samples.csv --burn_in_fraction 0.2  --thinning_rate 5
 
 #Or rename the output file
-python admixturebayes/analyzeSamples.py   --mcmc_results  mcmc_samples.csv --covariance covariance_and_multiplier.txt --result_file example_output.csv
+python admixturebayes/analyzeSamples.py   --mcmc_results  mcmc_samples.csv --result_file example_output.csv
 
 
 
@@ -42,7 +42,7 @@ python admixturebayes/makePlots.py  --plot top_trees  --posterior thinned_sample
 python admixturebayes/makePlots.py  --plot top_trees  --posterior thinned_samples.csv --top_trees_to_plot  5  --write_rankings example_rankings.txt
 
 #We can also plot the top trees with branch estimates, but this requires running the previous step with the --slower flag 
-python admixturebayes/analyzeSamples.py --mcmc_results  mcmc_samples.csv --covariance covariance_and_multiplier.txt --burn_in_fraction 0.2  --thinning_rate 5 --slower
+python admixturebayes/analyzeSamples.py --mcmc_results  mcmc_samples.csv --burn_in_fraction 0.2  --thinning_rate 5 --slower
 python admixturebayes/makePlots.py  --plot estimates  --posterior thinned_samples.csv --top_trees_to_estimate 2
 
 #Or plot the minimal topologies
