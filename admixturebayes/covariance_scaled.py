@@ -111,13 +111,12 @@ class ScaledEstimator(Estimator):
     def __init__(self,
                  reduce_method=['outgroup','average','None'],
                  scaling=['None','outgroup_sum', 'outgroup_product', 'average_outgroup', 'average_product','Jade','Jade-o'],
-                 reduce_also=True,
                  variance_correction=['None','unbiased','mle'],
                  add_variance_correction_to_graph=False,
                  prefix_for_saving_variance_correction='',
                  save_variance_correction=True,
                  nodes=None):
-        super(ScaledEstimator, self).__init__(reduce_also=reduce_also)
+        super(ScaledEstimator, self).__init__(reduce_also=True)
         self.scaling=initor(scaling)
         self.variance_correction=initor(variance_correction)
         self.add_variance_correction_to_graph=add_variance_correction_to_graph
@@ -158,7 +157,6 @@ class ScaledEstimator(Estimator):
             m=p2.dot(p2.T)/p2.shape[1]
         assert m.shape[0]<1000, 'sanity check failed, because of wrongly transposed matrices'
         
-        
         scaling_factor=m_scaler(self.scaling, p, n_outgroup)
         extra_info['m_scale']=scaling_factor
         m=m/scaling_factor
@@ -171,28 +169,5 @@ class ScaledEstimator(Estimator):
                     if self.save_variance_correction:
                         savetxt(self.prefix_for_saving_variance_correction+'variance_correction.txt', b)
                 else:
-                    m=m-b     
-        elif self.variance_correction!='None':
-            m=m/m_scaler(self.scaling, p, n_outgroup)    
-            extra_info['m_scale']=m_scaler(self.scaling, p, n_outgroup)     
-            if ns is None:
-                warnings.warn('No variance reduction performed due to no specified sample sizes', UserWarning)
-            elif isinstance(ns, int):
-                pop_sizes=[ns]*p2.shape[0]
-                changer=bias_correction(m,p, pop_sizes,n_outgroup, type_of_scaling=self.variance_correction)/m_scaler(self.bias_c_weight, p, n_outgroup)
-                if self.add_variance_correction_to_graph:
-                    m-=changer
-                if self.save_variance_correction:
-                    savetxt(self.prefix_for_saving_variance_correction+'variance_correction.txt', changer)
-            else:
-                warnings.warn('assuming the same population size for all SNPs', UserWarning)
-                pop_sizes=mean(ns, axis=1)
-                changer=bias_correction(m,p, pop_sizes,n_outgroup, type_of_scaling=self.variance_correction)/m_scaler(self.bias_c_weight, p, n_outgroup)
-                if self.add_variance_correction_to_graph:
-                    if self.save_variance_correction:
-                        savetxt(self.prefix_for_saving_variance_correction+'variance_correction.txt', changer)
-                else:
-                    m-=changer
-            
-        
+                    m=m-b
         return m

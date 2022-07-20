@@ -35,7 +35,6 @@ class dummy_dic(object):
 class color_dic(object):
     
     def __init__(self, node_freq_dic):
-        #removedprin node_freq_dic
         self.nfd=node_freq_dic
         
     def __getitem__(self, key):

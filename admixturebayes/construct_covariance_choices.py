@@ -33,8 +33,7 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
     xnn_tuple=order_covariance(xnn_tuple, outgroup=est_args['reducer'])
     xs,ns,names=xnn_tuple
 
-    est= make_estimator(reduce_method='outgroup',
-                   reduce_also=True, **est_args)
+    est= make_estimator(reduce_method='outgroup', **est_args)
     extra_info_dic={}
     cov=est(xs,ns, extra_info_dic)
     cov=reorder_reduced_covariance(cov, names, est_args['nodes'], outgroup=est_args['reducer'])
@@ -104,12 +103,7 @@ def get_covariance(input, full_nodes=None,
                    blocksize_empirical_covariance=100,
                    save_stages=list(range(1,6))+list(range(7,10)),
                    prefix='tmp',
-                   t_adjust_tree=False,
                    final_pop_size=100.0,
-                   via_treemix=True,
-                   sadmix=False,
-                   favorable_init_brownian=False,
-                   unbounded_brownian=False,
                    filter_on_outgroup=False,
                    locus_filter=None,
                    estimator_arguments={},
@@ -122,7 +116,6 @@ def get_covariance(input, full_nodes=None,
     kwargs['p']=p
     kwargs['outgroup_name']=outgroup_name
     kwargs['full_nodes']=full_nodes
-    kwargs['sadmix']=sadmix
     before_added_outgroup_nodes=deepcopy(full_nodes)
     after_reduce_nodes=deepcopy(full_nodes)
     if outgroup_name is not None and outgroup_name in before_added_outgroup_nodes:
@@ -137,14 +130,10 @@ def get_covariance(input, full_nodes=None,
     kwargs['treemix_file']=treemix_file
     kwargs['blocksize_empirical_covariance']=blocksize_empirical_covariance
     kwargs['pks']={}
-    kwargs['time_adjust']=t_adjust_tree
     kwargs['final_pop_size']=final_pop_size
-    kwargs['via_treemix']=via_treemix
     kwargs['add_file']=prefix+'true_add.txt'
     kwargs['import']=prefix+'m_scale.txt'
     kwargs['scale_goal']='max'
-    kwargs['favorable_init_brownian']=favorable_init_brownian
-    kwargs['unbounded_brownian']=unbounded_brownian
     kwargs['filter_on_outgroup']=filter_on_outgroup
     kwargs['est']=estimator_arguments
     kwargs['locus_filter']=locus_filter
