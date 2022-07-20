@@ -5,7 +5,7 @@ AdmixtureBayes is a program to generate, analyze, and plot posterior samples of 
 
 ## Installation
 
-AdmixtureBayes can be downloaded by running the commands
+AdmixtureBayes can be downloaded from this GitHub repo by running the following command:
 ```bash
 $ git clone https://github.com/avaughn271/AdmixtureBayes
 ```
@@ -33,7 +33,7 @@ in any R session.
 
 ### Example commands
 
-A script containing example commands is found in the *example/* folder together with a test dataset.
+A script containing example commands is found in the *example* folder together with a test dataset.
 
 ## Input file
 
