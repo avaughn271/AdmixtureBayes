@@ -34,13 +34,13 @@ def bootsrap_combine_covs(covs, cores, bootstrap_samples):
         indices=bootstrap_indices(len(covs))
         return combine_covs(covs, indices)
     result_covs=list(map(t, list(range(bootstrap_samples))))
-    return result_covs                
-                
+    return result_covs
+
 def remove_files(filenames):
     for fil in filenames:
         os.remove(fil)
-        os.remove(fil[:-3])                
-                
+        os.remove(fil[:-3])
+
 def make_covariances(filenames, cores, **kwargs):
     covs=[]
     p=Pool(cores)
@@ -56,6 +56,8 @@ def make_covariances(filenames, cores, **kwargs):
 def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='normal'):
     assert (blocksize is not None) or (no_blocks is not None), 'Has to specify either block size or number of blocks'
     filenames=[]
+    os.mkdir(os.getcwd() + "/temp_adbayes")
+    prefix = os.getcwd() + "/temp_adbayes/"
     if filename.endswith('.gz'):
         filename=unzip(filename)
     filename_reduced=prefix+filename.split(os.sep)[-1]+'boot.'
@@ -78,7 +80,7 @@ def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='n
         filenames.append(gzipped_filename)
     return filenames, first_line.split()
 
-def estimate_degrees_of_freedom_scaled_fast(filename, 
+def estimate_degrees_of_freedom_scaled_fast(filename,
                                             bootstrap_blocksize=1000,
                                             no_blocks=None,
                                             no_bootstrap_samples=10,

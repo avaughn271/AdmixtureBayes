@@ -343,6 +343,9 @@ def main(args):
     if os.path.exists("temp_add.txt"):
         os.remove("temp_add.txt")
 
+    if os.path.exists(os.getcwd() + "/temp_adbayes"):
+        os.rmdir(os.getcwd() + "/temp_adbayes")
+
     def multi_chain_run():
         #random_seeds = []
         #for i in range(options.MCMC_chains):
