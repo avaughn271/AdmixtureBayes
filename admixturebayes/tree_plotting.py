@@ -11,7 +11,7 @@ def plot_graph(*args, **kwargs):
 def plot_node_structure_as_directed_graph(node_structure, file_prefix='', drawing_name='tmp_.png', popup=True, node_dic=None, verbose=True):
     pure_leaves, admix_leaves, pure_coalescence, admix_coalescence, root, edges, inner_node_colors= node_structure_to_networkx(node_structure, node_dic)
     filename, image_format= drawing_name.split('.')
-    image_format = "pdf"
+    image_format = "pdf" #ANDREWDEBUG
     G=Digraph('G', filename=filename)
     leaves_graph=Digraph('l')
     leaves_graph.node_attr.update(style='filled', color='cadetblue1')

@@ -11,7 +11,7 @@ def thin_covariance(covmat, nodes_order, specified_nodes):
     take_out_indices=[ni[s] for s in specified_nodes]
     return covmat[ix_(take_out_indices,take_out_indices)]
 
-def read_freqs(new_filename):
+def read_freqs(new_filename, locus_filter):
     with open(new_filename, 'r') as f:
         names=f.readline().split()
         allele_counts=[]
@@ -32,17 +32,18 @@ def read_freqs(new_filename):
                     freqs.append(float(minor)/float(major+minor))
                 minor_list.append(minor)
                 pop_sizes_SNP.append(major+minor)
-            minors.append(minor_list)
-            pop_sizes.append(pop_sizes_SNP)
-            allele_counts.append(freqs)
+            if locus_filter(freqs,pop_sizes, names):
+                minors.append(minor_list)
+                pop_sizes.append(pop_sizes_SNP)
+                allele_counts.append(freqs)
     return allele_counts, names, pop_sizes, minors, total_sum
 
-def get_xs_and_ns_from_treemix_file(snp_file):
+def get_xs_and_ns_from_treemix_file(snp_file, locus_filter):
     if snp_file.endswith('.gz'):
         new_filename=unzip(snp_file)
     else:
         new_filename=snp_file
-    allele_freqs, names, ns, minors, total_sum= read_freqs(new_filename)
+    allele_freqs, names, ns, minors, total_sum= read_freqs(new_filename, locus_filter)
     xs=array(minors, dtype=dtype(float)).T
     ns=array(ns, dtype=dtype(float)).T
     return xs,ns,names

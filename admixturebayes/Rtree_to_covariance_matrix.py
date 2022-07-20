@@ -122,6 +122,12 @@ def _thin_out_dic(dic, taken):
             ready_nodes.append((key,_merge_pops(pops)))
             del dic[key]
     return dic,ready_nodes
+
+def make_newicks(tree, node_keys=None):
+    if node_keys is None:
+        node_keys=sorted(get_leaf_keys(tree))
+    pops=[Population([1.0],[node]) for node in node_keys]
+    ready_nodes=list(zip(node_keys,pops))
                 
 def make_covariance(tree, node_keys=None, old_cov=False):
     if node_keys is None:
