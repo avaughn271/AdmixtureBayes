@@ -94,11 +94,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
  ## This step produces (in the current working directory)
 
-***result_file*** This file contains the list of MCMC samples. 
-
-
-**covariance_and_multiplier.txt** This file contains the covariance matrix corresponding to the given input file.
-
+***result_file*** This file contains the list of MCMC samples.
 
 
 ## (2) analyzeSamples
@@ -112,8 +108,6 @@ $ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 ## This step takes as input:
 
 **--mcmc_results** This is the output file from the previous step that contains the mcmc samples.
-
-**--covariance** This is the output file from the previous step that contains the covariance matrix.
 
 **--result_file** (optional) The name of the output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "thinned_samples.csv"
 
