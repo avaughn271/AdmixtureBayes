@@ -1,7 +1,7 @@
 # AdmixtureBayes
 
 ## Purpose
-AdmixtureBayes is a program to generate, analyze, and plot posterior samples of admixture graphs (phylogenies incorporating admixture events) given an allele count file.
+AdmixtureBayes is a program to generate, analyze, and plot posterior samples of admixture graphs (phylogenies incorporating admixture events) given an allele count file. AdmixtureBayes is currently maintained by [Andrew Vaughn](https://nielsen-lab.github.io/team/andrew-vaughn). Please report any strange results, errors, or code suggestions to him at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu).
 
 ## Installation
 
@@ -37,7 +37,7 @@ A script containing example commands is found in the *example* folder together w
 
 ## Input file
 
-The input for AdmixtureBayes is an allele count file in the exact same format as used by TreeMix.
+The input for AdmixtureBayes is an allele count file in the exact same format as used by [TreeMix](https://bitbucket.org/nygcresearch/treemix/wiki/Home).
 
 ```bash
 s1 s2 s3 s4 out
