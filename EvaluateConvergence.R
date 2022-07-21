@@ -54,10 +54,10 @@ plot(admixes1, pch = 19, col ="orange", xlab = "Iteration", ylab = "Number of Ad
 plot(admixes2, pch = 19, col ="orange", xlab = "Iteration", ylab = "", cex = 0.48)
 plot(admixes3, pch = 19, col ="orange", xlab = "Iteration", ylab = "", cex = 0.48)
 
-#We reformat the plotting space for the Gelmnan-Rubin Plots
+#We reformat the plotting space for the Gelman-Rubin Plots
 par(mfrow=c(1,1))
 
-#This computes and plot the median the scale reduction factor for total branch length
+#This computes and plots the median of the scale reduction factor for total branch length
 #after the burn-in period for a cumulative increasing number of samples
 y = c()
 x = c()
