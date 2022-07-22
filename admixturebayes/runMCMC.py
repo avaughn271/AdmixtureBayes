@@ -2,7 +2,6 @@ from argparse import ArgumentParser, SUPPRESS
 
 from construct_starting_trees_choices import get_starting_trees
 from construct_covariance_choices import get_covariance
-from construct_summary_choices import get_summary_scheme
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
@@ -13,16 +12,40 @@ from numpy import random
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
+import summary
+import Rtree_operations
+import tree_statistics
+import Rtree_to_covariance_matrix
+from copy import deepcopy
 
-class filter(object):
-    def __init__(self, outgroup_name=''):
-        self.outgroup_name=outgroup_name
-        
-    def __call__(self, freqs, pop_sizes, names=None):
-        return True
+def get_summary_scheme(light_newick_tree_summaries=False,
+                       priors=False,
+                       no_chains=1,
+                       nodes=None, 
+                       verbose_level='normal'):
     
-def make_filter():
-    return filter()
+    summaries=[summary.s_posterior(),
+               summary.s_likelihood(),
+               summary.s_prior(),
+               summary.s_no_admixes(),
+               summary.s_variable('add', output='double'), 
+               summary.s_average_branch_length(),
+               summary.s_total_branch_length(),
+               summary.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
+               summary.s_basic_tree_statistics(Rtree_operations.get_average_distance_to_root, 'average_root'),
+               summary.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
+    summaries.append(summary.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
+    summaries.append(summary.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
+    if light_newick_tree_summaries:
+        summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_0ntree, 'Zero_Ntree',output='string'))
+        summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_random_ntree, 'random_Ntree',output='string'))
+        summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_mode_ntree, 'mode_Ntree',output='string'))
+    sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
+    sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
+    if no_chains==1:
+        return [sample_verbose_scheme_first], summaries
+    else:
+        return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
 
 class fixed_geometrical(object):
 
@@ -35,25 +58,12 @@ class fixed_geometrical(object):
     def get_temp(self,i):
         return self.temps[i]
 
-from copy import deepcopy
-
-def get_nodes(arguments, input_file, outgroup_name, reduce_node, backup_number=8):
+def get_nodes(input_file, reduce_node):
     ''' The outgroup_name is only used for simulation purposes and reduce_node is the important one
     that is used when analysing the admixture graphs.  '''
-    if not arguments[0]:#this means that we should use the input file for nodes
-        nodes=read_one_line(input_file)
-    else:
-        nodes=arguments
-    before_added_outgroup=deepcopy(nodes)
+    nodes=read_one_line(input_file)
     reduced_nodes=deepcopy(nodes)
-    if outgroup_name in nodes:
-        before_added_outgroup.remove(outgroup_name)
-    elif outgroup_name:
-        nodes.append(outgroup_name)
-    if reduce_node in reduced_nodes:
-        reduced_nodes.remove(reduce_node)
-    if reduce_node and reduce_node not in nodes:
-        nodes.append(reduce_node)
+    reduced_nodes.remove(reduce_node)
     return nodes, reduced_nodes
 
 from tree_to_data import unzip
@@ -100,8 +110,6 @@ def main(args):
     #convenience arguments
     parser.add_argument('--prefix', type=str, default='',
                         help='this directory will be the beginning of every temporary file created in the covariance pipeline and in the estimation of the degrees of freedom in the wishart distribution.')
-    parser.add_argument('--nodes', type=str, nargs='+', default=[''],
-                        help='list of nodes of the populations or the filename of a file where the first line contains all population names. If unspecified the first line of the input_file will be used. If no input file is found, there will be used standard s1,..,sn.')
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
     parser.add_argument('--Rscript_command', default='Rscript', type=str,
@@ -114,7 +122,6 @@ def main(args):
                         help='the geometrical parameter in the prior. The formula is p**x(1-p)')
     parser.add_argument('--no_bootstrap_samples', type=int, default=100,
                         help='the number of bootstrap samples to make to estimate the degrees of freedom in the wishart distribution.')
-    parser.add_argument('--bootstrap_type_of_estimation', choices=['mle_opt','var_opt'], default='var_opt', help='This is the way the bootstrap wishart estimate is estimated.')
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start or the so-called trivial tree')
@@ -143,14 +150,11 @@ def main(args):
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
      [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
 
-    full_nodes, reduced_nodes=get_nodes(options.nodes, os.getcwd() + "/temp_input.txt", '', options.outgroup)
+    full_nodes, reduced_nodes=get_nodes(os.getcwd() + "/temp_input.txt", options.outgroup)
 
     prefix=options.prefix
 
     treemix_in_file=os.getcwd() + "/temp_input.txt"
-    treemix_file = os.getcwd() + "/temp_input.txt"
-
-    locus_filter=make_filter()
 
     estimator_arguments=dict(reducer=options.outgroup, 
                              variance_correction='unbiased',
@@ -165,9 +169,7 @@ def main(args):
                               p=options.p_sim,
                               outgroup_name='',
                               reduce_covariance_node=options.outgroup,
-                              treemix_file=treemix_file,
                               prefix=prefix,
-                              locus_filter=locus_filter,
                               estimator_arguments=estimator_arguments,
                               verbose_level=options.verbose_level
                               )
@@ -177,22 +179,15 @@ def main(args):
             df = float(f.readline().rstrip())
     else:
         estimator_arguments['save_variance_correction']=False
-        summarization=options.bootstrap_type_of_estimation
         df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
                                                bootstrap_blocksize=options.bootstrap_blocksize,
                                                no_bootstrap_samples=options.no_bootstrap_samples,
-                                               summarization=summarization,
                                                cores=options.MCMC_chains,
                                                prefix=prefix,
-                                               est=estimator_arguments, locus_filter=locus_filter,
-                                               load_bootstrapped_covariances=[],
+                                               est=estimator_arguments, 
                                                verbose_level=options.verbose_level)
 
-    if 9 not in [6,8,9]:
-        multiplier=None
-        covariance=(covariance, multiplier)
-    else:
-        multiplier=covariance[1]
+    multiplier=covariance[1]
         
     tree_nodes=reduced_nodes
     if options.continue_samples != []:
@@ -284,8 +279,6 @@ def main(args):
 
     make_topological_summaries = options.stop_criteria and (options.stop_criteria_threshold>=0)
     summary_verbose_scheme, summaries=get_summary_scheme(light_newick_tree_summaries=make_topological_summaries,
-                                              full_tree=True, #can not think of a moment where you don't want this.
-                                              proposals=mp[0],
                                               no_chains=options.MCMC_chains,
                                               verbose_level=options.verbose_level)
 

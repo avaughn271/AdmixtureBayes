@@ -190,27 +190,5 @@ def get_populations(tree, min_w=0.0, keys_to_include=None):
         pop_strings.remove('')
     return sorted(list(set(pop_strings)))
 
-def get_admixtured_populations(tree):
-    node_keys = sorted(get_leaf_keys(tree))
-    pops = [Population([1.0], [node]) for node in node_keys]
-    ready_nodes = list(zip(node_keys, pops))
-    waiting_nodes = {}
-    taken_nodes = []
-    covmat = dummy_covmat()
-    admixed_populations=[]
-    while True:
-        for key, pop in ready_nodes:
-            upds, admixed = leave_node_and_check_admixtures(key, tree[key], pop, covmat)
-            admixed_populations.extend(admixed)
-            for upd in upds:
-                waiting_nodes = _add_to_waiting(waiting_nodes, upd, tree)
-            taken_nodes.append(key)
-        waiting_nodes, ready_nodes = _thin_out_dic(waiting_nodes, taken_nodes[:])
-        if len(ready_nodes) == 0:
-            return None
-        if len(ready_nodes) == 1 and ready_nodes[0][0] == "r":
-            break
-    return admixed_populations
-
 def get_populations_string(tree, min_w=0.0, keys_to_include=None):
     return '-'.join(get_populations(tree, min_w, keys_to_include))

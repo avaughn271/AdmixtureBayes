@@ -1,9 +1,32 @@
-from estimators import Estimator, initor
 from numpy import array, mean, zeros, diag, sum, savetxt,nan, isnan, nanmean
 from numpy import sum as npsum
 import warnings
 
 from numpy import insert, identity
+
+class Estimator(object):
+    
+    def __init__(self,
+                 reduce_also=True):
+        self.reduce_also=reduce_also
+        self.fitted_value=None
+        self.initial_Sigma_generator=None
+        self.initial_Sigma=None
+        
+    def get_reduce_index(self):
+        return 0
+    
+    def __call__(self,xs,ns, names=None, extra_info={}):
+        '''
+        Should return the covariance estimate and possibly set the variable fitted_value
+        '''
+        pass
+
+def initor(a):
+    if not isinstance(a, str):
+        return a[0]
+    else:
+        return a
 
 def reduce_covariance(covmat, subtracted_population_index):
     reducer=insert(identity(covmat.shape[0]-1), subtracted_population_index, -1, axis=1)

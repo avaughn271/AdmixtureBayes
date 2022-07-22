@@ -138,12 +138,6 @@ def special_min(x,y,z=None):
 def average_admixture_node(x,y,z):
     return z*x+(1-z)*y
 
-def get_max_distance_to_root(tree):
-    return max(get_leaf_distances_to_root(tree, function=special_max))
-
-def get_min_distance_to_root(tree):
-    return min(get_leaf_distances_to_root(tree, function=special_min))
-
 def get_average_distance_to_root(tree):
     av_lengths=get_leaf_distances_to_root(tree, function=average_admixture_node)
     return float(sum(av_lengths))/len(av_lengths)

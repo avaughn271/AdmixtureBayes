@@ -5,8 +5,18 @@ from Rtree_operations import (get_categories, get_destination_of_lineages, propa
                               get_admixture_keys_and_proportions, tree_to_0tree,
                               direct_all_admixtures)
 from copy import deepcopy
-from prior import matchmake
 from numpy.random import random
+
+def matchmake(single_coalescences, coalescences_on_hold):
+    happy_couples=[]
+    continuing_singles=[]
+    for key,branch in coalescences_on_hold:
+        if (key,branch) in single_coalescences:
+            happy_couples.append(((key,branch),single_coalescences[(key,branch)]))
+            del single_coalescences[(key,branch)]
+        else:
+            continuing_singles.append((key,branch))
+    return single_coalescences, happy_couples, continuing_singles
 
 def node_count(tree):
     '''

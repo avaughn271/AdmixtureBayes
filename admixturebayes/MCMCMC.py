@@ -3,7 +3,7 @@
 from MCMC import basic_chain
 from pathos.multiprocessing import freeze_support
 from Rtree_operations import get_number_of_admixes
-from prior import no_admixes
+from posterior import no_admixes
 import pandas as pd
 from multiprocessing_helpers import basic_chain_pool
 from numpy.random import choice, random

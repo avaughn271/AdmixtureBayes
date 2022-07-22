@@ -1,6 +1,5 @@
 from numpy.random import random
 from math import exp, log
-from summary import *
 from Rtree_operations import scale_tree_copy
 
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):

@@ -4,8 +4,29 @@ from tree_to_data import (file_to_emp_cov,
                           get_xs_and_ns_from_treemix_file, order_covariance, reorder_reduced_covariance)
 from copy import deepcopy
 from numpy import loadtxt, savetxt
-from construct_estimator_choices import make_estimator
 from math import log
+
+from covariance_scaled import ScaledEstimator
+
+def make_estimator(reduce_method, 
+                   variance_correction, 
+                   nodes, 
+                   reducer,
+                   reduce_also,
+                   Simulator_fixed_sxeed,
+                   add_variance_correction_to_graph=False,
+                   prefix='',
+                   save_variance_correction=True):
+    
+    est=ScaledEstimator(reduce_method=reduce_method,
+                 scaling='average_sum',
+                 reduce_also=reduce_also,
+                 variance_correction=variance_correction,
+                 add_variance_correction_to_graph=add_variance_correction_to_graph,
+                 prefix_for_saving_variance_correction=prefix,
+                 save_variance_correction=save_variance_correction)
+    return(est)
+
 def rescale_empirical_covariance(m, normalizer= ['min', 'max']):    
     if not isinstance(normalizer, str):
         normalizer=normalizer[0]
@@ -25,7 +46,7 @@ def rescale_empirical_covariance(m, normalizer= ['min', 'max']):
     return m*multiplier, multiplier
 
 def empirical_covariance_wrapper_directly(snp_data_file, **kwargs):
-    xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file, kwargs['locus_filter'])
+    xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file)
     return xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs)
 
 def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
@@ -94,29 +115,21 @@ def save_stage(value, stage_number, prefix, full_nodes, before_added_outgroup_no
         with open(filename, 'a') as f:
             f.write('multiplier='+str(value[1]))
 
-
 def get_covariance(input, full_nodes=None,
                    p=0.5,
                    outgroup_name=None,
                    reduce_covariance_node=None,
-                   theta=0.4, sites=500000,
-                   treemix_file=None,
+                   theta=0.4, 
                    blocksize_empirical_covariance=100,
                    save_stages=list(range(1,6))+list(range(7,10)),
                    prefix='tmp',
-                   t_adjust_tree=False,
                    final_pop_size=100.0,
                    via_treemix=True,
                    sadmix=False,
-                   favorable_init_brownian=False,
                    unbounded_brownian=False,
                    filter_on_outgroup=False,
-                   locus_filter=None,
                    estimator_arguments={},
                    verbose_level='normal'):
-
-    if treemix_file is None:
-        treemix_file=prefix+'treemix'
 
     kwargs={}
     kwargs['p']=p
@@ -133,21 +146,16 @@ def get_covariance(input, full_nodes=None,
     kwargs['after_reduce_nodes']=after_reduce_nodes
     kwargs['before_added_outgroup_nodes']=before_added_outgroup_nodes
     kwargs['theta']=theta
-    kwargs['sites']=sites
-    kwargs['treemix_file']=treemix_file
     kwargs['blocksize_empirical_covariance']=blocksize_empirical_covariance
     kwargs['pks']={}
-    kwargs['time_adjust']=t_adjust_tree
     kwargs['final_pop_size']=final_pop_size
     kwargs['via_treemix']=via_treemix
     kwargs['add_file']=prefix+'true_add.txt'
     kwargs['import']=prefix+'m_scale.txt'
     kwargs['scale_goal']='max'
-    kwargs['favorable_init_brownian']=favorable_init_brownian
     kwargs['unbounded_brownian']=unbounded_brownian
     kwargs['filter_on_outgroup']=filter_on_outgroup
     kwargs['est']=estimator_arguments
-    kwargs['locus_filter']=locus_filter
 
     stages_to_go_through = [6,8,9]
     #makes a necessary transformation of the input(if the input is a filename or something).
