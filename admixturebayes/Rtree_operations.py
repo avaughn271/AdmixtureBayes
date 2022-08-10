@@ -49,17 +49,6 @@ def max_distance_to_leaf(tree,key, parent_key=None):
         return add+max_distance_to_leaf(tree, node[5], key)
     assert False, 'strange node caused no exit.'
 
-def add_outgroup(tree, inner_node_name='new', to_new_root_length=0.5, to_outgroup_length=0.5, outgroup_name=None):
-    (child_key1, child_branch1,_),(child_key2, child_branch2, _)=find_rooted_nodes(tree)
-    tree[inner_node_name]=['r', None, None, to_new_root_length, None, child_key1, child_key2]
-    tree[child_key1][child_branch1]=inner_node_name
-    tree[child_key2][child_branch2]=inner_node_name
-    if outgroup_name is None:
-        n=get_number_of_leaves(tree)
-        outgroup_name='s'+str(n+1)
-    tree[outgroup_name]=['r', None, None,to_outgroup_length, None, None, None]
-    return tree
-
 def non_admixture_path(tree, key):
     if key=='r':
         return True

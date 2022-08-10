@@ -1,7 +1,4 @@
-from tree_statistics import identifier_to_tree_clean, generate_predefined_list_string
-from tree_to_data import (file_to_emp_cov,
-                         emp_cov_to_file,
-                          get_xs_and_ns_from_treemix_file, order_covariance, reorder_reduced_covariance)
+from tree_to_data import emp_cov_to_file, get_xs_and_ns_from_treemix_file, order_covariance, reorder_reduced_covariance
 from copy import deepcopy
 from numpy import loadtxt, savetxt
 from math import log
@@ -96,14 +93,6 @@ dictionary_of_reasonable_names={
     8:'covariance_without_reduce_name',
     9:'covariance_and_multiplier'}
 
-def write_one_line_to_file(filename, value):
-    with open(filename,'w') as f:
-        f.write(value)
-
-def write_two_lines_to_file(filename, value1, value2):
-    with open(filename, 'w') as f:
-        f.write(value1+'\n'+value2)
-
 def save_stage(value, stage_number, prefix, full_nodes, before_added_outgroup_nodes, after_reduce_nodes, filename=None):
     if filename is None:
         save_word=dictionary_of_reasonable_names[stage_number]
@@ -119,15 +108,9 @@ def get_covariance(input, full_nodes=None,
                    p=0.5,
                    outgroup_name=None,
                    reduce_covariance_node=None,
-                   theta=0.4, 
-                   blocksize_empirical_covariance=100,
                    save_stages=list(range(1,6))+list(range(7,10)),
                    prefix='tmp',
-                   final_pop_size=100.0,
-                   via_treemix=True,
                    sadmix=False,
-                   unbounded_brownian=False,
-                   filter_on_outgroup=False,
                    estimator_arguments={},
                    verbose_level='normal'):
 
@@ -145,16 +128,10 @@ def get_covariance(input, full_nodes=None,
     kwargs['reduce_covariance_node']=reduce_covariance_node
     kwargs['after_reduce_nodes']=after_reduce_nodes
     kwargs['before_added_outgroup_nodes']=before_added_outgroup_nodes
-    kwargs['theta']=theta
-    kwargs['blocksize_empirical_covariance']=blocksize_empirical_covariance
     kwargs['pks']={}
-    kwargs['final_pop_size']=final_pop_size
-    kwargs['via_treemix']=via_treemix
     kwargs['add_file']=prefix+'true_add.txt'
     kwargs['import']=prefix+'m_scale.txt'
     kwargs['scale_goal']='max'
-    kwargs['unbounded_brownian']=unbounded_brownian
-    kwargs['filter_on_outgroup']=filter_on_outgroup
     kwargs['est']=estimator_arguments
 
     stages_to_go_through = [6,8,9]
@@ -167,35 +144,6 @@ def get_covariance(input, full_nodes=None,
             save_stage(statistic, stage_to, prefix, full_nodes, before_added_outgroup_nodes, after_reduce_nodes)
 
     return statistic
-
-def read_multiplier(input):
-    with open(input, 'r') as f:
-        last_line=f.readlines()[-1]
-        return float(last_line.split("=")[1])
-
-def read_covariance_matrix(input, nodes):
-    if isinstance(input, str):
-        return file_to_emp_cov(input, nodes=nodes)
-    else:
-        return input
-
-def read_tree(input, nodes):
-    if isinstance(input, str):
-        if not ';' in input:
-            input=read_one_line_skip(filename=input)
-            return identifier_to_tree_clean(input, leaves=generate_predefined_list_string(deepcopy(nodes)))
-        else:
-            return identifier_to_tree_clean(input, leaves=generate_predefined_list_string(deepcopy(nodes)))
-    else:
-        return input
-
-def read_one_line_skip(filename):
-    with open(filename, 'r') as f:
-        lines=f.readlines()
-        if len(lines[-1])>3:
-            return lines[-1].rstrip()
-        else:
-            return lines[-2].rstrip()
 
 def read_one_line(filename):
     with open(filename, 'r') as f:

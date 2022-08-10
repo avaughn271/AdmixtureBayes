@@ -132,7 +132,7 @@ class simple_adaptive_proposal(object):
     def get_exportable_state(self):
         information={}
         information['n']=self.node_naming.n
-        return information     
+        return information
     
     def wear_exportable_state(self, information):
         self.node_naming.n=information['n']

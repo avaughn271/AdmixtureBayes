@@ -2,11 +2,6 @@ from Rtree_operations import to_networkx_format
 from node_structure import node_structure_to_networkx
 from graphviz import Digraph
 import os
-
-file_suffix=[s+'.csv' for s in ['leaves', 'inner_nodes','edges','adm_props']]
-
-def plot_graph(*args, **kwargs):
-    plot_as_directed_graph(*args, **kwargs)
         
 def plot_node_structure_as_directed_graph(node_structure, file_prefix='', drawing_name='tmp_.png', popup=True, node_dic=None, verbose=True):
     pure_leaves, admix_leaves, pure_coalescence, admix_coalescence, root, edges, inner_node_colors= node_structure_to_networkx(node_structure, node_dic)
