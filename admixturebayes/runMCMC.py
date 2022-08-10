@@ -6,7 +6,6 @@ from posterior import posterior_class
 from MCMCMC import MCMCMC
 from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
 from MCMC import basic_chain
-from stop_criteria import stop_criteria
 import os
 from numpy import random
 import pandas
@@ -18,11 +17,7 @@ import tree_statistics
 import Rtree_to_covariance_matrix
 from copy import deepcopy
 
-def get_summary_scheme(light_newick_tree_summaries=False,
-                       priors=False,
-                       no_chains=1,
-                       nodes=None, 
-                       verbose_level='normal'):
+def get_summary_scheme(no_chains=1):
     
     summaries=[summary.s_posterior(),
                summary.s_likelihood(),
@@ -36,10 +31,6 @@ def get_summary_scheme(light_newick_tree_summaries=False,
                summary.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
     summaries.append(summary.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
     summaries.append(summary.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
-    if light_newick_tree_summaries:
-        summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_0ntree, 'Zero_Ntree',output='string'))
-        summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_random_ntree, 'random_Ntree',output='string'))
-        summaries.append(summary.s_basic_tree_statistics(tree_statistics.tree_to_mode_ntree, 'mode_Ntree',output='string'))
     sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
     if no_chains==1:
@@ -100,12 +91,6 @@ def main(args):
     #medium important convergence arguments
     parser.add_argument('--m', type=int, default=50, help='the number of MCMC steps before between each MCMCMC flip')
     parser.add_argument('--max_temp', type=float, default=1000, help='the maximum temperature used in the MCMCMC.')
-    parser.add_argument('--stop_criteria', action='store_true', default=False,
-                        help='If applied the MCMCMC will stop when the coldest chain has an effective sample size at a certain threshold for a number of different summaries.')
-    parser.add_argument('--stop_criteria_frequency', type=int, default=200000,
-                        help='The frequency of checking for when the stop criteria are checked (if the stop_criteria flag is turned on). It is measured in total iterations(n*m).')
-    parser.add_argument('--stop_criteria_threshold', default=200, type=float,
-                        help='The minimum ESS to obtain for topological summaries of the MCMC chain (if the stop_criteria). If negative, the topological stop criteria will not be used at all.')
 
     #convenience arguments
     parser.add_argument('--prefix', type=str, default='',
@@ -277,21 +262,9 @@ def main(args):
     with open(prefix+options.save_df_file, 'w') as f:
         f.write(str(df))
 
-    make_topological_summaries = options.stop_criteria and (options.stop_criteria_threshold>=0)
-    summary_verbose_scheme, summaries=get_summary_scheme(light_newick_tree_summaries=make_topological_summaries,
-                                              no_chains=options.MCMC_chains,
-                                              verbose_level=options.verbose_level)
+    summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
     sim_lengths=[options.m]*options.n
-    if options.stop_criteria:
-        sc=stop_criteria(frequency=options.stop_criteria_frequency,
-                         outfile=prefix+'stop_criteria.txt',
-                         topological_threshold=options.stop_criteria_threshold,
-                         continuous_threshold=options.stop_criteria_threshold, #ANDREWDEBUG This used to be topological.
-                         Rscript_path=options.Rscript_command,
-                         verbose_level=options.verbose_level)
-    else:
-        sc=None
 
     collapse_row=''
     likelihood_nodes=reduced_nodes
@@ -356,7 +329,6 @@ def main(args):
                no_chains=options.MCMC_chains,
                multiplier=multiplier,  #numpy_seeds = random_seeds,
                result_file=options.result_file,
-               stop_criteria=sc,
                posterior_function_list=posterior_function_list, n_arg=options.n, m_arg=options.m, verboseee=options.verbose_level)
     def single_chain_run():
         basic_chain(start_x= starting_trees[0],
@@ -381,8 +353,6 @@ def main(args):
         single_chain_run()
     else:
         res=multi_chain_run()
-    if os.path.exists("stop_criteria.txt"):
-        os.remove("stop_criteria.txt")
     if os.path.exists("trees_tmp.txt"):
         os.remove("trees_tmp.txt")
     if options.continue_samples != []:

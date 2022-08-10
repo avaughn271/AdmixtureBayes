@@ -6,11 +6,8 @@ python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgr
 #We could also run the chain for more iterations with more chains
 python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgroup out --n 500 --MCMC_chains 10
 
-#Or use the stop criteria
-python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgroup out --n 5000   --stop_criteria --stop_criteria_threshold 4
-
 #We can also turn off printing to the console and rename the output
-python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgroup out --n 5000   --stop_criteria --stop_criteria_threshold 400 --verbose_level silent --result_file exampleoutput.csv
+python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgroup out --verbose_level silent --result_file exampleoutput.csv
 
 #This is how we start in a random state
 python admixturebayes/runMCMC.py  --input_file example/allele_counts.txt --outgroup out --n 5000 --result_file exampleoutput.csv --start random

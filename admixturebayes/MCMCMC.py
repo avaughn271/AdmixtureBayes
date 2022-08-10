@@ -10,7 +10,6 @@ from numpy.random import choice, random
 from math import exp
 from itertools import chain
 import time
-import os
 
 def _basic_chain_unpacker(args):
     return basic_chain(*args)
@@ -22,13 +21,12 @@ def MCMCMC(starting_trees,
            printing_schemes, 
            iteration_scheme, 
            overall_thinnings, 
-           proposal_scheme, 
+           proposal_scheme,
          n_arg, m_arg, verboseee,  cores=4,
            no_chains=None,
            numpy_seeds=None,
            multiplier= None,
            result_file=None,
-           stop_criteria=None,
            posterior_function_list=[]):
     '''
     this function runs a MC3 using the basic_chain_unpacker. Let no_chains=number of chains. The inputs are
@@ -102,14 +100,6 @@ def MCMCMC(starting_trees,
                                                                 [posterior_function])  # trees, posteriors, range(len(trees)),[None]*len(trees)#
         total_permutation=_update_permutation(total_permutation, permut)
         cum_iterations+=no_iterations
-        if stop_criteria is not None:
-            if stop_criteria(cum_iterations, result_file):
-                print("Stop criteria reached. MCMC terminating now.")
-                if os.path.exists("trees_tmp.txt"):
-                    os.remove("trees_tmp.txt")
-                if os.path.exists("stop_criteria.txt"):
-                    os.remove("stop_criteria.txt")
-                break
             
     pool.terminate()
     if result_file is None:

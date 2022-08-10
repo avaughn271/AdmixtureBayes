@@ -25,9 +25,9 @@ https://pypi.org/project/pathos/
 
 https://pypi.org/project/graphviz/
 
-Furthermore, if you wish to use the stop_criteria feature of the Markov Chain, then you need to also have R installed with the [rwty](https://cran.r-project.org/web/packages/rwty/index.html) and [coda](https://cran.r-project.org/web/packages/coda/index.html) packages, which can be installed by running: 
+Furthermore, if you wish to use use the given R script to evaluate convergence, then you need to also have R installed with the [coda](https://cran.r-project.org/web/packages/coda/index.html) package, which can be installed by running: 
 ```
-install.packages(c("rwty", "coda"))
+install.packages("coda")
 ```
 in any R session. 
 
@@ -78,12 +78,6 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 **--MCMC_chains** (optional) The number of chains to run the MCMCMC with (See Matthew Darlington's great explanation of MCMCMC [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains will result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8.
 
 **--result_file** (optional) The name of the mcmc output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "mcmc_samples.csv"
-
-**--stop_criteria** (optional) If this flag is used, then the MCMC sampler will stop as soon as the effective sample size has been reached or until n iterations have been reached, whichever comes first. Otherwise, the algorithm will continue until n iterations have been reached.
-
-**--stop_criteria_threshold** (optional) Ignored if stop_criteria is False. Sets the effective samples size that must be reached for the algorithm to terminate. Default value is 200.
-
-**--Rscript_command** (optional) Ignored if stop_criteria is False. The command with which to run an R script on the desired machine (eg. "Rscript" or "R CMD BATCH"). Default value is "Rscript".
 
 **--start random** (optional) If this flag is used, then the algorithm will start at a randomly constructed graph, which may be useful for monitoring mixing and convergence of the chain, for example by Gelman-Rubin statistics. By default, a deterministic heuristic tree constructor is used which gives a reasonable starting graph. Should not be used with --continue_samples.
 

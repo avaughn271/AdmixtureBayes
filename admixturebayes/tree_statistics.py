@@ -1,8 +1,8 @@
 from Rtree_operations import (get_categories, get_destination_of_lineages, propagate_married, 
                               propagate_admixtures, get_branch_length,update_parent_and_branch_length, 
                               get_trivial_nodes, insert_children_in_tree, rename_root,
-                              get_admixture_proportion, remove_admixture, get_admixture_proportion_from_key,
-                              get_admixture_keys_and_proportions, tree_to_0tree,
+                              get_admixture_proportion,
+                              get_admixture_keys_and_proportions,
                               direct_all_admixtures)
 from copy import deepcopy
 from numpy.random import random
@@ -154,56 +154,7 @@ class uniform_generator(object):
     
     def __call__(self):
         return random()
-         
-def non_admixture_to_newick(tree):
-    leaves,_,_=get_categories(tree)
-    keys_to_pops={l:l for l in leaves}
-    while len(keys_to_pops)>1:
-        next_gen={} #dictionary of mapping from parent to a list of children
-        dup_children=[]
-        dup_parents=[]
-        for key in keys_to_pops:
-            parent_key=tree[key][0]
-            if parent_key in next_gen:
-                next_gen[parent_key]=[next_gen[parent_key][0], key]
-                dup_parents.append(parent_key)
-                dup_children.append(next_gen[parent_key])
-            else:
-                next_gen[parent_key]=[key]
-        for (c1,c2),p in zip(dup_children, dup_parents):
-            keys_to_pops[p]='('+','.join(sorted([keys_to_pops[c1],keys_to_pops[c2]]))+')'
-            del keys_to_pops[c1]
-            del keys_to_pops[c2]
-    return list(keys_to_pops.values())[0]
-
-def tree_to_mode_ntree(tree):
-    '''
-    Every admixture node is collapsed such that the branch with smaller weight is removed. This is not the same majority tree because
-    '''
-    leaves,_,admixture_keys=get_categories(tree)
-    pruned_tree = deepcopy(tree)
-    for adm_key in admixture_keys:
-        if adm_key in pruned_tree:
-            if get_admixture_proportion_from_key(tree, adm_key)>0.5:
-                remove=1
-            else:
-                remove=0
-            pruned_tree=remove_admixture(pruned_tree, adm_key, remove)
-    return non_admixture_to_newick(pruned_tree)
-
-def tree_to_0ntree(tree):
-    pruned_tree=tree_to_0tree(tree)
-    return non_admixture_to_newick(pruned_tree)
-
-
-def tree_to_random_ntree(tree):
-    leaves,_,admixture_keys=get_categories(tree)
-    pruned_tree = deepcopy(tree)
-    for adm_key in admixture_keys:
-        if adm_key in pruned_tree:
-            pruned_tree=remove_admixture(pruned_tree, adm_key, int(random()<0.5))
-    return non_admixture_to_newick(pruned_tree)
-        
+  
 def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths=None, admixture_proportions=None):
     '''
     Transforms an identifier of the form qwert-uio-asdfg-jk into a dictionary tree using the generators of leaves, inner_nodes, branch_lengths and admixture_proportions.
