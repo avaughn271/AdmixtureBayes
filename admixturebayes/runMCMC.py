@@ -24,10 +24,8 @@ def get_summary_scheme(no_chains=1):
                summary.s_prior(),
                summary.s_no_admixes(),
                summary.s_variable('add', output='double'), 
-               summary.s_average_branch_length(),
                summary.s_total_branch_length(),
                summary.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
-               summary.s_basic_tree_statistics(Rtree_operations.get_average_distance_to_root, 'average_root'),
                summary.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
     summaries.append(summary.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
     summaries.append(summary.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
@@ -50,18 +48,12 @@ class fixed_geometrical(object):
         return self.temps[i]
 
 def get_nodes(input_file, reduce_node):
-    ''' The outgroup_name is only used for simulation purposes and reduce_node is the important one
-    that is used when analysing the admixture graphs.  '''
     nodes=read_one_line(input_file)
     reduced_nodes=deepcopy(nodes)
     reduced_nodes.remove(reduce_node)
     return nodes, reduced_nodes
 
-from tree_to_data import unzip
-
 def read_one_line(filename):
-    if filename.endswith('.gz'):
-        filename=unzip(filename)
     with open(filename, 'r') as f:
         return f.readline().rstrip().split()
 
@@ -73,7 +65,7 @@ def main(args):
 
     #input/output options
     parser.add_argument('--input_file', type=str, required=True, help='the input file of the pipeline. It should be of the same type as the treemix input file with a header of population names and each line representing a snp (unless --covariance_pipeline is altered).')
-    parser.add_argument('--result_file', type=str, default='mcmc_samples.csv', help='file in which to save results. The prefix will not be prepended the result_file.')
+    parser.add_argument('--result_file', type=str, default='mcmc_samples.csv', help='file in which to save results.')
 
     parser.add_argument('--outgroup', type=str, default='',
                         help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
@@ -82,23 +74,15 @@ def main(args):
     parser.add_argument('--MCMC_chains', type=int, default=8,
                         help='The number of chains to run the MCMCMC with. Optimally, the number of cores matches the number of chains.')
     parser.add_argument('--n', type=int, default=200, help='the number of MCMCMC flips throughout the chain.')
-    parser.add_argument('--df_file', type=str, default='',
-                        help='By default, the degrees of freedom will be estimated with bootstrap. If this flag is used, it will cancel the bootstrap estimation of the degrees of freedom. The degrees of freedom represents the number of effectively independent SNPs in the dataset.')
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
-
     #medium important convergence arguments
     parser.add_argument('--m', type=int, default=50, help='the number of MCMC steps before between each MCMCMC flip')
-    parser.add_argument('--max_temp', type=float, default=1000, help='the maximum temperature used in the MCMCMC.')
 
     #convenience arguments
-    parser.add_argument('--prefix', type=str, default='',
-                        help='this directory will be the beginning of every temporary file created in the covariance pipeline and in the estimation of the degrees of freedom in the wishart distribution.')
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
-    parser.add_argument('--Rscript_command', default='Rscript', type=str,
-                        help='The command to start R from the terminal. If there is no valid path, the stop criteria should be not used. Its default value is "Rscript"')
     parser.add_argument('--thinning_coef', type=int, default=40,
                         help=SUPPRESS)#'The number of MCMC steps between each saved instance. It has to be lower than --m.')
 
@@ -109,18 +93,7 @@ def main(args):
                         help='the number of bootstrap samples to make to estimate the degrees of freedom in the wishart distribution.')
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
-                        help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start or the so-called trivial tree')
-    parser.add_argument('--start', choices=['trivial', 'random', 'perfect'], default='trivial',
-                        help='Where to start the chain - works only if starting trees are not specified.')
-
-    #more obscure convenience arguments
-    parser.add_argument('--save_df_file', type=str, default='DF.txt',
-                        help=SUPPRESS)#'the prefix is put before this string and the degrees of freedom is saved to this file.')
-
-    #Very obscure arguments
-    # tree simulation
-    parser.add_argument('--p_sim', type=float, default=.5,
-                        help=SUPPRESS)#'the parameter of the geometric distribution in the distribution to simulate the true tree from.')
+                        help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
 
     options=parser.parse_args(args)
 
@@ -137,40 +110,26 @@ def main(args):
 
     full_nodes, reduced_nodes=get_nodes(os.getcwd() + "/temp_input.txt", options.outgroup)
 
-    prefix=options.prefix
-
     treemix_in_file=os.getcwd() + "/temp_input.txt"
 
     estimator_arguments=dict(reducer=options.outgroup, 
-                             variance_correction='unbiased',
                              nodes=full_nodes,
                              Simulator_fixed_sxeed=True,
                              add_variance_correction_to_graph=True,
-                             save_variance_correction=True,
-                             prefix=prefix)
-
+                             save_variance_correction=True)
+                             
     covariance=get_covariance(os.getcwd() + "/temp_input.txt",
                               full_nodes=full_nodes,
-                              p=options.p_sim,
-                              outgroup_name='',
                               reduce_covariance_node=options.outgroup,
-                              prefix=prefix,
-                              estimator_arguments=estimator_arguments,
-                              verbose_level=options.verbose_level
-                              )
+                              estimator_arguments=estimator_arguments)
 
-    if options.df_file:
-        with open(options.df_file, 'r') as f:
-            df = float(f.readline().rstrip())
-    else:
-        estimator_arguments['save_variance_correction']=False
-        df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
-                                               bootstrap_blocksize=options.bootstrap_blocksize,
-                                               no_bootstrap_samples=options.no_bootstrap_samples,
-                                               cores=options.MCMC_chains,
-                                               prefix=prefix,
-                                               est=estimator_arguments, 
-                                               verbose_level=options.verbose_level)
+    estimator_arguments['save_variance_correction']=False
+    df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
+                                            bootstrap_blocksize=options.bootstrap_blocksize,
+                                            no_bootstrap_samples=options.no_bootstrap_samples,
+                                            cores=options.MCMC_chains,
+                                            est=estimator_arguments, 
+                                            verbose_level=options.verbose_level)
 
     multiplier=covariance[1]
         
@@ -246,52 +205,29 @@ def main(args):
         starting_trees=get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
                                         options.MCMC_chains,
                                         adds=[os.getcwd() + "/" + "temp_add.txt"],
-                                        nodes=tree_nodes,
-                                        multiplier=multiplier,
-                                        start=options.start,
-                                        prefix=prefix)
+                                        nodes=tree_nodes)
     else:
         starting_trees=get_starting_trees(options.continue_samples,
                                       options.MCMC_chains,
                                       adds=[],
-                                      nodes=tree_nodes,
-                                      multiplier=multiplier,
-                                      start=options.start,
-                                      prefix=prefix)
-
-    with open(prefix+options.save_df_file, 'w') as f:
-        f.write(str(df))
+                                      nodes=tree_nodes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
     sim_lengths=[options.m]*options.n
 
-    collapse_row=''
     likelihood_nodes=reduced_nodes
     posterior = posterior_class(emp_cov=covariance[0],
                                 M=df,
                                 p=options.p,
                                 multiplier=covariance[1],
-                                nodes=likelihood_nodes,
-                                prefix=prefix,
-                                variance_correction_file='',
-                                collapse_row=collapse_row)
+                                nodes=likelihood_nodes)
 
     posterior_function_list=[]
 
-    temperature_scheme=fixed_geometrical(options.max_temp,options.MCMC_chains)
+    temperature_scheme=fixed_geometrical(1000,options.MCMC_chains)
 
     #####    ANDREW DEBUG   !!!!!!!!!!
-    if os.path.exists("DF.txt"):
-        os.remove("DF.txt")
-    else:
-        print("The file does not exist")
-
-    if os.path.exists("m_scale.txt"):
-        os.remove("m_scale.txt")
-    else:
-        print("The file does not exist")
-
     if os.path.exists("covariance_without_reduce_name.txt"):
         os.remove("covariance_without_reduce_name.txt")
     else:

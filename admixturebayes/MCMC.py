@@ -31,7 +31,7 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     
     u=random()
     pks['U']=u
-    proposal.adapt(mhr, u, post_new, post, temperature)
+    proposal.adapt(mhr)
     if u<mhr:
         return newx,post_new
     return x,post
@@ -78,8 +78,6 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
         post=new_post
     
     return x, post, list(zip(*iteration_summary)),proposal.get_exportable_state()
-        
-        
         
 def _calc_and_print_summaries(sample_verbose_scheme,summaries,**kwargs):
     iteration=kwargs['iteration_number']

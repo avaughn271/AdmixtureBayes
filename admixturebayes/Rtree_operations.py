@@ -1,97 +1,5 @@
 from copy import deepcopy
 
-def create_trivial_tree(size, total_height=1.0):
-    '''
-    constructs tree of the form (..((s1,s2),s3),s4)...)
-    '''
-    step_size=total_height/size
-    tree={'s1':['n1',None,None,step_size,None, None,None],
-          's2':['n1',None,None,step_size,None, None,None],
-          'n1':['n2',None,None,step_size,None, 's1','s2']}
-    nex_inner_node='n2'
-    new_inner_node='n1'
-    for k in range(3,size+1):
-        old_inner_node='n'+str(k-2)
-        new_inner_node='n'+str(k-1)
-        nex_inner_node='n'+str(k)
-        new_leaf='s'+str(k)
-        tree[new_leaf]=[new_inner_node, None,None, step_size*(k-1),None, None,None]
-        tree[new_inner_node]=[nex_inner_node, None,None, step_size, None, new_leaf,old_inner_node]
-    del tree[new_inner_node]
-    return rename_root(tree, new_inner_node)
-
-def rename_leaves(tree, new_leaf_names):
-    old_keys=get_leaf_keys(tree)
-    assert len(new_leaf_names) == len(old_keys), 'number of renamed nodes did not match the actual number of nodes'
-    unique_identifier= max(old_keys, key=len)+max(new_leaf_names, key=len)+'_'
-    temporary_keys=[ok+unique_identifier for ok in old_keys]
-    for old_key, new_key in zip(old_keys, temporary_keys):
-        tree=rename_key(tree, old_key, new_key )
-    for old_key, new_key in zip(temporary_keys, new_leaf_names):
-        tree = rename_key(tree, old_key, new_key)
-    return tree
-
-def max_distance_to_leaf(tree,key, parent_key=None):
-    if key=='r':
-        (child_key1,_,_),(child_key2,_,_)=find_rooted_nodes(tree)
-        return max(max_distance_to_leaf(tree, child_key1, key), max_distance_to_leaf(tree, child_key2,key))
-    node=tree[key]
-    if parent_key is not None:
-        branch=mother_or_father(tree, key, parent_key)
-        add=node[3+branch]
-    else:
-        add=0
-    if node_is_leaf_node(node):
-        return add
-    if node_is_coalescence(node):
-        return add+max(max_distance_to_leaf(tree, node[5], key), max_distance_to_leaf(tree, node[6],key))
-    if node_is_admixture(node):
-        return add+max_distance_to_leaf(tree, node[5], key)
-    assert False, 'strange node caused no exit.'
-
-def non_admixture_path(tree, key):
-    if key=='r':
-        return True
-    if node_is_admixture(tree[key]):
-        return False
-    parent_key=tree[key][0]
-    return non_admixture_path(tree, parent_key)
-
-def get_first_admixture_meeting(tree, key):
-    if key=='r':
-        return None
-    if node_is_admixture(tree[key]):
-        return key
-    parent_key=tree[key][0]
-    return get_first_admixture_meeting(tree, parent_key)
-
-def get_branches_to_reverse(tree, key, so_far=None):
-    if so_far is None:
-        so_far=[]
-    if is_root(key):
-        (key1, branch1, length1),(key2,branch2,length2)=find_rooted_nodes(tree)
-        if key1==so_far[-1][0]:
-            so_far.append((key2,tree[key2][branch2+3],tree[key2][branch2]))
-        else:
-            so_far.append((key1,tree[key1][branch1+3],tree[key1][branch1]))
-        return so_far
-    else:
-        so_far.append((key,tree[key][3], tree[key][0]))
-        return get_branches_to_reverse(tree, tree[key][0], so_far)
-    
-def rename_rootname(tree,old_name, new_name):
-    for key,node in list(tree.items()):
-        if node[0]==old_name:
-            tree[key][0]=new_name
-        if node[1]==old_name:
-            tree[key][1]=new_name 
-    return tree
-
-def remove_children(tree):
-    for key in tree:
-        tree[key]=tree[key][:5]
-    return tree
-
 def rename_key(tree, old_key_name, new_key_name):
     node=tree[old_key_name]
     tree[new_key_name]=node
@@ -105,39 +13,6 @@ def rename_key(tree, old_key_name, new_key_name):
     del tree[old_key_name]
     return tree
 
-def get_trivial_nodes(size):
-    return ['s'+str(n+1) for n in range(size)]
-
-def get_distance_to_root(tree, key, function=max):
-    if key=='r':
-        return 0.0
-    node=tree[key]
-    if node_is_admixture(node):
-        return function(get_distance_to_root(tree, node[0], function=function)+node[3], 
-                   get_distance_to_root(tree, node[1], function=function)+node[4], node[2])
-    else:
-        return get_distance_to_root(tree, node[0], function=function)+node[3]
-
-def special_max(x,y,z=None):
-    return max(x,y)
-
-def special_min(x,y,z=None):
-    return min(x,y)
-
-def average_admixture_node(x,y,z):
-    return z*x+(1-z)*y
-
-def get_average_distance_to_root(tree):
-    av_lengths=get_leaf_distances_to_root(tree, function=average_admixture_node)
-    return float(sum(av_lengths))/len(av_lengths)
-
-def get_leaf_distances_to_root(tree, function=max):
-    res=[]
-    for key, node in list(tree.items()):
-        if node_is_leaf_node(node):
-            res.append(get_distance_to_root(tree, key, function=function))
-    return res
-
 def get_number_of_ghost_populations(tree):
     count=0
     for key,node in list(tree.items()):
@@ -147,7 +22,6 @@ def get_number_of_ghost_populations(tree):
                 count+=1
     return count
 
-    
 def update_all_branches(tree, updater):
     for key, node in list(tree.items()):
         if node_is_admixture(node):
@@ -518,20 +392,6 @@ def get_admixture_keys_and_proportions(tree):
             props.append(node[2])
     return keys, props
 
-def get_pruned_tree_and_add(tree, outgroup):
-    assert tree[outgroup][0]=='r', 'can not remove outgroup which is not outgroup'
-    (child1, branch1, a), (child2,branch2, b)=find_rooted_nodes(tree)
-    del tree[child2]
-    del tree[child1]
-    if child1==outgroup:
-        tree=rename_root(tree, child2)
-    else:
-        tree=rename_root(tree, child1)
-    return tree, a+b
-        
-            
-    
-
 
 def get_destination_of_lineages(tree, ready_lineages):
     single_coalescences={} #list of tuples ((key,branch),(sister_key,sister_branch))
@@ -599,8 +459,6 @@ def insert_children_in_tree(tree):
     for key in tree:
         tree[key]=_update_parents(tree[key], children[key])
     return tree
-
-
 
 def get_all_branch_lengths(tree):
     res=[]
@@ -856,16 +714,6 @@ def remove_admix2(tree, rkey, rbranch, pks={}):
     del tree[source_key]
     return tree, (t1,t2,t3,t4,t5), alpha
 
-def tree_to_0tree(tree):
-    leaves,_,admixture_keys=get_categories(tree)
-    pruned_tree = deepcopy(tree)
-    for adm_key in admixture_keys:
-        if adm_key in pruned_tree:
-            #removedprin '------------------------------------------'
-            #removedprin 'removing', (adm_key, int_bin) , 'from tree:'
-            pruned_tree=remove_admixture(pruned_tree, adm_key, 1)
-    return pruned_tree
-
 def direct_all_admixtures(tree, smaller_than_half=True):
     for key, node in list(tree.items()):
         if node_is_admixture(node):
@@ -929,8 +777,6 @@ def remove_non_mixing_admixtures(tree, limit=1e-7):
             tree=remove_admixture(tree, adm_key, adm_branch)
     return tree
         
-    
-        
 def get_parents(node):
     return node[:2]
 
@@ -966,21 +812,7 @@ def get_keys_and_branches_from_children(tree, key):
     for child_key in child_keys:
         branches.append(mother_or_father(tree, child_key, key))
     return list(zip(child_keys, branches))
-    
-    
-
-def get_real_children_root(tree, key):
-    if key=='r':
-        a,b=find_rooted_nodes(tree)
-        return [(a[0],a[1]), (b[0],b[1])]
-    else:
-        c_keys=get_real_children(tree[key])
-        res=[]
-        for c_key in c_keys:
-            res.append((c_key, mother_or_father(tree, c_key, key)))
-        return res
         
-
 def get_other_parent(node, parent_key):
     if parent_key==node[0]:
         return node[1]
@@ -1053,7 +885,6 @@ def get_all_admixture_origins(tree):
         if node_is_admixture(node):
             res[key]=(node[3], get_parents(node)[0])
     return res
-        
 
 def is_root(*keys):
     ad=[key=='r' for key in list(keys)]

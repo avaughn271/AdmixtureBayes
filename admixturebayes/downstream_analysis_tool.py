@@ -95,10 +95,6 @@ def remove_empty_children(tree):
                 tree[k][5+n]=None
     return tree
 
-def get_list_of_turned_topologies(trees, true_tree):
-    nodes=get_leaf_keys(true_tree)
-    return [admixture_sorted_unique_identifier(tree, nodes) for tree in trees], admixture_sorted_unique_identifier(true_tree, nodes)
-
 def identity(x):
     return x
 
@@ -115,7 +111,6 @@ def iterate_over_output_file(outfile,
     all_results=[]
     
     for n,(i,r) in enumerate(df.iterrows()):
-        cont=False
         d_dic={colname:r[k] for k, colname in enumerate(cols)}
         d_dic.update(constant_kwargs)
 
@@ -129,7 +124,6 @@ class make_Rtree(object):
     
     def __init__(self, nodes_to_be_sorted, remove_sadtrees=False, subnodes=[], outgroup_name=''):
         self.nodes=sorted(nodes_to_be_sorted)
-        self.remove_sadtrees=remove_sadtrees
         self.subnodes=subnodes
         self.outgroup_name=outgroup_name
         
@@ -137,8 +131,10 @@ class make_Rtree(object):
         first_level=tree.split('-')[0]
         no_pops=len(first_level.split('.'))
         if no_pops==len(self.nodes): #checking if
+            print("d")
             Rtree=identifier_to_tree_clean(tree, leaves=generate_predefined_list_string(deepcopy(self.nodes)))
         elif no_pops==len(self.nodes)+1 and self.outgroup_name:
+            print("e")
             self.nodes=sorted(self.nodes+[self.outgroup_name])
             Rtree = identifier_to_tree_clean(tree, leaves=generate_predefined_list_string(deepcopy(self.nodes)))
         else:
@@ -149,8 +145,6 @@ class make_Rtree(object):
             try:
                 Rtree=get_subtree(Rtree, self.subnodes)
             except AssertionError:
-                from tree_plotting import plot_as_directed_graph
-                plot_as_directed_graph(Rtree)
                 print('input_tree', tree)
                 print('nodes', self.nodes)
                 print('subnodes', self.subnodes)
@@ -159,13 +153,9 @@ class make_Rtree(object):
     
 class make_full_tree(object):
     
-    def __init__(self, outgroup_name='out', remove_sadtrees=False, subnodes=[], reroot_population='',
-                 reroot_method='stop'):
+    def __init__(self, outgroup_name='out', remove_sadtrees=False, subnodes=[]):
         self.outgroup_name=outgroup_name
-        self.remove_sadtrees=remove_sadtrees
         self.subnodes=subnodes
-        self.reroot_population=reroot_population
-        self.reroot_method=reroot_method
         
     def __call__(self, Rtree=None, add=None, **kwargs):
         full_tree=deepcopy(Rtree)
@@ -215,7 +205,7 @@ class topology(object):
 class get_pops(object):
     
     def __init__(self, min_w=0.0, keys_to_include=None):
-        self.min_w=min_w
+        self.min_w=0.0
         self.keys_to_include=keys_to_include
             
     def __call__(self, full_tree=None, **kwargs):
@@ -223,7 +213,7 @@ class get_pops(object):
             tree=kwargs['Rtree']
         else:
             tree=full_tree
-        pops=get_populations(tree, self.min_w, keys_to_include=self.keys_to_include)
+        pops=get_populations(tree, 0.0, keys_to_include=self.keys_to_include)
         return {'pops':'-'.join(pops)}, False
 
 class thinning(object):

@@ -1,6 +1,5 @@
 from numpy import loadtxt
 from Rtree_to_covariance_matrix import make_covariance
-from covariance_scaled import reduce_covariance
 from scipy.stats import wishart
 from numpy.linalg import LinAlgError
 
@@ -59,12 +58,10 @@ def prior(x, p=0.5, pks={}, r=0):
         return -float('inf')
     branch_prior=calculate_branch_prior(branches, no_leaves)
     no_admix_prior=no_admixes(p, len(admixtures), r=r)
-    admix_prop_prior=0
     top_prior=uniform_topological_prior_function(tree)
-    logsum=branch_prior+no_admix_prior+admix_prop_prior+top_prior-add
+    logsum=branch_prior+no_admix_prior+top_prior-add
     pks['branch_prior']= branch_prior
     pks['no_admix_prior']=no_admix_prior
-    pks['admix_prop_prior']=admix_prop_prior
     pks['top_prior']= top_prior
     return logsum
 
@@ -85,7 +82,7 @@ def no_admixes(p, admixes, hard_cutoff=20, r=0):
 
         return geom.logpmf(admixes+1, 1.0-p)-geom.logcdf(hard_cutoff+1, 1.0-p)
 
-def likelihood(x, emp_cov, b, M=12,nodes=None, collapse_row='', pks={}):
+def likelihood(x, emp_cov, b, M=12,nodes=None, pks={}):
     tree, add= x
     r=emp_cov.shape[0]
     if nodes is None:
@@ -94,9 +91,6 @@ def likelihood(x, emp_cov, b, M=12,nodes=None, collapse_row='', pks={}):
     if par_cov is None:
         print('illegal tree')
         return -float('inf')
-    if collapse_row:
-        n=len(nodes)-1
-        par_cov=reduce_covariance(par_cov, n)
     if b is not None:
         par_cov+=b
     pks['covariance']=par_cov
@@ -116,12 +110,7 @@ class posterior_class(object):
                  M=10, 
                  p=0.5, 
                  multiplier=None, 
-                 nodes=None, 
-                 prefix='',
-                 variance_correction_file='',
-                 r=0,
-                 collapse_row='',
-                 ):
+                 nodes=None):
         '''
         M can either be a float - the degrees of freedom in the wishart distribution or the constant variance in the normal approximation of the covariance matrix.
         or M can be a matrix - the same size of emp_cov where each entry is the variance of that entry. 
@@ -129,30 +118,23 @@ class posterior_class(object):
         self.emp_cov=emp_cov
         self.M=M
         self.p=p
-        self.base_r=r
         self.lik=likelihood
             
         self.multiplier=multiplier
         self.nodes=nodes
-        self.collapse_row=collapse_row
         
-        if variance_correction_file:
-            self.b=loadtxt(variance_correction_file)
-        else:
-            self.b=loadtxt(prefix+'variance_correction.txt')
+        self.b=loadtxt('variance_correction.txt')
         if multiplier:
             self.b*=multiplier
 
-
-        
     def __call__(self, x, pks={}, verbose=False,r=None):
         if r is None:
-            r=self.base_r
+            r=0
         prior_value = prior(x,p=self.p, r=r)
         if prior_value==-float('inf'):
             return -float('inf'), prior_value
         
-        likelihood_value=self.lik(x, self.emp_cov,self.b, self.M, nodes=self.nodes, collapse_row=self.collapse_row, pks=pks)
+        likelihood_value=self.lik(x, self.emp_cov,self.b, self.M, nodes=self.nodes, pks=pks)
         pks['prior']=prior_value
         pks['likelihood']=likelihood_value
         return likelihood_value, prior_value

@@ -1,6 +1,6 @@
 from Rtree_operations import (get_categories, get_destination_of_lineages, propagate_married, 
                               propagate_admixtures, get_branch_length,update_parent_and_branch_length, 
-                              get_trivial_nodes, insert_children_in_tree, rename_root,
+                              insert_children_in_tree, rename_root,
                               get_admixture_proportion,
                               get_admixture_keys_and_proportions,
                               direct_all_admixtures)
@@ -17,17 +17,7 @@ def matchmake(single_coalescences, coalescences_on_hold):
         else:
             continuing_singles.append((key,branch))
     return single_coalescences, happy_couples, continuing_singles
-
-def node_count(tree):
-    '''
-    Returns number of leaves, coalescence nodes, and admixture nodes in a tuple of size 3.
-    '''
     
-    leaves, coalescence_nodes, admixture_nodes=get_categories(tree)
-    
-    return len(leaves), len(coalescence_nodes), len(admixture_nodes)
-    
-
 def make_dics_first_and_second(double_list):
     if double_list:
         firsts, seconds=list(map(list,list(zip(*double_list))))
@@ -113,18 +103,16 @@ def _list_double_to_string(list_of_doubles, digits=3):
 
 class generate_numbered_nodes(object):
     
-    def __init__(self, prefix='n', admixture_prefix='a'):
+    def __init__(self):
         self.node_count=0
         self.admixture_count=0
-        self.prefix='n'
-        self.admixture_prefix='a'
         
     def __call__(self, admixture=False):
         if admixture:
             self.admixture_count+=1
-            return self.admixture_prefix+str(self.admixture_count)
+            return 'a' + str(self.admixture_count)
         self.node_count+=1
-        return self.prefix+str(self.node_count)
+        return 'n' + str(self.node_count)
     
 class generate_predefined_list(object):
     
@@ -159,21 +147,15 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     '''
     Transforms an identifier of the form qwert-uio-asdfg-jk into a dictionary tree using the generators of leaves, inner_nodes, branch_lengths and admixture_proportions.
     '''
-    
+    print("dddd")
     levels=identifier.split('-')
     n_leaves=len(levels[0].split('.'))
-    
-    #initiate leaves
-    if leaves is None:
-        leaf_values=sorted(get_trivial_nodes(n_leaves))
-    else:
-        leaf_values=[leaves() for _ in range(n_leaves)]
+    leaf_values=[leaves() for _ in range(n_leaves)]
     tree={leaf:[None]*5 for leaf in leaf_values}
     trace_lineages=[(leaf,0) for leaf in leaf_values]
-    
-    #initiate generators
+    print(leaf_values)
     if inner_nodes is None:
-        inner_nodes=generate_numbered_nodes('n')
+        inner_nodes=generate_numbered_nodes()
     if branch_lengths is None:
         def f(): 
             return 1.0
@@ -230,15 +212,17 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     
     return insert_children_in_tree(tree)
               
-def identifier_to_tree_clean(identifier, **kwargs):            
+def identifier_to_tree_clean(identifier, **kwargs):
+    print("a")     
     ad2, branch_lengths, admixture_proportions=divide_triple_string(identifier)
-    tree_good2= identifier_to_tree(ad2, 
+    tree_good2= identifier_to_tree(ad2,
                                    branch_lengths=string_to_generator(branch_lengths), 
                                    admixture_proportions=string_to_generator(admixture_proportions),
                                    **kwargs)
     return tree_good2
 
 def topological_identifier_to_tree_clean(identifier, **kwargs):
+    print("b")
     tree_good2= identifier_to_tree(identifier,
                                    branch_lengths=uniform_generator(),
                                    admixture_proportions=uniform_generator(),

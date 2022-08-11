@@ -1,3 +1,4 @@
+
 from multiprocessing import Queue, Process
 from MCMC import basic_chain
 from numpy import random
@@ -23,7 +24,7 @@ class basic_chain_class(object):
     def __init__(self, summaries, posterior_function, proposal, resxeed):
         if resxeed is None: #if not applied the different chains will run with the same seexd, putting the assumptions of the model in danger.
             random.seed()
-        elif isinstance(resexed, int): #SxEEDINGDEBUG
+        elif isinstance(resxeed, int): #SxEEDINGDEBUG
             random.seed(resxeed)
         self.summaries=summaries
         self.posterior_function=posterior_function
@@ -79,4 +80,3 @@ class basic_chain_pool(object):
     def terminate(self):
         for chain in self.group:
             chain.terminate()
-    

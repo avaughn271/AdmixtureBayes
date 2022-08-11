@@ -1,8 +1,6 @@
 from Rproposal_admix import addadmix_class, deladmix_class
-from Rproposal_rescale import rescale_class
 from Rproposal_sliding_regraft import sliding_regraft_class_resimulate
-from Rproposal_rescale_constrained import rescale_constrained_class
-from Rproposal_rescale_admix import rescale_admixtures_class, rescale_add_class
+from Rproposal_rescale_constrained import rescale_constrained_class, rescale_add_class, rescale_class, rescale_admixtures_class
 from numpy.random import choice
 from Rtree_operations import get_number_of_admixes
 from math import exp
@@ -14,10 +12,10 @@ class new_node_naming_policy(object):
         
     def next_nodes(self, no_nodes):
         if no_nodes==2:
-            self.n+=1 
+            self.n+=1
             return ['x'+str(self.n)+a for a in ['a','b']]
         elif no_nodes==1:
-            self.n+=1  
+            self.n+=1
             return 'x'+str(self.n)
               
         else:
@@ -33,13 +31,11 @@ def get_args(names, params):
 
 class simple_adaption(object):
     
-    def __init__(self, start_value=0.1, count=10, multiplier=10, desired_mhr=0.234, alpha=0.9, maxval=15, name='adap'):
+    def __init__(self, start_value=0.1, count=10, multiplier=10, alpha=0.9, name='adap'):
         self.value=start_value
         self.count=count
         self.multiplier=multiplier
-        self.desired_mhr=desired_mhr
         self.alpha=alpha
-        self.maxval=15
         self.name=name
         
     def get_value(self):
@@ -51,7 +47,6 @@ class simple_adaption(object):
                                                 self.alpha, 
                                                 self.value, 
                                                 mhr, 
-                                                desired_mhr=self.desired_mhr, 
                                                 name=self.name)
     
 def initialize_proposals(proposals):
@@ -125,7 +120,7 @@ class simple_adaptive_proposal(object):
             new_x, forward, backward = self.props[index](x, *args, pks=pks)
             return new_x, forward, backward, 1.0, jforward, jbackward
         
-    def adapt(self, mhr, u, post_new, post, temperature):
+    def adapt(self, mhr):
         if self.props[self.recently_called_index].adaption:
             self.adaps[self.recently_called_index].adapt(mhr)
         
@@ -137,10 +132,9 @@ class simple_adaptive_proposal(object):
     def wear_exportable_state(self, information):
         self.node_naming.n=information['n']
 
-def standard_update(count, multiplier, alpha, old_value, mhr, desired_mhr=0.234, max_val=float('inf'), name='value'):
+def standard_update(count, multiplier, alpha, old_value, mhr, name='value'):
     count+=1
     gamma=multiplier/count**alpha
-    change=exp(gamma*(min(1.0,mhr)-desired_mhr))
+    change=exp(gamma*(min(1.0,mhr)-0.234))
     value=old_value*change
-    value=min(value, max_val)
     return value,count

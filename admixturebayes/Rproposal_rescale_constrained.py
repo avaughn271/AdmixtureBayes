@@ -1,10 +1,87 @@
-from Rtree_operations import update_specific_branch_lengths
 from copy import deepcopy
 from numpy.random import normal
 from Rtree_operations import get_leaf_keys, get_all_branches, node_is_non_admixture
 from numpy import zeros, insert
 from Rtree_to_covariance_matrix import Population, _add_to_waiting, _thin_out_dic
 from scipy.linalg import svd
+
+from Rtree_operations import update_all_admixtures, update_all_branches, get_number_of_leaves, get_number_of_admixes, update_specific_branch_lengths
+from math import sqrt
+
+class updater(object):
+    
+    def __init__(self, sigma):
+        self.sigma=sigma
+
+    def __call__(self):
+        return normal(scale=self.sigma)
+
+def rescale_normal(tree, sigma=0.01, pks={}):
+    n=get_number_of_leaves(tree)
+    k=get_number_of_admixes(tree)
+    pks['rescale_adap_param']=sigma
+    new_tree=deepcopy(tree)
+    updat=updater(sigma/sqrt(2*n-2+4*k))
+    new_tree=update_all_branches(new_tree, updat)
+    if new_tree is None:
+        return tree,1,0 #rejecting by setting backward jump probability to 0.
+    return new_tree ,1,1
+
+class rescale_class(object):
+    new_nodes=0
+    proposal_name='rescale'
+    adaption=True
+    input='tree'
+    require_admixture=0
+    reverse='rescale'
+    admixture_change=0
+    
+    def __call__(self,*args, **kwargs):
+        return rescale_normal(*args, **kwargs)
+
+def rescale_admixtures(tree, sigma=0.01, pks={}):
+    k=get_number_of_admixes(tree)
+    pks['rescale_admixtures_adap_param']=sigma
+    new_tree=deepcopy(tree)
+    if k>0:
+        updat=updater(sigma/sqrt(k))
+        new_tree=update_all_admixtures(new_tree, updat)
+        if new_tree is None:
+            return tree,1,0 #rejecting by setting backward jump probability to 0.
+    else:
+        return new_tree,1,0.234 #not to have to deal with the admix=0 case, I return 0.234 such that the adaptive parameter is not affected by these special cases.
+    return new_tree ,1,1
+
+class rescale_admixtures_class(object):
+    new_nodes=0
+    proposal_name='rescale_admixtures'
+    adaption=True
+    input='tree'
+    require_admixture=1
+    admixture_change=0
+    reverse='rescale_admixtures'
+    
+    def __call__(self, *args, **kwargs):
+        return rescale_admixtures(*args, **kwargs)
+
+def rescale(add, sigma=0.01, pks={}):
+    pks['rescale_add_adap_param']=sigma
+    new_add=add+normal()*sigma
+    if new_add<0:
+        return add,1,0 #rejecting by setting backward jump probability to 0.
+    return new_add,1,1
+
+class rescale_add_class(object):
+    new_nodes=0
+    proposal_name='rescale_add'
+    adaption=True
+    input='add'
+    require_admixture=0
+    reverse='rescale_add'
+    admixture_change=0
+    
+    def __call__(self,*args, **kwargs):
+        return rescale(*args, **kwargs)
 
 class Coefficient_Matrix():
     
@@ -38,11 +115,9 @@ class Coefficient_Matrix():
     def get_matrix(self):
         return self.cofmat
 
-
-def nullspace(A, atol=1e-13, rtol=0):
+def nullspace(A):
     u, s, vh = svd(A)
-    tol = max(atol, rtol * s[0])
-    nnz = (s >= tol).sum()
+    nnz = (s >= 1e-13).sum()
     ns = vh[nnz:].conj().T
     return ns
 
@@ -87,7 +162,7 @@ def make_coefficient_matrix(tree, node_keys=None, branch_keys=None):
     return cofmat.get_matrix(), ni,bi
 
 def leave_node(key, node, population, cofmat):
-    if node_is_non_admixture(node): 
+    if node_is_non_admixture(node):
         return [follow_branch(parent_key=node[0],branch=(key,0), population=population, cofmat=cofmat)]
     else:
         new_pop=population.remove_partition(1.0-node[2])
@@ -118,7 +193,7 @@ def reverse_dic_to_list(dic):
 def get_added_branch_pieces(org, param):
     return org.dot(normal(scale=param, size=org.shape[1]))
 
-def rescale(x, sigma=0.01, pks={}, update_add=True):
+def rescale_constrained(x, sigma=0.01, pks={}, update_add=True):
     tree, add=x
     pks['rescale_constrained_adap_param']=sigma
     new_tree=deepcopy(tree)
@@ -149,10 +224,8 @@ class rescale_constrained_class(object):
     adaption=True
     input='both'
     require_admixture=0
-    reverse_require_admixture=0
     admixture_change=0
     reverse='rescale_constrained'
-    
     
     def __init__(self, **kwargs):
         self.kwargs=kwargs
@@ -160,5 +233,5 @@ class rescale_constrained_class(object):
     def __call__(self,*args, **kwargs):
         kwargs.update(self.kwargs)
         #removedprin kwargs
-        return rescale(*args, **kwargs)
+        return rescale_constrained(*args, **kwargs)
 

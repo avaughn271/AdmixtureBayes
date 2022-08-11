@@ -1,10 +1,81 @@
-from Rproposal_regraft import get_possible_regrafters, thin_out_sibling
-from Rtree_operations import get_all_branch_descendants_and_rest, get_parent_of_branch, move_node, get_branch_length, update_branch_length, find_rooted_nodes, get_real_children, get_real_parents, mother_or_father
-from scipy.stats import chi2, gamma, uniform
+from scipy.stats import chi2, gamma, uniform, expon
 from numpy.random import choice
 from copy import deepcopy
+
+from Rtree_operations import (node_is_non_admixture, get_parent_of_branch, move_node, find_rooted_nodes, get_real_children, mother_or_father,
+remove_parent_attachment, graft, get_real_parents, halfbrother_is_uncle,
+get_branch_length, get_all_branch_descendants_and_rest)
 from random import getrandbits
-from math import exp
+
+def get_possible_regrafters(tree):
+    res=[]
+    for key in tree:
+        parents=get_real_parents(tree[key])
+        for branch, parent in enumerate(parents):
+            if parent=='r' or (node_is_non_admixture(tree[parent]) and not halfbrother_is_uncle(tree, key, parent)):
+                res.append((key,branch))
+    return res
+
+class regraft_class(object):
+    
+    new_nodes=1
+    proposal_name='regraft'
+    input='tree'
+    require_admixture=0
+    adaption=False
+    reverse='regraft'
+    admixture_change=0
+    
+    def __call__(self,*args, **kwargs):
+        return make_regraft(*args, **kwargs)
+
+def make_regraft(tree, new_node=None, pks={}):
+    possible_nodes= get_possible_regrafters(tree)
+        
+    new_tree= deepcopy(tree)
+    regraft_key, regraft_branch= possible_nodes[choice(len(possible_nodes), 1)[0]]
+    pks['regraft_key']=regraft_key
+    pks['regraft_branch']=regraft_branch
+    new_tree, remove_distrub, remove_val, remove_par = remove_parent_attachment(new_tree, regraft_key, regraft_branch)
+    q_backward=back_density(remove_distrub, remove_val, remove_par)
+    children, other= get_all_branch_descendants_and_rest(new_tree, regraft_key, regraft_branch)
+    candidates=thin_out_sibling(new_tree, other, regraft_key)+[('r',0)]
+    ch= choice(len(candidates),1)[0]
+    recipient_key, recipient_branch=candidates[ch]
+    new_tree, q_forward= regraft(new_tree, regraft_key, regraft_branch, recipient_key, new_node=new_node, which_branch=recipient_branch)
+
+    return new_tree, q_forward, q_backward
+
+def thin_out_sibling(tree, branches, key):
+    return [(r,w) for r,w in branches if (r!='r' and tree[r][3+w]!='closed_branch' and r!=key)]
+
+def back_density(distrub, val, par):
+    if distrub=='r':
+        return expon.pdf(val)
+    if distrub=='u':
+        return uniform.pdf(val, scale=par)
+
+def simulate_and_forward_density(distrub, par=None):
+    if distrub == 'r':
+        insertion_spot=expon.rvs()
+        q=expon.pdf(insertion_spot)
+    else:
+        insertion_spot=uniform.rvs()
+        branch_length=par
+        q=uniform.pdf(insertion_spot*branch_length,scale=branch_length)
+    return insertion_spot, q
+
+def regraft(tree, remove_key,remove_branch, add_to_branch, new_node=None,which_branch=0):
+    
+    if add_to_branch=='r':
+        insertion_spot, q=simulate_and_forward_density('r')
+    else:
+        branch_length=get_branch_length(tree, add_to_branch,which_branch)
+        insertion_spot, q=simulate_and_forward_density('u', branch_length)
+    if new_node is None:
+        new_node=str(getrandbits(68)).strip()
+    tree=graft(tree, remove_key, add_to_branch, insertion_spot, new_node, which_branch, remove_branch=remove_branch)
+    return tree,q
 
 class piece(object):
     
@@ -34,12 +105,6 @@ class piece(object):
         if self.end_distance is None:
             return distance>=self.start_distance
         return distance<=self.end_distance and distance>=self.start_distance
-    
-    def within_distance(self, distance):
-        return self.start_distance<=distance
-    
-    def get_start_distance(self):
-        return self.start_distance
     
     def get_leaf_and_root_sided_length(self, distance):
         if self.end_distance is None:
@@ -142,7 +207,6 @@ def logpdf(x,t,delta_L, shape=20):
         simulated_part=x-t
         return clean_gamma_logpdf(simulated_part, mean=delta_L, shape=shape)
         
-    
 def clean_gamma_rvs(mean, shape):
     shape,scale=transform_to_shape_scale(mean, shape=shape)
     return gamma.rvs(a=shape, scale=scale)
@@ -163,7 +227,6 @@ class sliding_regraft_class_resimulate(object):
     new_nodes=1
     input='tree'
     require_admixture=0
-    reverse_require_admixture=0
     admixture_change=0
     proposal_name='sliding_regraft'
     adaption=True
@@ -185,11 +248,7 @@ def get_thinned_pieces(tree,regraft_key, regraft_branch, distance_to_regraft, pa
     thinned_pieces=[piece for piece in pieces if (piece.get_branch_key() in candidates and piece.contains_distance(distance_to_regraft) )]
     return thinned_pieces
     
-    
 def make_sliding_regraft(tree, new_node=None, param=0.1, resimulate_moved_branch_length=False, pks={}):
-    '''
-    
-    '''
     
     possible_nodes= get_possible_regrafters(tree)
         
@@ -215,20 +274,4 @@ def make_sliding_regraft(tree, new_node=None, param=0.1, resimulate_moved_branch
     
     backward_choices=len(thinned_pieces_backward)
     
-    
-    if resimulate_moved_branch_length:
-        new_tree, forward, backward= resimulate_moved_branch(new_tree, regraft_key, regraft_branch, chosen_piece.get_lattitude(distance_to_regraft), resimulate_moved_branch_length)
-    else:
-        forward=1.0
-        backward=1.0
-    
-    return new_tree, forward/forward_choices, backward/backward_choices
-
-def resimulate_moved_branch(tree, key, branch, delta_L, alpha):
-    old_length= get_branch_length(tree, key, branch)
-    new_length= gamma_restricted.rvs(old_length, -delta_L, alpha)
-    logpdf=gamma_restricted.logpdf(new_length, old_length, -delta_L, alpha)
-    logpdf_back=gamma_restricted.logpdf(old_length, new_length, delta_L, alpha)
-    backward=exp(-logpdf+logpdf_back) #for stability, both forward and backward are put in backward. 
-    update_branch_length(tree, key, branch, new_length)
-    return tree, 1.0, backward
+    return new_tree, 1.0/forward_choices, 1.0/backward_choices

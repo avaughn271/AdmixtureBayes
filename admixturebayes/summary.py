@@ -42,16 +42,6 @@ class s_total_branch_length(Summary):
         tree=kwargs['tree']
         return sum(get_all_branch_lengths(tree))
 
-class s_average_branch_length(Summary):
-    
-    def __init__(self):
-        super(s_average_branch_length,self).__init__('average_branch_length')
-
-    def __call__(self, **kwargs):
-        tree=kwargs['tree']
-        all_branch=get_all_branch_lengths(tree)
-        return sum(all_branch)/len(all_branch)
-
 class s_variable(Summary):
     
     def __init__(self, variable, pandable=True, output='double'):

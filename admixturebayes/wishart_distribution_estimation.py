@@ -1,6 +1,14 @@
 from numpy.random import choice
-from tree_to_data import unzip, gzip
 import warnings
+import subprocess
+
+def gzip(filename, new_filename=None):
+    if new_filename is None:
+        new_filename=filename+'.gz'
+    command=['gzip','-c',filename]
+    with open(new_filename, 'w') as f:
+        subprocess.call(command, stdout=f)
+    return new_filename
 
 from construct_covariance_choices import empirical_covariance_wrapper_directly
 from pathos.multiprocessing import Pool
@@ -56,7 +64,6 @@ def variance_mean_based(sample_of_matrices, divisor=None, verbose_level='normal'
     rval=I_cant_believe_I_have_to_write_this_function_myself(penalty_function, r)
     return rval
 
-    
 def get_partitions(lines, blocksize):
     list_of_lists=[]
     for i in range(0,len(lines)-blocksize, blocksize):
@@ -101,14 +108,10 @@ def make_covariances(filenames, cores, **kwargs):
         warnings.warn('Erasing the files did not succeed',UserWarning)
     return covs
 
-def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='normal'):
-    assert (blocksize is not None) or (no_blocks is not None), 'Has to specify either block size or number of blocks'
+def make_single_files(filename,blocksize, no_blocks, verbose_level='normal'):
     filenames=[]
     os.mkdir(os.getcwd() + "/temp_adbayes")
-    prefix = os.getcwd() + "/temp_adbayes/"
-    if filename.endswith('.gz'):
-        filename=unzip(filename)
-    filename_reduced=prefix+filename.split(os.sep)[-1]+'boot.'
+    filename_reduced=os.getcwd() + "/temp_adbayes/" +filename.split(os.sep)[-1]+'boot.'
     with open(filename, 'r') as f:
         first_line=f.readline()
         lines=f.readlines()
@@ -123,7 +126,7 @@ def make_single_files(filename,blocksize, no_blocks, prefix='', verbose_level='n
         with open(new_filename, 'w') as g:
             g.write(first_line)
             g.writelines(lins)
-        gzipped_filename=gzip(new_filename, overwrite=True)
+        gzipped_filename=gzip(new_filename)
         filenames.append(gzipped_filename)
     return filenames, first_line.split()
 
@@ -132,10 +135,9 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
                                             no_blocks=None,
                                             no_bootstrap_samples=10,
                                             cores=1,
-                                            prefix='',
                                             verbose_level='normal',
                                             **kwargs):
-    single_files, nodes=make_single_files(filename, blocksize=bootstrap_blocksize, no_blocks=no_blocks, prefix=prefix, verbose_level=verbose_level)
+    single_files, nodes=make_single_files(filename, blocksize=bootstrap_blocksize, no_blocks=no_blocks, verbose_level=verbose_level)
     assert len(single_files)>1, 'There are ' +str(len(single_files)) + ' bootstrapped SNP blocks and that is not enough. Either add more data or lower the --bootstrap_blocksize'
     if len(single_files)<39:
         warnings.warn('There are only '+str(len(single_files))+' bootstrap blocks. Consider lowering the --bootstrap_blocksize or add more data.', UserWarning)

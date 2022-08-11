@@ -9,7 +9,6 @@ from multiprocessing_helpers import basic_chain_pool
 from numpy.random import choice, random
 from math import exp
 from itertools import chain
-import time
 
 def _basic_chain_unpacker(args):
     return basic_chain(*args)
@@ -75,7 +74,6 @@ def MCMCMC(starting_trees,
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
     
     cum_iterations=0
-    start_time=time.time()
     for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * m_arg))
@@ -159,7 +157,6 @@ def _update_results(df_result, df_add):
         df_result = pd.concat([df_result, df_add])
     return df_result
 
-##should match basic_chain_class.run_chain(start_tree, post, N, sample_verbose_scheme, overall_thinning, i_start_from, temperature, proposal_update)
 def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,overall_thinnings,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
     return ([x, 
              posterior,

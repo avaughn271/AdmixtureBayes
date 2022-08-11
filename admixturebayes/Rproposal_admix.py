@@ -23,7 +23,6 @@ class addadmix_class(object):
     input='tree'
     require_admixture=0
     admixture_change=1
-    reverse_require_admixture=1
     reverse='deladmix'
     
     def __init__(self, **kwargs):
@@ -41,7 +40,6 @@ class deladmix_class(object):
     input='tree'
     require_admixture=1
     admixture_change=-1
-    reverse_require_admixture=0
     reverse='addadmix'
     
     def __init__(self, **kwargs):
@@ -84,7 +82,6 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
     pks['source_key']=source_key
     pks['source_branch']=source_branch
     pks['sink_branch']=sink_branch
-    #removedprin 'children', children
     if fixed_sink_source is not None:
         new_tree, forward_density, backward_density, multip= insert_admix(new_tree, source_key, source_branch, sink_key, sink_branch, pks=pks, new_branch_length=new_branch_length, new_to_root_length=new_to_root_length, preserve_root_distance=preserve_root_distance)
     elif new_node_names is None:
