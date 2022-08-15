@@ -73,7 +73,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--outgroup** The name of the population that will serve as the outgroup. For example, in the above file, "out" could be the outgroup.
 
-**--n** (optional) The number of proposal steps the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proporional to the number of proposal steps). Default value is 200.
+**--n** (optional) The number of proposal steps the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proportional to the number of proposal steps). Default value is 200.
 
 **--MCMC_chains** (optional) The number of chains to run the MCMCMC with (See Matthew Darlington's great explanation of MCMCMC [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains will result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8. Must be at least 2.
 
