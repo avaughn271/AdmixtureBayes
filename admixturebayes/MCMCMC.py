@@ -1,17 +1,13 @@
 #os.environ["OPENBLAS_NUM_THREADS"] = "1"
 #os.environ["MKL_NUM_THREADS"] = "1"
-from MCMC import basic_chain
 from pathos.multiprocessing import freeze_support
 from Rtree_operations import get_number_of_admixes
 from posterior import no_admixes
 import pandas as pd
-from multiprocessing_helpers import basic_chain_pool
+from MCMC import basic_chain_pool
 from numpy.random import choice, random
 from math import exp
 from itertools import chain
-
-def _basic_chain_unpacker(args):
-    return basic_chain(*args)
 
 def MCMCMC(starting_trees, 
            posterior_function,
@@ -79,10 +75,7 @@ def MCMCMC(starting_trees,
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * m_arg))
         #letting each chain run for no_iterations:
         iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, overall_thinnings, no_iterations, cum_iterations, proposal_updates, multiplier)
-        if no_chains==1:#debugging purposes
-            new_state=[_basic_chain_unpacker(next(iteration_object))]
-        else:
-            new_state = pool.order_calculation(iteration_object)
+        new_state = pool.order_calculation(iteration_object)
         xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, summaries, total_permutation)
         df_result=_update_results(df_result, df_add)
         if result_file is not None:

@@ -198,14 +198,11 @@ def rescale_constrained(x, sigma=0.01, pks={}, update_add=True):
     pks['rescale_constrained_adap_param']=sigma
     new_tree=deepcopy(tree)
     orgs, bi,_= get_orthogonal_branch_space(new_tree, add_one_column=update_add)
-    #removedprin norm(orgs, axis=0)
     branches=reverse_dic_to_list(bi)
     branch_pieces= get_added_branch_pieces(orgs, sigma)
     if update_add:
         b=branch_pieces[:-1]
-        #removedprin 'ADD!'
     else:
-        #removedprin 'NO ADD!'
         b=branch_pieces
     new_tree= update_specific_branch_lengths(new_tree, branches, b, add=True)
     if new_tree is None:
@@ -232,6 +229,5 @@ class rescale_constrained_class(object):
     
     def __call__(self,*args, **kwargs):
         kwargs.update(self.kwargs)
-        #removedprin kwargs
         return rescale_constrained(*args, **kwargs)
 

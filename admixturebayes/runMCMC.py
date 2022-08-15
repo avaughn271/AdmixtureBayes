@@ -1,16 +1,14 @@
 from argparse import ArgumentParser, SUPPRESS
 
-from construct_starting_trees_choices import get_starting_trees
+import construct_starting_trees_choices
 from construct_covariance_choices import get_covariance, estimate_degrees_of_freedom_scaled_fast
 from posterior import posterior_class
 from MCMCMC import MCMCMC
-from MCMC import basic_chain
 import os
 from numpy import random
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
-import summary
 import Rtree_operations
 import tree_statistics
 import Rtree_to_covariance_matrix
@@ -18,22 +16,19 @@ from copy import deepcopy
 
 def get_summary_scheme(no_chains=1):
     
-    summaries=[summary.s_posterior(),
-               summary.s_likelihood(),
-               summary.s_prior(),
-               summary.s_no_admixes(),
-               summary.s_variable('add', output='double'), 
-               summary.s_total_branch_length(),
-               summary.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
-               summary.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
-    summaries.append(summary.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
-    summaries.append(summary.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
+    summaries=[construct_starting_trees_choices.s_posterior(),
+               construct_starting_trees_choices.s_likelihood(),
+               construct_starting_trees_choices.s_prior(),
+               construct_starting_trees_choices.s_no_admixes(),
+               construct_starting_trees_choices.s_variable('add', output='double'), 
+               construct_starting_trees_choices.s_total_branch_length(),
+               construct_starting_trees_choices.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
+               construct_starting_trees_choices.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
+    summaries.append(construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
+    summaries.append(construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
     sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
-    if no_chains==1:
-        return [sample_verbose_scheme_first], summaries
-    else:
-        return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
+    return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
 
 class fixed_geometrical(object):
 
@@ -95,7 +90,7 @@ def main(args):
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
 
     options=parser.parse_args(args)
-
+    assert options.MCMC_chains > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
     #Here is the only thing we should be changing.
@@ -201,12 +196,12 @@ def main(args):
         f.close()
 
         #compute addfile as a file with a number
-        starting_trees=get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
+        starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
                                         options.MCMC_chains,
                                         adds=[os.getcwd() + "/" + "temp_add.txt"],
                                         nodes=tree_nodes)
     else:
-        starting_trees=get_starting_trees(options.continue_samples,
+        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,
                                       options.MCMC_chains,
                                       adds=[],
                                       nodes=tree_nodes)
@@ -265,29 +260,11 @@ def main(args):
                multiplier=multiplier,  #numpy_seeds = random_seeds,
                result_file=options.result_file,
                posterior_function_list=posterior_function_list, n_arg=options.n, m_arg=options.m, verboseee=options.verbose_level)
-    def single_chain_run():
-        basic_chain(start_x= starting_trees[0],
-                    summaries=summaries,
-                    posterior_function=posterior,
-                    proposal=mp[0],
-                    post=None,
-                    N=sum(sim_lengths),
-                    sample_verbose_scheme=summary_verbose_scheme[0],
-                    overall_thinning=int(options.thinning_coef),
-                    i_start_from=0,
-                    temperature=1.0,
-                    proposal_update=None,
-                    multiplier=multiplier,
-                    appending_result_file=options.result_file,
-                    appending_result_frequency=sim_lengths[0])
 
     if os.path.exists(os.getcwd() + "/temp_input.txt"):
         os.remove(os.getcwd() + "/temp_input.txt")
 
-    if options.MCMC_chains==1:
-        single_chain_run()
-    else:
-        res=multi_chain_run()
+    res=multi_chain_run()
     if os.path.exists("trees_tmp.txt"):
         os.remove("trees_tmp.txt")
     if options.continue_samples != []:

@@ -336,7 +336,6 @@ def remove_one_in_one_out(tree, child, key, parent_key):
     del tree[key]
     return tree
 
-
 def get_leaf_keys(tree):
     res=[]
     for key, node in list(tree.items()):
@@ -455,7 +454,6 @@ def insert_children_in_tree(tree):
         for parent in parents:
             if parent!='r':
                 children[parent].append(key)
-    #removedprin children
     for key in tree:
         tree[key]=_update_parents(tree[key], children[key])
     return tree

@@ -21,14 +21,6 @@ class new_node_naming_policy(object):
         else:
             return ''
 
-def get_args(names, params):
-    args=[]
-    if names:
-        args.append(names)
-    if params is not None:
-        args.extend(params)
-    return args
-
 class simple_adaption(object):
     
     def __init__(self, start_value=0.1, count=10, multiplier=10, alpha=0.9, name='adap'):

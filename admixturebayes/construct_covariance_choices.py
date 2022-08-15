@@ -22,8 +22,6 @@ def gzip(filename, new_filename=None):
         subprocess.call(command, stdout=f)
     return new_filename
 
-
-
 #maximizes the function, function in the interval [lower_limit,\infty).
 def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
     old_x=lower_limit
@@ -59,7 +57,7 @@ def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
         new_y=function(new_x)
     return new_x
 
-def variance_mean_based(sample_of_matrices, divisor=None, verbose_level='normal'):
+def variance_mean_based(sample_of_matrices):
     mean_wishart=  np.mean(sample_of_matrices, axis=0)
     var_wishart= np.var(sample_of_matrices, axis=0)
     r=mean_wishart.shape[0]
@@ -136,7 +134,7 @@ def make_single_files(filename,blocksize, no_blocks, verbose_level='normal'):
             g.writelines(lins)
         gzipped_filename=gzip(new_filename)
         filenames.append(gzipped_filename)
-    return filenames, first_line.split()
+    return filenames
 
 def estimate_degrees_of_freedom_scaled_fast(filename,
                                             bootstrap_blocksize=1000,
@@ -145,13 +143,13 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
                                             cores=1,
                                             verbose_level='normal',
                                             **kwargs):
-    single_files, nodes=make_single_files(filename, blocksize=bootstrap_blocksize, no_blocks=no_blocks, verbose_level=verbose_level)
+    single_files=make_single_files(filename, blocksize=bootstrap_blocksize, no_blocks=no_blocks, verbose_level=verbose_level)
     assert len(single_files)>1, 'There are ' +str(len(single_files)) + ' bootstrapped SNP blocks and that is not enough. Either add more data or lower the --bootstrap_blocksize'
     if len(single_files)<39:
         warnings.warn('There are only '+str(len(single_files))+' bootstrap blocks. Consider lowering the --bootstrap_blocksize or add more data.', UserWarning)
     single_covs=make_covariances(single_files, cores=cores, return_also_mscale=True, **kwargs)
     covs=bootsrap_combine_covs(single_covs, cores=cores, bootstrap_samples=no_bootstrap_samples)
-    res=variance_mean_based(covs, verbose_level=verbose_level)
+    res=variance_mean_based(covs)
     return res, covs
 
 class Estimator(object):
@@ -248,16 +246,13 @@ class ScaledEstimator(Estimator):
         else:
             m=p2.dot(p2.T)/p2.shape[1]
         
-        scaling_factor=m_scaler( p)
+        scaling_factor=m_scaler(p)
         extra_info['m_scale']=scaling_factor
         m=m/scaling_factor
         m=reduce_covariance(m)
-        if self.variance_correction!='None':
-            assert ns is not None, 'Variance correction needs a ns-matrix specified'
-            b=reduced_covariance_bias_correction(p, ns, 0)/scaling_factor
-            if self.save_variance_correction:
-                savetxt('variance_correction.txt', b)
-        
+        b=reduced_covariance_bias_correction(p, ns, 0)/scaling_factor
+        if self.save_variance_correction:
+            savetxt('variance_correction.txt', b)
         return m
 
 def thin_covariance(covmat, nodes_order, specified_nodes):
@@ -378,18 +373,14 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
         vc=loadtxt(filename)
         vc=reorder_reduced_covariance(vc, names, est_args['nodes'], outgroup=est_args['reducer'])
         savetxt(filename, vc)
-    if 'm_scale' in extra_info_dic:
-        if 'return_also_mscale' in kwargs and kwargs['return_also_mscale']:
-            return cov, extra_info_dic['m_scale']
+    if 'return_also_mscale' in kwargs and kwargs['return_also_mscale']:
+        return cov, extra_info_dic['m_scale']
     return cov
 
 def normaliser_wrapper(covariance, **kwargs):
     return rescale_empirical_covariance(covariance)
 
-dictionary_of_transformations={
-    (6,8):empirical_covariance_wrapper_directly,
-    (8,9):normaliser_wrapper
-    }
+dictionary_of_transformations={ (6,8):empirical_covariance_wrapper_directly, (8,9):normaliser_wrapper }
 
 dictionary_of_reasonable_names = { 8:'covariance_without_reduce_name', 9:'covariance_and_multiplier'}
 

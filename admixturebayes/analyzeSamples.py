@@ -320,7 +320,6 @@ def analyze_tree(topology, branches, admixtures):
         branches_permutation= list(map(int, rf))
         admixtures_permutation=get_admixtures_permutation(admixtures_sperm)
         res[lookup_topology]=(top_topology, branches_permutation, admixtures_permutation)
-    #removedprin res
     return res
     
 def get_admixtures_permutation(admixtures):

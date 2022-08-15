@@ -69,15 +69,11 @@ def unique_identifier(tree, leaf_order=None):
                 gen.append('a')
             else:
                 gen.append('w')
-        #removedprin 'gen',gen
-        #removedprin 'gone', gone
         list_of_gens,gone, lineages =update_lineages(list_of_gens,gen,gone, lineages, tree)
         for gon in gone:
             lineages.remove(gon)
         gone=[]
 
-
-        #updating lineages
         coalescences_on_hold=still_on_hold+list(waiting_coalescences.values())
         ready_lineages=propagate_married(tree, awaited_coalescences)
         ready_lineages.extend(propagate_married(tree, sames))
@@ -131,14 +127,6 @@ class generate_predefined_list_string(object):
 
     def __call__(self):
         return self.listi.pop(0)
-
-class same_number(object):
-
-    def __init__(self, value):
-        self.value=value
-
-    def __call__(self):
-        return self.value
 
 class uniform_generator(object):
 
@@ -224,7 +212,6 @@ def identifier_to_tree_clean(identifier, **kwargs):
     return tree_good2
 
 def topological_identifier_to_tree_clean(identifier, **kwargs):
-    print("b")
     tree_good2= identifier_to_tree(identifier,
                                    branch_lengths=uniform_generator(),
                                    admixture_proportions=uniform_generator(),
