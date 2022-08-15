@@ -1,4 +1,98 @@
 from copy import deepcopy
+def create_trivial_tree(size, total_height=1.0):
+    '''
+    constructs tree of the form (..((s1,s2),s3),s4)...)
+    '''
+    step_size=total_height/size
+    tree={'s1':['n1',None,None,step_size,None, None,None],
+          's2':['n1',None,None,step_size,None, None,None],
+          'n1':['n2',None,None,step_size,None, 's1','s2']}
+    nex_inner_node='n2'
+    new_inner_node='n1'
+    for k in range(3,size+1):
+        old_inner_node='n'+str(k-2)
+        new_inner_node='n'+str(k-1)
+        nex_inner_node='n'+str(k)
+        new_leaf='s'+str(k)
+        tree[new_leaf]=[new_inner_node, None,None, step_size*(k-1),None, None,None]
+        tree[new_inner_node]=[nex_inner_node, None,None, step_size, None, new_leaf,old_inner_node]
+    del tree[new_inner_node]
+    return rename_root(tree, new_inner_node)
+
+def rename_leaves(tree, new_leaf_names):
+    old_keys=get_leaf_keys(tree)
+    assert len(new_leaf_names) == len(old_keys), 'number of renamed nodes did not match the actual number of nodes'
+    unique_identifier= max(old_keys, key=len)+max(new_leaf_names, key=len)+'_'
+    temporary_keys=[ok+unique_identifier for ok in old_keys]
+    for old_key, new_key in zip(old_keys, temporary_keys):
+        tree=rename_key(tree, old_key, new_key )
+    for old_key, new_key in zip(temporary_keys, new_leaf_names):
+        tree = rename_key(tree, old_key, new_key)
+    return tree
+
+def get_trivial_nodes(size):
+    return ['s'+str(n+1) for n in range(size)]
+
+def max_distance_to_leaf(tree,key, parent_key=None):
+    if key=='r':
+        (child_key1,_,_),(child_key2,_,_)=find_rooted_nodes(tree)
+        return max(max_distance_to_leaf(tree, child_key1, key), max_distance_to_leaf(tree, child_key2,key))
+    node=tree[key]
+    if parent_key is not None:
+        branch=mother_or_father(tree, key, parent_key)
+        add=node[3+branch]
+    else:
+        add=0
+    if node_is_leaf_node(node):
+        return add
+    if node_is_coalescence(node):
+        return add+max(max_distance_to_leaf(tree, node[5], key), max_distance_to_leaf(tree, node[6],key))
+    if node_is_admixture(node):
+        return add+max_distance_to_leaf(tree, node[5], key)
+    assert False, 'strange node caused no exit.'
+
+def non_admixture_path(tree, key):
+    if key=='r':
+        return True
+    if node_is_admixture(tree[key]):
+        return False
+    parent_key=tree[key][0]
+    return non_admixture_path(tree, parent_key)
+
+def get_first_admixture_meeting(tree, key):
+    if key=='r':
+        return None
+    if node_is_admixture(tree[key]):
+        return key
+    parent_key=tree[key][0]
+    return get_first_admixture_meeting(tree, parent_key)
+
+def get_branches_to_reverse(tree, key, so_far=None):
+    if so_far is None:
+        so_far=[]
+    if is_root(key):
+        (key1, branch1, length1),(key2,branch2,length2)=find_rooted_nodes(tree)
+        if key1==so_far[-1][0]:
+            so_far.append((key2,tree[key2][branch2+3],tree[key2][branch2]))
+        else:
+            so_far.append((key1,tree[key1][branch1+3],tree[key1][branch1]))
+        return so_far
+    else:
+        so_far.append((key,tree[key][3], tree[key][0]))
+        return get_branches_to_reverse(tree, tree[key][0], so_far)
+
+def rename_rootname(tree,old_name, new_name):
+    for key,node in list(tree.items()):
+        if node[0]==old_name:
+            tree[key][0]=new_name
+        if node[1]==old_name:
+            tree[key][1]=new_name
+    return tree
+
+def remove_children(tree):
+    for key in tree:
+        tree[key]=tree[key][:5]
+    return tree
 
 def rename_key(tree, old_key_name, new_key_name):
     node=tree[old_key_name]
@@ -33,7 +127,7 @@ def update_all_branches(tree, updater):
         else:
             node[3]+=updater()
             if node[3]<0:
-                return None        
+                return None
     return tree
 
 def update_all_admixtures(tree, updater):
@@ -41,7 +135,7 @@ def update_all_admixtures(tree, updater):
         if node_is_admixture(node):
             node[2]+=updater()
             if node[2]<0 or node[2]>1:
-                return None  
+                return None
     return tree
 
 def update_node(tree, key, updater, admixture_proportion_multiplier=1.0):
@@ -55,8 +149,8 @@ def update_node(tree, key, updater, admixture_proportion_multiplier=1.0):
     else:
         node[3]+=updater()
         if node[3]<0:
-            return None 
-    tree[key]=node       
+            return None
+    tree[key]=node
     return tree
 
 def update_branch(tree, key, branch, updater):
@@ -82,13 +176,13 @@ def extend_branch(node, pkey, grand_parent_key, p_to_gp):
     else:
         assert False, 'extension of branch was not possible'
 
-    
+
 def remove_parent_attachment(tree, orphanota_key, orphanota_branch):
     '''
     This takes the tree and removes the parent of orphanonte_key.
     '''
     pkey=get_parent_of_branch(tree, orphanota_key, orphanota_branch)
-    
+
     if pkey=='r':
         return remove_root_attachment(tree, orphanota_key, orphanota_branch)
     grand_pkey=get_parents(tree[pkey])[0]
@@ -104,13 +198,13 @@ def remove_parent_attachment(tree, orphanota_key, orphanota_branch):
 def remove_root_attachment(tree, orphanota_key, orphanota_branch):
     '''
     The situation is different when the root is removed because of the special naming strategy.
-    
+
                 r
                / \
              /    \
-      orphanota   new_root 
+      orphanota   new_root
     Here a new root is born.
-    
+
     '''
     rooted_keys=find_rooted_nodes(tree)
     for key,branch,len_to_root in rooted_keys:
@@ -124,7 +218,7 @@ def remove_root_attachment(tree, orphanota_key, orphanota_branch):
                 #removedprin 'closed_branch!'
             tree[orphanota_key][orphanota_branch]=None
     return tree,'r', r,None
-    
+
 def get_branch_length_and_reset(node, parent_key, new_length,add=False):
     if node[0]==parent_key:
         old_length=node[3]
@@ -142,7 +236,7 @@ def get_branch_length_and_reset(node, parent_key, new_length,add=False):
         return node, old_length
     else:
         assert False, 'could not give new length because the parent was unknown'
-    
+
 def rename_root(tree, old_name):
     for _,node in list(tree.items()):
         if node[0]==old_name:
@@ -168,7 +262,7 @@ def rename_parent(node, old_name, new_name):
     else:
         assert False, 'tried to rename a parent that didnt exist in its childs document'
     return node
-    
+
 def find_rooted_nodes(tree):
     res=[]
     for key,node in list(tree.items()):
@@ -256,7 +350,7 @@ def update_specific_branch_lengths(tree, branches, new_lengths, add=False):
     return tree
 
 
-        
+
 
 def get_all_branch_descendants_and_rest(tree, key,branch):
     all_branches=get_all_branches(tree)
@@ -324,7 +418,7 @@ def screen_and_prune_one_in_one_out(tree):
             if len(children)==1 and len(parents)==1:
                 tree=remove_one_in_one_out(tree, children[0], key, parents[0])
     return tree
-        
+
 def remove_one_in_one_out(tree, child, key, parent_key):
     branch=mother_or_father(tree, key, parent_key)
     length=get_branch_length(tree, key, branch)
@@ -335,8 +429,8 @@ def remove_one_in_one_out(tree, child, key, parent_key):
         tree[parent_key]=_update_child(tree[parent_key], key, child)
     del tree[key]
     return tree
-    
-    
+
+
 def get_leaf_keys(tree):
     res=[]
     for key, node in list(tree.items()):
@@ -440,14 +534,14 @@ def propagate_admixtures(tree, list_of_admixtures):
         res.append((parent_key,0))
         res.append((parent_key,1))
     return res
-    
-        
+
+
 def mother_or_father(tree, child_key, parent_key):
     if tree[child_key][0]==parent_key:
         return 0
     elif tree[child_key][1]==parent_key:
         return 1
-    
+
 def insert_children_in_tree(tree):
     children={key:[] for key in tree}
     for key in tree:
@@ -468,7 +562,7 @@ def get_all_branch_lengths(tree):
         else:
             res.extend(node[3:5])
     return res
-    
+
 def get_all_admixture_proportions(tree):
     res=[]
     for key, node in list(tree.items()):
@@ -493,10 +587,10 @@ def graft(tree, remove_key, add_to_branch, insertion_spot, new_node_code, which_
     #if we are at the root, things are different.
     if add_to_branch=='r':
         return graft_onto_root(tree, insertion_spot, remove_key, new_name_for_old_root=new_node_code, remove_branch=remove_branch)
-    
+
     #updating the grafted_branch. Easy.
     tree[remove_key][remove_branch]=new_node_code
-    
+
     #dealing with the other child of the new node
     index_of_pop_name_to_change=which_branch
     index_of_branchl_to_change=which_branch+3
@@ -506,33 +600,33 @@ def graft(tree, remove_key, add_to_branch, insertion_spot, new_node_code, which_
     #updating node
     tree[add_to_branch][index_of_pop_name_to_change]=new_node_code
     tree[add_to_branch][index_of_branchl_to_change]=length_of_piece_to_break_up*insertion_spot
-    
+
     #taking care of the new node
     tree[new_node_code]=[parent_of_branch, None, None, length_of_piece_to_break_up*(1.0-insertion_spot), None, add_to_branch, remove_key]
 
     #taking care of the parent of the new node
     if parent_of_branch != 'r':
         tree[parent_of_branch]=_update_child(tree[parent_of_branch], add_to_branch, new_node_code)
-        
+
     return tree
-    
-def graft_onto_root(tree, insertion_spot, remove_key, new_name_for_old_root, remove_branch=0):    
+
+def graft_onto_root(tree, insertion_spot, remove_key, new_name_for_old_root, remove_branch=0):
     root_keys=find_rooted_nodes(tree)
 
     if len(root_keys)==1:#this is the special case where an admixture leads to the new root
         return graft_onto_rooted_admixture(tree, insertion_spot, remove_key, root_keys[0], remove_branch=remove_branch)
-    
+
     #updating the grafted_branch. Easy.
     tree[remove_key][remove_branch]='r'
-    
+
     #dealing with the other child of the new node, but since the new node is the root, the old root is the new node. If that makes sense.
     #removedprin 'root_keys', root_keys
     tree[new_name_for_old_root]=['r', None, None, insertion_spot, None,root_keys[0][0], root_keys[1][0]]
-    
+
     #dealing with the children of the new node.
     for rkey, _, b_l in root_keys:
         tree[rkey]=_update_parent(tree[rkey], 'r', new_name_for_old_root)
-    
+
     return tree
 
 def materialize_root(tree, new_key):
@@ -569,8 +663,8 @@ def move_node(tree, regraft_key, regraft_branch, parent_key, distance_to_regraft
         if chosen_piece.child_key=='r':
             tree=materialize_root(tree, new_node_name)
             u1,_=chosen_piece.get_leaf_and_root_sided_length(distance_to_regraft)
-            tree[new_node_name][3]=u1       
-            tree[regraft_key][regraft_branch]='r'     
+            tree[new_node_name][3]=u1
+            tree[regraft_key][regraft_branch]='r'
         else:
             u1,u2=chosen_piece.get_leaf_and_root_sided_length(distance_to_regraft)
             #removedprin u1,u2
@@ -588,10 +682,10 @@ def move_node(tree, regraft_key, regraft_branch, parent_key, distance_to_regraft
         if grandfather_key!='r':
             tree[grandfather_key]=_rename_child(tree[grandfather_key], parent_key, sibling_key)
         del tree[parent_key]
-    
+
     return tree
-        
-    
+
+
 
 def graft_onto_rooted_admixture(tree, insertion_spot, remove_key, root_key, remove_branch=0):
     #removedprin 'undoing a closed branch', insertion_spot, remove_key, root_key
@@ -614,7 +708,7 @@ def get_number_of_admixes(tree):
 
 def get_number_of_leaves(tree):
     return sum((1 for node in list(tree.values()) if node_is_leaf_node(node)))
-            
+
 def remove_admix(tree, rkey, rbranch):
     '''
     removes an admixture. besides the smaller tree, also the disappeared branch lengths are returned.
@@ -624,9 +718,9 @@ def remove_admix(tree, rkey, rbranch):
         |   __---- source_key
       rkey/   t_5       \
         |                \t_3
-        |t_2          sorphanota_key  
-    orphanota_key   
-    and alpha=admixture proportion. The function returns new_tree, (t1,t2,t3,t4,t5), alpha 
+        |t_2          sorphanota_key
+    orphanota_key
+    and alpha=admixture proportion. The function returns new_tree, (t1,t2,t3,t4,t5), alpha
 
     Note that t_4 could be None if source key is root. The source_key node is not an admixture node by assumption.
     '''
@@ -637,11 +731,11 @@ def remove_admix(tree, rkey, rbranch):
     t1= rnode[3+other_branch(rbranch)]
     t5= rnode[3+rbranch]
     alpha=rnode[2]
-    
+
     tree[orphanota_key],t2=get_branch_length_and_reset(tree[orphanota_key], rkey, t1, add=True)
     tree[orphanota_key]=_update_parent(tree[orphanota_key], rkey, parent_key)
     orphanota_branch=_get_index_of_parent(tree[orphanota_key], parent_key)
-    
+
     if parent_key!='r':
         tree[parent_key]=_update_child(tree[parent_key], old_child=rkey, new_child=orphanota_key)
     if source_key=='r':
@@ -669,9 +763,9 @@ def remove_admix2(tree, rkey, rbranch, pks={}):
         |   __---- source_key
       rkey/   t_5       \
         |                \t_3
-        |t_2          sorphanota_key  
-    orphanota_key   
-    and alpha=admixture proportion. The function returns new_tree, (t1,t2,t3,t4,t5), alpha 
+        |t_2          sorphanota_key
+    orphanota_key
+    and alpha=admixture proportion. The function returns new_tree, (t1,t2,t3,t4,t5), alpha
 
     Note that t_4 could be None if source key is root. The source_key node is not an admixture node by assumption.
     '''
@@ -685,13 +779,13 @@ def remove_admix2(tree, rkey, rbranch, pks={}):
         alpha=1-rnode[2]
     else:
         alpha=rnode[2]
-        
+
     tree[orphanota_key],t2=get_branch_length_and_reset(tree[orphanota_key], rkey, t1, add=True)
     tree[orphanota_key]=_update_parent(tree[orphanota_key], rkey, parent_key)
     orphanota_branch=_get_index_of_parent(tree[orphanota_key], parent_key)
     pks['orphanota_key']=orphanota_key
     pks['orphanota_branch']=orphanota_branch
-    
+
     if parent_key!='r':
         tree[parent_key]=_update_child(tree[parent_key], old_child=rkey, new_child=orphanota_key)
     if source_key=='r':
@@ -721,7 +815,7 @@ def direct_all_admixtures(tree, smaller_than_half=True):
             if (smaller_than_half and alpha<0.5) or (not smaller_than_half and alpha>0.5):
                 tree[key]=change_admixture(node)
     return tree
-    
+
 def other_branch(branch):
     if branch==0:
         return 1
@@ -729,7 +823,7 @@ def other_branch(branch):
         return 0
     else:
         assert False, 'illegal branch'
-    
+
 
 def _update_parents(node, new_parents):
     if len(new_parents)==1:
@@ -742,7 +836,7 @@ def _update_parents(node, new_parents):
         res=node[:5]+[None]*2
         return res
     assert False, 'how many parents do you think you have?'
-    
+
 def _update_parent(node, old_parent, new_parent):
     if node[0]==old_parent:
         node[0]=new_parent
@@ -751,7 +845,7 @@ def _update_parent(node, old_parent, new_parent):
     else:
         assert False, 'parent could not be updated'
     return node
-        
+
 def _update_child(node, old_child, new_child):
     if node[5]==old_child:
         node[5]=new_child
@@ -776,7 +870,7 @@ def remove_non_mixing_admixtures(tree, limit=1e-7):
         if adm_key in tree:#it could have been removed by others
             tree=remove_admixture(tree, adm_key, adm_branch)
     return tree
-        
+
 def get_parents(node):
     return node[:2]
 
@@ -806,13 +900,13 @@ def get_keys_and_branches_from_children(tree, key):
     '''
     the key has to be an admixture
     '''
-    
+
     child_keys=get_real_children(tree[key])
     branches=[]
     for child_key in child_keys:
         branches.append(mother_or_father(tree, child_key, key))
     return list(zip(child_keys, branches))
-        
+
 def get_other_parent(node, parent_key):
     if parent_key==node[0]:
         return node[1]
@@ -820,7 +914,7 @@ def get_other_parent(node, parent_key):
         return node[0]
     else:
         assert False, 'the shared parent was not a parent of the sibling.'
-        
+
 def halfbrother_is_uncle(tree, key, parent_key):
     '''
     parent_key is a non admixture node. This function checks if a sibling is an admixture that goes to the parent and the grandparent at the same time.
@@ -835,14 +929,14 @@ def halfbrother_is_uncle(tree, key, parent_key):
 
 def remove_admixture(tree, key, branch):
     parent_key=tree[key][branch]
-    
+
     while parent_key!='r' and node_is_admixture(tree[parent_key]):
         tree=remove_admixture(tree, parent_key, 1)
         parent_key=tree[key][branch]
-        
+
     return remove_admix2(tree, key,branch)[0]
 
-def scale_tree_copy(tree, factor):        
+def scale_tree_copy(tree, factor):
     cop=deepcopy(tree)
     for key,node in list(cop.items()):
         node[3]*=factor
@@ -864,14 +958,14 @@ def parent_is_spouse(tree, key, direction):
 
 def parent_is_sibling(tree, key, direction):
     '''
-    key is an admixture node. This function checks if the parent in the direction of 'direction' is also the child of the parent in the direction of 
-    'other_branch(direction)'. 
+    key is an admixture node. This function checks if the parent in the direction of 'direction' is also the child of the parent in the direction of
+    'other_branch(direction)'.
     '''
     parent_key=tree[key][direction]
     other_parent_key=tree[key][other_branch(direction)] #there is only one because key is an admixture node
     return (parent_key=='r' or other_parent_key in get_real_parents(tree[parent_key]))
 
-    
+
 def get_admixture_branches(tree):
     res=[]
     for key,node in list(tree.items()):
