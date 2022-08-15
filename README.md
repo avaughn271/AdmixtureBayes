@@ -9,7 +9,7 @@ AdmixtureBayes can be downloaded from this GitHub repo by running the following 
 ```bash
 $ git clone https://github.com/avaughn271/AdmixtureBayes
 ```
-AdmixtureBayes is written almost completely in Python and requires the following Python packages:
+AdmixtureBayes is written in Python and requires the following Python packages:
 
 "numpy", "scipy",  "pandas",    "pathos",   "graphviz"
 
@@ -25,7 +25,7 @@ https://pypi.org/project/pathos/
 
 https://pypi.org/project/graphviz/
 
-Furthermore, if you wish to use use the given R script to evaluate convergence, then you need to also have R installed with the [coda](https://cran.r-project.org/web/packages/coda/index.html) package, which can be installed by running: 
+Furthermore, if you wish to use the given R script to evaluate convergence, then you need to also have R installed with the [coda](https://cran.r-project.org/web/packages/coda/index.html) package, which can be installed by running: 
 ```
 install.packages("coda")
 ```
@@ -75,13 +75,11 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--n** (optional) The number of proposal steps the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proporional to the number of proposal steps). Default value is 200.
 
-**--MCMC_chains** (optional) The number of chains to run the MCMCMC with (See Matthew Darlington's great explanation of MCMCMC [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains will result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8.
+**--MCMC_chains** (optional) The number of chains to run the MCMCMC with (See Matthew Darlington's great explanation of MCMCMC [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains will result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8. Must be at least 2.
 
 **--result_file** (optional) The name of the mcmc output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "mcmc_samples.csv"
 
-**--start random** (optional) If this flag is used, then the algorithm will start at a randomly constructed graph, which may be useful for monitoring mixing and convergence of the chain, for example by Gelman-Rubin statistics. By default, a deterministic heuristic tree constructor is used which gives a reasonable starting graph. Should not be used with --continue_samples.
-
-**--continue_samples** (optional) This is used if you want to continue a previous AdmixtureBayes run, for example if convergence was not yet reached. The argument passed to --continue_samples should be the file name of the MCMC sample file produced by a previous AdmixtureBayes run (which is "mcmc_samples.csv" by default). A new file will be produced (whose name will be whatever the input to --result_file is in this call to AdmixtureBayes) that will contain all of the samples of the previous run in addition to all of the samples from this run. This call to AdmixtureBayes will start the chain in the last state of the previous AdmixtureBayes run. The previous output file will not be overwritten.  The name of the --result_file argument used in this call to AdmixtureBayes should be different than the one produced by the previous call to avoid unwanted behavior. For example, if a user does not specify  --result_file for either call, then both will be "mcmc_samples.csv" by default and unwanted behavior will occur. Should not be used with --start random.
+**--continue_samples** (optional) This is used if you want to continue a previous AdmixtureBayes run, for example if convergence was not yet reached. The argument passed to --continue_samples should be the file name of the MCMC sample file produced by a previous AdmixtureBayes run (which is "mcmc_samples.csv" by default). A new file will be produced (whose name will be whatever the input to --result_file is in this call to AdmixtureBayes) that will contain all of the samples of the previous run in addition to all of the samples from this run. This call to AdmixtureBayes will start the chain in the last state of the previous AdmixtureBayes run. The previous output file will not be overwritten.  The name of the --result_file argument used in this call to AdmixtureBayes should be different than the one produced by the previous call to avoid unwanted behavior. For example, if a user does not specify  --result_file for either call, then both will be "mcmc_samples.csv" by default and unwanted behavior will occur. If this argument is not specified, then the algorithm will start at a randomly constructed graph, which may be useful for monitoring mixing and convergence of the chain, for example by Gelman-Rubin statistics.
 
 **--verbose_level** (optional) Either "normal" or "silent". If "normal", then the total number of snps will be printed to the console along with the progress of the MCMC sampler. Every 1000th iteration, the progress towards the total number of iterations is printed. If "silent", then nothing will be printed to the console. Default value is "normal."
 
@@ -113,7 +111,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 
 **--subnodes** (optional) A list of population labels, which should be a subset of all non-outgroup population labels. This can be specified if only a subset of the population labels should be analyzed. Plots generated using the output of this step will only use the populations given in this step. If not specified, all non-outgroup populations will be considered.
 
-**--slower** (optional) If this flag is used, then the necessary information to plot the top trees with branch estimates  will be computed. By default, this is not done as this can be a very slow process when the number of admixture events is large. This flag also has another effect. For each graph that contains admixture events, each admixture event has one ancestral lineage that is specifically marked as the "introgressed" lineage. Graphs are considered distinct if they have different marked lineages, even if their topologies are the same. However, if this flag is specified, then graphs with the same topology are combined into equivalence classes induced by the set of all introgression markings. This distinction might be important for considering the posterior probabilities of different topologies.
+**--slower** (optional) If this flag is used, then the necessary information to plot the top trees with branch estimates  will be computed. By default this is not done as this can be a very slow process when the number of admixture events is large. This flag also has another effect. For each graph that contains admixture events, each admixture event has one ancestral lineage that is specifically marked as the "introgressed" lineage. Graphs are considered distinct if they have different marked lineages, even if their topologies are the same. However, if this flag is specified, then graphs with the same topology are combined into equivalence classes induced by the set of all introgression markings. This distinction might be important for considering the posterior probabilities of different topologies.
 
  ## This step produces (in the current working directory)
 
