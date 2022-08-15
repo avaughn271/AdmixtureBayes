@@ -107,7 +107,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/analyzeSamples.py
 
 **--burn_in_fraction** (optional) The fraction of samples to discard as a burn-in period. Default value is 0.5.
 
-**--thinning_rate** (optional) The thinning rate of the sample thinning step (which occurs after the burn-in step). Deafult value is 10.
+**--thinning_rate** (optional) The thinning rate of the sample thinning step (which occurs after the burn-in step). Default value is 10.
 
 **--subnodes** (optional) A list of population labels, which should be a subset of all non-outgroup population labels. This can be specified if only a subset of the population labels should be analyzed. Plots generated using the output of this step will only use the populations given in this step. If not specified, all non-outgroup populations will be considered.
 
