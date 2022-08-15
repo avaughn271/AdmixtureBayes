@@ -6,12 +6,6 @@ from numpy.random import choice
 from collections import Counter
 from scipy.stats import uniform, expon, geom
 
-def rvss(fro=0.0, to=1.0):
-    guess=uniform.rvs(fro, to-fro)
-    while uniform.rvs() > (to-(guess-fro))/(to-fro):
-        guess=uniform.rvs(fro, to-fro)
-    return guess
-
 def set_outgoing_branch(node, parent_name, branch, length):
     node[branch]=parent_name
     node[branch+3]=length

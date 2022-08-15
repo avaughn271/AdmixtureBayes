@@ -1,10 +1,9 @@
 from argparse import ArgumentParser, SUPPRESS
 
 from construct_starting_trees_choices import get_starting_trees
-from construct_covariance_choices import get_covariance
+from construct_covariance_choices import get_covariance, estimate_degrees_of_freedom_scaled_fast
 from posterior import posterior_class
 from MCMCMC import MCMCMC
-from wishart_distribution_estimation import estimate_degrees_of_freedom_scaled_fast
 from MCMC import basic_chain
 import os
 from numpy import random

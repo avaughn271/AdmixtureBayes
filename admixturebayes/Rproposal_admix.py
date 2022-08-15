@@ -189,8 +189,6 @@ def deladmix(tree,pks={}, fixed_remove=None, preserve_root_distance=True):
         remove_key, remove_branch = fixed_remove
     pks['remove_key']=remove_key
     pks['remove_branch']=remove_branch
-    #get_keys_and_branches_from_children()
-    #removedprin 'remove', (remove_key, remove_branch)
     
     new_tree, (t1,t2,t3,t4,t5), alpha = remove_admix2(cop, remove_key, remove_branch, pks=pks)
     #pks['sink_key']=sink_key

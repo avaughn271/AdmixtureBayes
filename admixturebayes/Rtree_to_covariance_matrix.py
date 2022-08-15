@@ -62,21 +62,12 @@ class Population:
         return self
 
 def leave_node(key, node, population, covmat):
-    if node_is_non_admixture(node): 
+    if node_is_non_admixture(node):
         return [follow_branch(parent_key=node[0],branch_length=node[3], population=population, covmat=covmat)]
     else:
         new_pop=population.remove_partition(1.0-node[2])
         return [follow_branch(parent_key=node[0],branch_length=node[3], population=population, covmat=covmat, dependent='none'), #changed dependent='none' to go to most loose restriction that still makes sense. To go back,put dependent=node[1
                 follow_branch(parent_key=node[1],branch_length=node[4], population=new_pop, covmat=covmat, dependent='none')]
-
-def leave_node_and_check_admixtures(key, node, population, covmat):
-    if node_is_non_admixture(node):
-        return [follow_branch(parent_key=node[0],branch_length=node[3], population=population, covmat=covmat)],[]
-    else:
-        members=population.members[:]
-        new_pop=population.remove_partition(1.0-node[2])
-        return [follow_branch(parent_key=node[0],branch_length=node[3], population=population, covmat=covmat, dependent='none'), #changed dependent='none' to go to most loose restriction that still makes sense. To go back,put dependent=node[1
-                follow_branch(parent_key=node[1],branch_length=node[4], population=new_pop, covmat=covmat, dependent='none')], members
 
 def follow_branch(parent_key, branch_length, population, covmat, dependent="none"):
     covmat.update(branch_length, population)

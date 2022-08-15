@@ -149,7 +149,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     '''
     Transforms an identifier of the form qwert-uio-asdfg-jk into a dictionary tree using the generators of leaves, inner_nodes, branch_lengths and admixture_proportions.
     '''
-    print("dddd")
     levels=identifier.split('-')
     n_leaves=len(levels[0].split('.'))
     if leaves is None:
@@ -158,7 +157,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
         leaf_values=[leaves() for _ in range(n_leaves)]
     tree={leaf:[None]*5 for leaf in leaf_values}
     trace_lineages=[(leaf,0) for leaf in leaf_values]
-    print(leaf_values)
     if inner_nodes is None:
         inner_nodes=generate_numbered_nodes('n')
     if branch_lengths is None:
@@ -218,7 +216,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     return insert_children_in_tree(tree)
 
 def identifier_to_tree_clean(identifier, **kwargs):
-    print("a")
     ad2, branch_lengths, admixture_proportions=divide_triple_string(identifier)
     tree_good2= identifier_to_tree(ad2,
                                    branch_lengths=string_to_generator(branch_lengths),
