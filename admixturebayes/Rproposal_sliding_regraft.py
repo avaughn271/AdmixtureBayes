@@ -153,13 +153,9 @@ class lineage(object):
     def under_cap(self, cap):
         return self.distance<cap
 
-
 def insert_root_in_tree(tree):
     (child_key1,_,_),(child_key2,_,_)=find_rooted_nodes(tree)
     tree['r']=[None,None,None,None,None,child_key1, child_key2]
-
-def remove_root_from_tree(tree):
-    del tree['r']
     
 def distanced_branch_lengths(tree, start_key, visited_keys=[], upper_cap=float('inf'), topological_distance=False):
     insert_root_in_tree(tree)
@@ -170,11 +166,10 @@ def distanced_branch_lengths(tree, start_key, visited_keys=[], upper_cap=float('
         lin=lineages.pop(0)
         if lin.key not in visited_keys:
             visited_keys.append(lin.key)
-            #removedprin lin.key
             new_lineages, new_pieces= lin.follow(tree, visited_keys)
             pieces.extend(new_pieces)
             lineages.extend([new_lineage for new_lineage in new_lineages if new_lineage.under_cap(upper_cap)])
-    remove_root_from_tree(tree)
+    del tree['r']
     return pieces
 
 def conditional_gamma_rvs(mean,shape, upper_limit):

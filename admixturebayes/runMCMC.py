@@ -14,6 +14,10 @@ import tree_statistics
 import Rtree_to_covariance_matrix
 from copy import deepcopy
 
+def removefile(filename):
+    if os.path.exists(filename):
+        os.remove(filename)
+
 def get_summary_scheme(no_chains=1):
     
     summaries=[construct_starting_trees_choices.s_posterior(),
@@ -33,10 +37,7 @@ def get_summary_scheme(no_chains=1):
 class fixed_geometrical(object):
 
     def __init__(self, maxT, no_chains):
-        if no_chains==1:
-            self.temps=[1.0]
-        else:
-            self.temps=[maxT**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
+        self.temps=[maxT**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
 
     def get_temp(self,i):
         return self.temps[i]
@@ -71,20 +72,12 @@ def main(args):
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
-    #medium important convergence arguments
-    parser.add_argument('--m', type=int, default=50, help='the number of MCMC steps before between each MCMCMC flip')
-
     #convenience arguments
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
     parser.add_argument('--thinning_coef', type=int, default=40,
                         help=SUPPRESS)#'The number of MCMC steps between each saved instance. It has to be lower than --m.')
 
-    #more obscure arguments
-    parser.add_argument('--p', type=float, default=0.5,
-                        help='the geometrical parameter in the prior. The formula is p**x(1-p)')
-    parser.add_argument('--no_bootstrap_samples', type=int, default=100,
-                        help='the number of bootstrap samples to make to estimate the degrees of freedom in the wishart distribution.')
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
@@ -104,11 +97,8 @@ def main(args):
 
     full_nodes, reduced_nodes=get_nodes(os.getcwd() + "/temp_input.txt", options.outgroup)
 
-    treemix_in_file=os.getcwd() + "/temp_input.txt"
-
     estimator_arguments=dict(reducer=options.outgroup, 
                              nodes=full_nodes,
-                             Simulator_fixed_sxeed=True,
                              add_variance_correction_to_graph=True,
                              save_variance_correction=True)
                              
@@ -118,21 +108,18 @@ def main(args):
                               estimator_arguments=estimator_arguments)
 
     estimator_arguments['save_variance_correction']=False
-    df, boot_covs=estimate_degrees_of_freedom_scaled_fast(treemix_in_file,
+    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + "/temp_input.txt",
                                             bootstrap_blocksize=options.bootstrap_blocksize,
-                                            no_bootstrap_samples=options.no_bootstrap_samples,
                                             cores=options.MCMC_chains,
                                             est=estimator_arguments, 
                                             verbose_level=options.verbose_level)
 
     multiplier=covariance[1]
-        
-    tree_nodes=reduced_nodes
+    
     if options.continue_samples != []:
         #This is where the continuation is all happening.
         #We first save the tree to a temporary file
-        if os.path.exists(os.getcwd() + "/" +  "temp_start_tree.txt"):
-            os.remove(os.getcwd() + "/" +  "temp_start_tree.txt")
+        removefile(os.getcwd() + "/" +  "temp_start_tree.txt")
         temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
         temp2 = (temp[["tree"]])
         f = open(os.getcwd() + "/" +  "temp_start_tree.txt", "a")
@@ -141,8 +128,7 @@ def main(args):
         f.write("\n")
         f.close()
 
-        if os.path.exists(os.getcwd() + "/" +  "temp_starttree.txt"):
-            os.remove(os.getcwd() + "/" +  "temp_starttree.txt")
+        removefile(os.getcwd() + "/" +  "temp_starttree.txt")
         gii = open(os.getcwd() + "/" + "covariance_and_multiplier.txt", "r")
         g = gii.readlines()
         g = g[len(g)-1]
@@ -151,13 +137,11 @@ def main(args):
         gii.close()
         fff = open(os.getcwd() + "/" + "temp_start_tree.txt", "r")
 
-        FinalString = "\n"
-
         f = fff.readlines()
         secondline = f[1]
         splitted = secondline.split(";")
 
-        FinalString = FinalString + splitted[0] + ";"
+        FinalString = "\n" + splitted[0] + ";"
 
         relevantbranches = splitted[1]
         splitbranches = relevantbranches.split("-")
@@ -189,8 +173,7 @@ def main(args):
         addvalue = (temp[["add"]])
         addvalue = float(addvalue.iloc[len(addvalue.index) - 1, 0])
 
-        if os.path.exists(os.getcwd() + "/" + "temp_add.txt"):
-            os.remove(os.getcwd() + "/" + "temp_add.txt")
+        removefile(os.getcwd() + "/" + "temp_add.txt")
         f = open(os.getcwd() + "/" + "temp_add.txt", "a")
         f.write(str(addvalue) + "\n")
         f.close()
@@ -199,80 +182,55 @@ def main(args):
         starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
                                         options.MCMC_chains,
                                         adds=[os.getcwd() + "/" + "temp_add.txt"],
-                                        nodes=tree_nodes)
+                                        nodes=reduced_nodes)
     else:
         starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,
                                       options.MCMC_chains,
                                       adds=[],
-                                      nodes=tree_nodes)
+                                      nodes=reduced_nodes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
-    sim_lengths=[options.m]*options.n
+    sim_lengths=[50]*options.n
 
-    likelihood_nodes=reduced_nodes
-    posterior = posterior_class(emp_cov=covariance[0],
-                                M=df,
-                                p=options.p,
-                                multiplier=covariance[1],
-                                nodes=likelihood_nodes)
-
-    posterior_function_list=[]
+    posterior = posterior_class(emp_cov=covariance[0], M=df,
+                                multiplier=covariance[1], nodes=reduced_nodes)
 
     temperature_scheme=fixed_geometrical(1000,options.MCMC_chains)
 
-    #####    ANDREW DEBUG   !!!!!!!!!!
-    if os.path.exists("covariance_without_reduce_name.txt"):
-        os.remove("covariance_without_reduce_name.txt")
-    else:
-        print("The file does not exist")
-
-    if os.path.exists("variance_correction.txt"):
-        os.remove("variance_correction.txt")
-    else:
-        print("The file does not exist")
-
-    if os.path.exists("temp_starttree.txt"):
-        os.remove("temp_starttree.txt")
-    if os.path.exists("temp_start_tree.txt"):
-        os.remove("temp_start_tree.txt")
-    if os.path.exists("temp_add.txt"):
-        os.remove("temp_add.txt")
-
+    removefile("covariance_without_reduce_name.txt")
+    removefile("variance_correction.txt")
+    removefile("temp_starttree.txt")
+    removefile("temp_start_tree.txt")
+    removefile("temp_add.txt")
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
-    def multi_chain_run():
         #random_seeds = []
         #for i in range(options.MCMC_chains):
         #    random_seeds.append(givenseed + i)
         #print(random_seeds)
-        res=MCMCMC(starting_trees=starting_trees,
-               posterior_function= posterior,
-               summaries=summaries,
-               temperature_scheme=temperature_scheme,
-               printing_schemes=summary_verbose_scheme,
-               iteration_scheme=sim_lengths,
-               overall_thinnings=int(options.thinning_coef),
-               proposal_scheme= mp,
-               cores=options.MCMC_chains,
-               no_chains=options.MCMC_chains,
-               multiplier=multiplier,  #numpy_seeds = random_seeds,
-               result_file=options.result_file,
-               posterior_function_list=posterior_function_list, n_arg=options.n, m_arg=options.m, verboseee=options.verbose_level)
+    res=MCMCMC(starting_trees=starting_trees,
+            posterior_function= posterior,
+            summaries=summaries,
+            temperature_scheme=temperature_scheme,
+            printing_schemes=summary_verbose_scheme,
+            iteration_scheme=sim_lengths,
+            overall_thinnings=int(options.thinning_coef),
+            proposal_scheme= mp,
+            no_chains=options.MCMC_chains,
+            multiplier=multiplier,  #numpy_seeds = random_seeds,
+            result_file=options.result_file,
+            n_arg=options.n, verboseee=options.verbose_level)
 
-    if os.path.exists(os.getcwd() + "/temp_input.txt"):
-        os.remove(os.getcwd() + "/temp_input.txt")
+    removefile(os.getcwd() + "/temp_input.txt")
 
-    res=multi_chain_run()
-    if os.path.exists("trees_tmp.txt"):
-        os.remove("trees_tmp.txt")
+    removefile("trees_tmp.txt")
     if options.continue_samples != []:
         oldcsv = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
         newcsv = pandas.read_csv(os.getcwd() + "/" + options.result_file)
         result = pandas.concat([oldcsv,newcsv])
-        if os.path.exists(os.getcwd() + "/" + options.result_file):
-            os.remove(os.getcwd() + "/" + options.result_file)
+        removefile(os.getcwd() + "/" + options.result_file)
         result.to_csv(os.getcwd() + "/" + options.result_file, index = False)
 
 if __name__=='__main__':

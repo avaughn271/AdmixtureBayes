@@ -27,7 +27,7 @@ def make_dics_first_and_second(double_list):
         return {},[],[]
 
 def unique_identifier(tree, leaf_order=None):
-    leaves, coalescences_nodes, admixture_nodes=get_categories(tree)
+    leaves,admixture_nodes=get_categories(tree)
     if leaf_order is not None:
         assert set(leaves)==set(leaf_order), 'the specified leaf order did not match the leaves of the tree.'
         leaves_ordered=leaf_order
@@ -204,7 +204,7 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     return insert_children_in_tree(tree)
 
 def identifier_to_tree_clean(identifier, **kwargs):
-    ad2, branch_lengths, admixture_proportions=divide_triple_string(identifier)
+    ad2, branch_lengths, admixture_proportions=identifier.split(';')
     tree_good2= identifier_to_tree(ad2,
                                    branch_lengths=string_to_generator(branch_lengths),
                                    admixture_proportions=string_to_generator(admixture_proportions),
@@ -219,7 +219,7 @@ def topological_identifier_to_tree_clean(identifier, **kwargs):
     return tree_good2
 
 def unique_identifier_and_branch_lengths(tree, leaf_order=None):
-    leaves, coalescences_nodes, admixture_nodes=get_categories(tree)
+    leaves,admixture_nodes=get_categories(tree)
     if leaf_order is not None:
         assert set(leaves)==set(leaf_order), 'the specified leaf order did not match the leaves of the tree.'
         leaves_ordered=leaf_order
@@ -291,13 +291,8 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
 def list_to_generator(listi):
     return generate_predefined_list(listi)
 
-def string_to_generator(stringi, floats=True):
-    if floats:
-        return list_to_generator(list(map(str,stringi.split('-'))))
-    return list_to_generator(stringi.split('-'))
-
-def divide_triple_string(stringbig):
-    return stringbig.split(';')
+def string_to_generator(stringi):
+    return list_to_generator(list(map(str,stringi.split('-'))))
 
 def update_lineages(lists, new, gone, lineages, tree):
     for n,element in enumerate(new):

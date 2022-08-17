@@ -87,7 +87,6 @@ class simple_adaptive_proposal(object):
         self.proportions=proportions
         self.adaps=[simple_adaption() if prop.adaption else None for prop in self.props]
         self.node_naming=new_node_naming_policy()
-        self.recently_called_type=None
         self.recently_called_index=None
         
     def __call__(self, x, pks={}):
@@ -96,7 +95,6 @@ class simple_adaptive_proposal(object):
         index, jforward, jbackward = draw_proposal(self.props, k, self.proportions)
         
         names=self.node_naming.next_nodes(self.props[index].new_nodes)
-        self.recently_called_type=self.props[index].proposal_name
         self.recently_called_index=index
         proposal_input= self.props[index].input
         args=get_args2(names, self.adaps[index])

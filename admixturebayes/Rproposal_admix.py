@@ -1,6 +1,6 @@
 from numpy.random import choice, random
 from copy import deepcopy
-from Rtree_operations import (get_number_of_admixes, node_is_admixture, insert_admixture_node_halfly, 
+from Rtree_operations import (node_is_admixture, insert_admixture_node_halfly, 
                               graft, node_is_non_admixture,
                               parent_is_spouse, halfbrother_is_uncle,
                               parent_is_sibling, other_branch, get_branch_length, change_admixture,
@@ -11,9 +11,6 @@ from random import getrandbits
 from scipy.stats import expon
 
 import warnings
-
-def _get_possible_starters(tree):
-    return get_all_branches(tree)
 
 class addadmix_class(object):
     
@@ -64,9 +61,8 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
             h(c1,c2,u1,u2,w)=(c1*u1, c1*(1-u1), c2*u2, c2*(1-u2), 0.5*w)
     '''
     
-    possible_nodes=_get_possible_starters(tree)
+    possible_nodes=get_all_branches(tree)
         
-    no_admixtures=get_number_of_admixes(tree)
     new_tree= deepcopy(tree)
     #removedprin possible_nodes
     sink_key, sink_branch=possible_nodes[choice(len(possible_nodes), 1)[0]]
@@ -119,7 +115,6 @@ def get_insertion_spot(x=None, length=1.0):
             return 1.0
         return 1.0/length
     
-
 def insert_admix(tree, source_key, source_branch, sink_key, sink_branch, source_name=None, sink_name=None, pks={}, new_branch_length=None, new_to_root_length=None, preserve_root_distance=False):
     if source_key=='r':
         u1,q1=get_root_branch_length()
@@ -217,7 +212,7 @@ def get_backward_remove_density(t1,t2,t3,t4,t5, alpha):
     return q1*q2*q3*q4
     
 def get_possible_admixture_adds(tree, sink_key,sink_branch):
-    possible_nodes=_get_possible_starters(tree)
+    possible_nodes=get_all_branches(tree)
     other= get_all_branch_descendants_and_rest(tree, sink_key, sink_branch)
     candidates=other+[('r',0)]
     return len(possible_nodes)*len(candidates)

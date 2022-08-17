@@ -122,7 +122,7 @@ def iterate_over_output_file(outfile,
 
 class make_Rtree(object):
     
-    def __init__(self, nodes_to_be_sorted, remove_sadtrees=False, subnodes=[], outgroup_name=''):
+    def __init__(self, nodes_to_be_sorted, subnodes=[], outgroup_name=''):
         self.nodes=sorted(nodes_to_be_sorted)
         self.subnodes=subnodes
         self.outgroup_name=outgroup_name
@@ -151,7 +151,7 @@ class make_Rtree(object):
     
 class make_full_tree(object):
     
-    def __init__(self, outgroup_name='out', remove_sadtrees=False, subnodes=[]):
+    def __init__(self, outgroup_name='out', subnodes=[]):
         self.outgroup_name=outgroup_name
         self.subnodes=subnodes
         
@@ -202,8 +202,7 @@ class topology(object):
     
 class get_pops(object):
     
-    def __init__(self, min_w=0.0, keys_to_include=None):
-        self.min_w=0.0
+    def __init__(self, keys_to_include=None):
         self.keys_to_include=keys_to_include
             
     def __call__(self, full_tree=None, **kwargs):
@@ -211,7 +210,7 @@ class get_pops(object):
             tree=kwargs['Rtree']
         else:
             tree=full_tree
-        pops=get_populations(tree, 0.0, keys_to_include=self.keys_to_include)
+        pops=get_populations(tree, keys_to_include=self.keys_to_include)
         return {'pops':'-'.join(pops)}, False
 
 class thinning(object):
@@ -284,7 +283,7 @@ def make_admixture_string(admixes, admixture_permutations):
     
 def get_possible_strees(tree, nodes):
     
-    leaves,_,admixture_keys=get_categories(tree)
+    leaves,admixture_keys=get_categories(tree)
     k=len(admixture_keys)
     format_code='{0:0'+str(k)+'b}'
     
@@ -293,7 +292,6 @@ def get_possible_strees(tree, nodes):
     for i in range(2**k):
         pruned_tree = deepcopy(tree)
         bina= format_code.format(i)
-        prop=1.0
         for adm_key,str_bin in zip(admixture_keys, list(bina)):
             int_bin=int(str_bin)
             if int_bin==1:
@@ -306,7 +304,6 @@ def analyze_tree(topology, branches, admixtures):
     
     id_branches='-'.join(map(str, list(range(len(branches.split('-'))))))
     id_admixtures='-'.join(map(str, list(range(1,len(admixtures.split('-'))+1))))
-    #removedprin branches, id_branches
     id_stree=';'.join([topology,id_branches, id_admixtures])
     no_leaves=len((id_stree.split('-')[0]).split('.'))
     id_tree=identifier_to_tree_clean(id_stree.strip())
@@ -332,10 +329,9 @@ def get_admixtures_permutation(admixtures):
             else:
                 res.append(number)
     return res
-    
 
 def get_possible_permutation_strees(tree):
-    leaves,_,admixture_keys=get_categories(tree)
+    leaves,admixture_keys=get_categories(tree)
     k=len(admixture_keys)
     format_code='{0:0'+str(k)+'b}'
     
@@ -353,12 +349,6 @@ def get_possible_permutation_strees(tree):
     
 def run_posterior_main(args):
 
-    possible_summaries={'Rtree': make_Rtree,
-                        'full_tree':make_full_tree,
-                        'string_tree':make_string_tree,
-                        'topology':topology,
-                        'pops':get_pops,
-                        }
     parser = ArgumentParser(usage='pipeline for post analysis')
 
     parser.add_argument('--mcmc_results', required=True, type=str, help='The output file from an AdmixtureBayes run.')
@@ -371,33 +361,17 @@ def run_posterior_main(args):
                              'As a consequence, the option "--plot estimates" can not be used by AdmixtureBayes plot.')
 
     parser.add_argument('--thinning_rate', default=10, type=int,
-                        #help='an upper limit on the number of rows to reduce computational pressure')
                         help='thinning rate')
     parser.add_argument('--burn_in_fraction', default=0.5, type=float,
                         help='the proportion of the rows that are discarded as burn in period')
-    parser.add_argument('--calculate_summaries', default=['Rtree', 'pops','full_tree','string_tree','topology'], choices=list(possible_summaries.keys()),
-                        nargs='*', type=str, help='The summaries to calculate')
     parser.add_argument('--save_summaries', default=['no_admixes', 'topology', 'pops','string_tree'], nargs='*', type=str,
                         help='The list of summaries to save')
-    parser.add_argument('--min_w', default=0.0, type=float,
-                        help='a lower threshold of which descendants matter when the consensus_method is descendant_frequencies.')
-    parser.add_argument('--use_cols', default=['tree', 'add', 'layer', 'no_admixes'], type=str, nargs='+',
-                        help='The columns to load from the input file')
-    parser.add_argument('--outgroup_name', default='', type=str, help='Name of the outgroup. By default this is argument is empty meaning that the outgroup will not be included in any summary.')
 
     options= parser.parse_args(args)
 
     if options.subnodes:
-        if not options.outgroup_name:
-            subnodes_wo_outgroup=options.subnodes
-            subnodes_with_outgroup=options.subnodes
-        elif options.outgroup_name in options.subnodes:
-            subnodes_with_outgroup=options.subnodes
-            subnodes_wo_outgroup=deepcopy(options.subnodes)
-            subnodes_wo_outgroup.remove(options.outgroup_name)
-        else:
-            subnodes_with_outgroup=deepcopy(options.subnodes)+[options.outgroup_name]
-            subnodes_wo_outgroup=options.subnodes
+        subnodes_wo_outgroup=options.subnodes
+        subnodes_with_outgroup=options.subnodes
     else:
         subnodes_with_outgroup=[]
         subnodes_wo_outgroup=[]
@@ -417,11 +391,7 @@ def run_posterior_main(args):
     nodes.sort()
 
     nodes_wo_outgroup = deepcopy(nodes)
-    if options.outgroup_name:
-        assert options.outgroup_name not in nodes_wo_outgroup, 'The outgroup_name=' + options.outgroup_name + ' occured in the covariance which an outgroup should not.'
-        nodes_with_outgroup = nodes_wo_outgroup + [options.outgroup_name]
-    else:
-        nodes_with_outgroup = deepcopy(nodes_wo_outgroup)
+    nodes_with_outgroup = deepcopy(nodes_wo_outgroup)
     nodes_with_outgroup.sort()
     nodes_wo_outgroup.sort()
     subnodes_with_outgroup.sort()
@@ -444,15 +414,11 @@ def run_posterior_main(args):
 
     name_to_rowsum_index=pointers()
 
-    if 'Rtree' in options.calculate_summaries:
-        row_sums.append(possible_summaries['Rtree'](deepcopy(nodes_wo_outgroup),False, subnodes=subnodes_wo_outgroup, outgroup_name=options.outgroup_name))
-        name_to_rowsum_index('Rtree')
-    if 'full_tree' in options.calculate_summaries:
-
-        row_sums.append(possible_summaries['full_tree'](outgroup_name=options.outgroup_name,
-                                                        remove_sadtrees=False,
-                                                        subnodes=options.subnodes))
-        name_to_rowsum_index('full_tree')
+    row_sums.append(make_Rtree(deepcopy(nodes_wo_outgroup), subnodes=subnodes_wo_outgroup, outgroup_name=''))
+    name_to_rowsum_index('Rtree')
+    row_sums.append(make_full_tree(outgroup_name='',
+                                                    subnodes=options.subnodes))
+    name_to_rowsum_index('full_tree')
 
     if options.subnodes:
         nodes=options.subnodes
@@ -460,27 +426,20 @@ def run_posterior_main(args):
         nodes_wo_outgroup=subnodes_wo_outgroup
     else:
         nodes=nodes_with_outgroup
-    if 'string_tree' in options.calculate_summaries and options.slower:
-        row_sums.append(possible_summaries['string_tree'](deepcopy(nodes), tree_unifier())) #calling make_string_tree
+    if options.slower:
+        row_sums.append(make_string_tree(deepcopy(nodes), tree_unifier())) #calling make_string_tree
         name_to_rowsum_index('string_tree')
     if not options.slower:
-        if 'string_tree' in options.calculate_summaries:
-            options.calculate_summaries.remove('string_tree')
-
-        if 'string_tree' in options.save_summaries:
-            options.save_summaries.remove('string_tree')
-
-    if 'topology' in options.calculate_summaries:
-        row_sums.append(possible_summaries['topology'](nodes=nodes))
-        name_to_rowsum_index('topology')
-    if 'pops' in options.calculate_summaries:
-        row_sums.append(possible_summaries['pops'](min_w=options.min_w, keys_to_include=nodes))
-        name_to_rowsum_index('pops')
+        options.save_summaries.remove('string_tree')
+    row_sums.append(topology(nodes=nodes))
+    name_to_rowsum_index('topology')
+    row_sums.append(get_pops(keys_to_include=nodes))
+    name_to_rowsum_index('pops')
 
     def save_thin_columns(d_dic):
         return {summ:d_dic[summ] for summ in list(set(options.save_summaries+[]))}
     all_results=iterate_over_output_file(options.mcmc_results,
-                                             cols=options.use_cols,
+                                             cols=['tree', 'add', 'layer', 'no_admixes'],
                                              pre_thin_data_set_function=thinner,
                                              row_summarize_functions=row_sums,
                                              thinned_d_dic=save_thin_columns)

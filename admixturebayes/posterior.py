@@ -3,7 +3,7 @@ from Rtree_to_covariance_matrix import make_covariance
 from scipy.stats import wishart
 from numpy.linalg import LinAlgError
 
-from scipy.stats import geom, nbinom
+from scipy.stats import geom
 from Rtree_operations import (get_all_branch_lengths, get_all_admixture_proportions, get_number_of_leaves)
 
 from Rtree_operations import get_number_of_admixes, get_number_of_leaves
@@ -42,12 +42,10 @@ def logpdf(x, fro=0.0, to=1.0):
 
 def calculate_branch_prior(branches, n):
     rate=float(2*n-2)/len(branches)
-    n2k=len(branches)
-    d=float(n2k)/float(n)
     
     return -sum(branches)*rate+log(rate)*len(branches)
 
-def prior(x, p=0.5, pks={}, r=0):
+def prior(x, p=0.5):
     tree, add=x
     no_leaves=get_number_of_leaves(tree)
     admixtures=get_all_admixture_proportions(tree)
@@ -57,7 +55,7 @@ def prior(x, p=0.5, pks={}, r=0):
     if not all(branch>=0 for branch in branches):
         return -float('inf')
     branch_prior=calculate_branch_prior(branches, no_leaves)
-    no_admix_prior=no_admixes(p, len(admixtures), r=r)
+    no_admix_prior=no_admixes(p, len(admixtures))
     top_prior=uniform_topological_prior_function(tree)
     logsum=branch_prior+no_admix_prior+top_prior-add
     return logsum
@@ -65,19 +63,11 @@ def prior(x, p=0.5, pks={}, r=0):
 def linear_admixture_proportions(admixtures):
     return sum((logpdf(admixture) for admixture in admixtures))
 
-def no_admixes(p, admixes, hard_cutoff=20, r=0):
+def no_admixes(p, admixes, hard_cutoff=20):
     if admixes>hard_cutoff:
         return -float('inf')
-    if r>1:
-        if hard_cutoff is None:
-            return nbinom.logpmf(admixes,n=r, p=1.0-p)
-        else:
-            return nbinom.logpmf(admixes, n=r, p=1.0 - p) - nbinom.logcdf(hard_cutoff ,n=r, p= 1.0 - p)
-    else:
-        if hard_cutoff is None:
-            return geom.logpmf(admixes+1, 1.0-p)
 
-        return geom.logpmf(admixes+1, 1.0-p)-geom.logcdf(hard_cutoff+1, 1.0-p)
+    return geom.logpmf(admixes+1, 1.0-p)-geom.logcdf(hard_cutoff+1, 1.0-p)
 
 def likelihood(x, emp_cov, b, M=12,nodes=None, pks={}):
     tree, add= x
@@ -104,7 +94,6 @@ class posterior_class(object):
     def __init__(self, 
                  emp_cov, 
                  M=10, 
-                 p=0.5, 
                  multiplier=None, 
                  nodes=None):
         '''
@@ -113,7 +102,7 @@ class posterior_class(object):
         '''
         self.emp_cov=emp_cov
         self.M=M
-        self.p=p
+        self.p=0.5
         self.lik=likelihood
             
         self.multiplier=multiplier
@@ -124,9 +113,7 @@ class posterior_class(object):
             self.b*=multiplier
 
     def __call__(self, x, pks={}, verbose=False,r=None):
-        if r is None:
-            r=0
-        prior_value = prior(x,p=self.p, r=r)
+        prior_value = prior(x,p=self.p)
         if prior_value==-float('inf'):
             return -float('inf'), prior_value
         

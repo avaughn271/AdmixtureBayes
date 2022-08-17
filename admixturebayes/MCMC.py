@@ -107,8 +107,7 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
 
 def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=10000, 
                 sample_verbose_scheme=None, overall_thinning=1, i_start_from=0, 
-                temperature=1.0, proposal_update=None, multiplier=None, 
-                appending_result_file=None, appending_result_frequency=10):
+                temperature=1.0, proposal_update=None, multiplier=None):
     if proposal_update is not None:
         proposal.wear_exportable_state(proposal_update)
     
@@ -117,12 +116,6 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
         post=posterior_function(x)
     
     iteration_summary=[]
-    count=0
-    from_count=0
-    
-    if appending_result_file is not None:
-        with open(appending_result_file, 'w') as f:
-            f.write(",".join(['iteration'] + [s.name for s in summaries])+'\n')
         
     for i in range(i_start_from,i_start_from+N):
         proposal_knowledge_scraper={}
@@ -136,13 +129,6 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
                                                                old_post=post,
                                                                old_tree=scale_tree_copy(x[0],1.0/multiplier),
                                                                iteration_number=i,**proposal_knowledge_scraper))
-            if appending_result_file is not None:
-                count+=1
-                if count % appending_result_frequency==0:
-                    with open(appending_result_file, 'a') as f:
-                        for n,params in enumerate(iteration_summary[from_count:]):
-                            f.write(",".join(map(str, params))+'\n')
-                    from_count=count
         x=new_x
         post=new_post
     

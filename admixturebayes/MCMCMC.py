@@ -1,8 +1,6 @@
 #os.environ["OPENBLAS_NUM_THREADS"] = "1"
 #os.environ["MKL_NUM_THREADS"] = "1"
 from pathos.multiprocessing import freeze_support
-from Rtree_operations import get_number_of_admixes
-from posterior import no_admixes
 import pandas as pd
 from MCMC import basic_chain_pool
 from numpy.random import choice, random
@@ -17,12 +15,11 @@ def MCMCMC(starting_trees,
            iteration_scheme, 
            overall_thinnings, 
            proposal_scheme,
-         n_arg, m_arg, verboseee,  cores=4,
+         n_arg, verboseee,
            no_chains=None,
            numpy_seeds=None,
            multiplier= None,
-           result_file=None,
-           posterior_function_list=[]):
+           result_file=None):
     '''
     this function runs a MC3 using the basic_chain_unpacker. Let no_chains=number of chains. The inputs are
         starting_trees: a list of one or more trees that the chains should be started with
@@ -65,7 +62,7 @@ def MCMCMC(starting_trees,
     cum_iterations=0
     for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
-            print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * m_arg))
+            print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
         #letting each chain run for no_iterations:
         iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, overall_thinnings, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
@@ -78,14 +75,10 @@ def MCMCMC(starting_trees,
                 add_to_data_frame(df_result, result_file)
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
-        if not posterior_function_list:
-            xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
+        xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
         total_permutation=_update_permutation(total_permutation, permut)
         cum_iterations+=no_iterations
-            
     pool.terminate()
-    if result_file is None:
-        return df_result
         
 def _update_permutation(config, permut):
     return [config[n] for n in permut]
@@ -98,17 +91,6 @@ def add_to_data_frame(df_add, result_file):
     df_add=df_add.loc[df_add.layer==0,:]
     with open(result_file, 'a') as f:
         df_add.to_csv(f, header=False)
-
-def r_correction(x1,x2, r1,r2,p1,p2):
-    (tree1,_),(tree2,_)=x1,x2
-    n1=get_number_of_admixes(tree1)
-    n2=get_number_of_admixes(tree2)
-    cadmix_prior11= no_admixes(p=p1, admixes=n1, r=r1)
-    cadmix_prior12 = no_admixes(p=p2, admixes=n1, r=r2)
-    cadmix_prior21= no_admixes(p=p1, admixes=n2, r=r1)
-    cadmix_prior22= no_admixes(p= p2, admixes=n2, r=r2)
-
-    return cadmix_prior12-cadmix_prior11, cadmix_prior21-cadmix_prior22
     
 def flipping(xs, posteriors, temperature_scheme, proposal_updates):
     n=len(xs)

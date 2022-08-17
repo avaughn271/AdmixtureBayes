@@ -253,7 +253,6 @@ def branch_and_proportion_quantiles(list_of_string_trees):
             aresults.append(('ax'+str(n+1), lower,mean,upper))
     return bresults, aresults
 
-
 def main(args):
     parser = ArgumentParser(usage='pipeline for plotting posterior distribution summaries.')
 
@@ -281,8 +280,6 @@ def main(args):
     parser.add_argument('--write_rankings', type=str, default='', help='if a file is supplied here, the natural rankings for each of the plots is written here.')
     parser.add_argument('--rankings_to_write_to_file', type=int, default=1000,
                         help='the number of rankings(nodes, min topology or topology depending on --plot) to write to the ranking file.')
-    parser.add_argument('--dont_annotate_node_posterior', default=False, action='store_true',
-                        help='This will not color the nodes according to their posterior probability.')
     parser.add_argument('--popup', default=False, action='store_true')
 
     options= parser.parse_args(args)
@@ -336,10 +333,7 @@ def main(args):
                 total_threshold = int(N * threshold)
                 final_node_combinations = [k for k, v in list(seen_combinations.items()) if v > total_threshold]
                 node_combinations.append(final_node_combinations)
-            if not options.dont_annotate_node_posterior:
-                node_count_dic={frozenset(k.split('.')):float(v)/N for k,v in list(seen_combinations.items())}
-            else:
-                node_count_dic=None
+            node_count_dic={frozenset(k.split('.')):float(v)/N for k,v in list(seen_combinations.items())}
             for i, final_node_combinations in enumerate(node_combinations):
                 final_node_structure = node_combinations_to_node_structure(final_node_combinations)
                 plot_node_structure_as_directed_graph(final_node_structure, drawing_name='consensus_'+str(int(100*options.consensus_thresholds[i]))+'.png', node_dic=node_count_dic,  popup=options.popup)
@@ -356,11 +350,8 @@ def main(args):
                 with open(options.write_rankings, 'w') as f:
                     for tree, frequency in c.most_common(options.rankings_to_write_to_file):
                         f.write(tree + ',' + str(float(frequency) / N) + '\n')
-            if not options.dont_annotate_node_posterior:
-                c=Counter(seen_combinations)
-                node_count_dic={frozenset(key.split('.')):float(count)/N for key,count in c.most_common(1000)}
-            else:
-                node_count_dic=None
+            c=Counter(seen_combinations)
+            node_count_dic={frozenset(key.split('.')):float(count)/N for key,count in c.most_common(1000)}
             for i, (to_plot,count) in enumerate(to_plots):
                 node_structure = node_combinations_to_node_structure(to_plot.split('-'))
                 plot_node_structure_as_directed_graph(node_structure, drawing_name='minimal_topology_' +str(i+1)+'.png',
@@ -452,7 +443,6 @@ def main(args):
             with open(admixtures_file, 'w') as f:
                 f.write(','.join(['branch label','lower 95%', 'mean', 'upper 95%','interpretation'])+'\n')
                 for v in admixture_proportion_intervals:
-
                     f.write(','.join(map(str,list(v)+[adm_interpretation[v[0]]]))+'\n')
 
     sys.exit()

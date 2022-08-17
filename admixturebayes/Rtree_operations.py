@@ -71,7 +71,6 @@ def update_branch_length(tree,key,branch, new_length):
     tree[key][branch+3]=new_length
 
 def extend_branch(node, pkey, grand_parent_key, p_to_gp):
-    #removedprin node, pkey, grand_parent_key, p_to_gp
     if node[0]==pkey:
         node[0]=grand_parent_key
         u=node[3]/(node[3]+p_to_gp)
@@ -124,7 +123,6 @@ def remove_root_attachment(tree, orphanota_key, orphanota_branch):
                 del tree[key]
             else:
                 tree[key],r=get_branch_length_and_reset(tree[key], 'r', 'closed_branch')
-                #removedprin 'closed_branch!'
             tree[orphanota_key][orphanota_branch]=None
     return tree,'r', r,None
 
@@ -213,11 +211,8 @@ def node_is_coalescence(node):
 def node_is_leaf_node(node):
     return (node[1] is None and node[5] is None)
 
-
-
 def get_descendants_and_rest(tree, key):
     all_keys=list(tree.keys())
-    #removedprin tree, key
     descendant_keys=_get_descendants(tree, key)
     return descendant_keys, list(set(all_keys)-set(descendant_keys))
 
@@ -346,15 +341,12 @@ def get_leaf_keys(tree):
 def get_categories(tree):
     leaves=[]
     admixture_nodes=[]
-    coalescence_nodes=[]
     for key, node in list(tree.items()):
         if node_is_leaf_node(node):
             leaves.append(key)
-        if node_is_coalescence(node):
-            coalescence_nodes.append(key)
         if node_is_admixture(node):
             admixture_nodes.append(key)
-    return leaves, coalescence_nodes, admixture_nodes
+    return leaves, admixture_nodes
 
 def get_parent_of_branch(tree, key, branch):
     assert key!='r', 'Tried to access the parent of the root branch'
@@ -524,7 +516,6 @@ def graft_onto_root(tree, insertion_spot, remove_key, new_name_for_old_root, rem
     tree[remove_key][remove_branch]='r'
 
     #dealing with the other child of the new node, but since the new node is the root, the old root is the new node. If that makes sense.
-    #removedprin 'root_keys', root_keys
     tree[new_name_for_old_root]=['r', None, None, insertion_spot, None,root_keys[0][0], root_keys[1][0]]
 
     #dealing with the children of the new node.
@@ -571,7 +562,6 @@ def move_node(tree, regraft_key, regraft_branch, parent_key, distance_to_regraft
             tree[regraft_key][regraft_branch]='r'
         else:
             u1,u2=chosen_piece.get_leaf_and_root_sided_length(distance_to_regraft)
-            #removedprin u1,u2
             tree[new_node_name]=[chosen_piece.parent_key, None,None,u2,None,regraft_key,chosen_piece.child_key]
             if chosen_piece.parent_key=='r':
                 pass
@@ -590,7 +580,6 @@ def move_node(tree, regraft_key, regraft_branch, parent_key, distance_to_regraft
     return tree
 
 def graft_onto_rooted_admixture(tree, insertion_spot, remove_key, root_key, remove_branch=0):
-    #removedprin 'undoing a closed branch', insertion_spot, remove_key, root_key
     tree[remove_key][remove_branch]='r'
     tree[root_key[0]],_=get_branch_length_and_reset(tree[root_key[0]], 'r', insertion_spot)
     return tree

@@ -114,7 +114,7 @@ def make_covariances(filenames, cores, **kwargs):
         warnings.warn('Erasing the files did not succeed',UserWarning)
     return covs
 
-def make_single_files(filename,blocksize, no_blocks, verbose_level='normal'):
+def make_single_files(filename,blocksize, verbose_level='normal'):
     filenames=[]
     os.mkdir(os.getcwd() + "/temp_adbayes")
     filename_reduced=os.getcwd() + "/temp_adbayes/" +filename.split(os.sep)[-1]+'boot.'
@@ -122,8 +122,6 @@ def make_single_files(filename,blocksize, no_blocks, verbose_level='normal'):
         first_line=f.readline()
         lines=f.readlines()
     n=len(lines)
-    if no_blocks is not None:
-        blocksize=n/no_blocks
     line_sets=get_partitions(lines, blocksize)
     if verbose_level!='silent':
         print('total number of SNPs: '+ str(n))
@@ -138,19 +136,17 @@ def make_single_files(filename,blocksize, no_blocks, verbose_level='normal'):
 
 def estimate_degrees_of_freedom_scaled_fast(filename,
                                             bootstrap_blocksize=1000,
-                                            no_blocks=None,
-                                            no_bootstrap_samples=10,
                                             cores=1,
                                             verbose_level='normal',
                                             **kwargs):
-    single_files=make_single_files(filename, blocksize=bootstrap_blocksize, no_blocks=no_blocks, verbose_level=verbose_level)
+    single_files=make_single_files(filename, blocksize=bootstrap_blocksize, verbose_level=verbose_level)
     assert len(single_files)>1, 'There are ' +str(len(single_files)) + ' bootstrapped SNP blocks and that is not enough. Either add more data or lower the --bootstrap_blocksize'
     if len(single_files)<39:
         warnings.warn('There are only '+str(len(single_files))+' bootstrap blocks. Consider lowering the --bootstrap_blocksize or add more data.', UserWarning)
     single_covs=make_covariances(single_files, cores=cores, return_also_mscale=True, **kwargs)
-    covs=bootsrap_combine_covs(single_covs, cores=cores, bootstrap_samples=no_bootstrap_samples)
+    covs=bootsrap_combine_covs(single_covs, cores=cores, bootstrap_samples=100)
     res=variance_mean_based(covs)
-    return res, covs
+    return res
 
 class Estimator(object):
     
@@ -335,7 +331,6 @@ def unzip(filename, overwrite=False, new_filename=None):
 
 def make_estimator( nodes, 
                    reducer,
-                   Simulator_fixed_sxeed,
                    add_variance_correction_to_graph=False,
                    save_variance_correction=True):
     
@@ -384,7 +379,7 @@ dictionary_of_transformations={ (6,8):empirical_covariance_wrapper_directly, (8,
 
 dictionary_of_reasonable_names = { 8:'covariance_without_reduce_name', 9:'covariance_and_multiplier'}
 
-def save_stage(value, stage_number, full_nodes, after_reduce_nodes):
+def save_stage(value, stage_number, after_reduce_nodes):
     save_word=dictionary_of_reasonable_names[stage_number]
     filename=save_word+'.txt'
     if stage_number==8:
@@ -408,5 +403,5 @@ def get_covariance(input, full_nodes=None,
     for stage_from, stage_to in zip(stages_to_go_through[:-1], stages_to_go_through[1:]):
         transformer_function=dictionary_of_transformations[(stage_from, stage_to)]
         statistic=transformer_function(statistic, **kwargs)
-        save_stage(statistic, stage_to, full_nodes, after_reduce_nodes)
+        save_stage(statistic, stage_to, after_reduce_nodes)
     return statistic

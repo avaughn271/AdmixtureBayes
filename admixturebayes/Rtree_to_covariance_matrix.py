@@ -43,7 +43,7 @@ class Population:
                 return 'all'
         return 'none'
         
-    def get_population_string(self, min_w, keys_to_remove=[]):
+    def get_population_string(self, keys_to_remove=[]):
         return '.'.join(sorted([m for m,w in zip(self.members,self.weights) if w>0.0 and m not in keys_to_remove]))
         
     def remove_partition(self, weight):
@@ -143,8 +143,7 @@ class dummy_covmat(object):
     def update(self, *args, **kwargs):
         pass
         
-
-def get_populations(tree, min_w=0.0, keys_to_include=None):
+def get_populations(tree, keys_to_include=None):
     
     node_keys=sorted(get_leaf_keys(tree))
     if keys_to_include is None:
@@ -159,7 +158,7 @@ def get_populations(tree, min_w=0.0, keys_to_include=None):
     pop_strings=[]
     while True:
         for key,pop in ready_nodes:
-            pop_strings.append(pop.get_population_string(0.0, keys_to_remove))
+            pop_strings.append(pop.get_population_string( keys_to_remove))
             upds=leave_node(key, tree[key], pop, covmat)
             for upd in upds:
                 waiting_nodes=_add_to_waiting(waiting_nodes, upd,tree)
@@ -169,11 +168,11 @@ def get_populations(tree, min_w=0.0, keys_to_include=None):
             return None
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
             big_pop=ready_nodes[0][1]
-            pop_strings.append(big_pop.get_population_string(0.0, keys_to_remove))
+            pop_strings.append(big_pop.get_population_string( keys_to_remove))
             break
     if '' in pop_strings:
         pop_strings.remove('')
     return sorted(list(set(pop_strings)))
 
 def get_populations_string(tree, min_w=0.0, keys_to_include=None):
-    return '-'.join(get_populations(tree, 0.0, keys_to_include))
+    return '-'.join(get_populations(tree, keys_to_include))

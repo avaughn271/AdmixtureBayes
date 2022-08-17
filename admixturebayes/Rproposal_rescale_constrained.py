@@ -119,13 +119,13 @@ def nullspace(A):
     return ns
 
 def get_orthogonal_branch_space(tree, add_one_column=True):
-    cof,_, bi= make_coefficient_matrix(tree)
+    cof,bi= make_coefficient_matrix(tree)
     if add_one_column:
         cof=insert(cof, cof.shape[1], 1, axis=1)
     ad=nullspace(cof)
     return ad, bi, cof.T
     
-def make_coefficient_matrix(tree, node_keys=None, branch_keys=None):
+def make_coefficient_matrix(tree):
     '''
     Instead of constructing the covariance matrix, this function calculates the coefficient matrix, C, to solve
     
@@ -133,10 +133,8 @@ def make_coefficient_matrix(tree, node_keys=None, branch_keys=None):
     
     where w is the diagonal of the covariance matrix and x is the vector of branch lengths. Hence, C depends on the admixture proportions and the topology.
     '''
-    if node_keys is None:
-        node_keys=sorted(get_leaf_keys(tree))
-    if branch_keys is None:
-        branch_keys=get_all_branches(tree)
+    node_keys=sorted(get_leaf_keys(tree))
+    branch_keys=get_all_branches(tree)
     pops=[Population([1.0],[node]) for node in node_keys]
     ready_nodes=list(zip(node_keys,pops))
     ni={node_key:n for n,node_key in enumerate(node_keys)}
@@ -156,7 +154,7 @@ def make_coefficient_matrix(tree, node_keys=None, branch_keys=None):
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
             break
 
-    return cofmat.get_matrix(), ni,bi
+    return cofmat.get_matrix(),bi
 
 def leave_node(key, node, population, cofmat):
     if node_is_non_admixture(node):
