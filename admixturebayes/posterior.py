@@ -60,9 +60,6 @@ def prior(x, p=0.5, pks={}, r=0):
     no_admix_prior=no_admixes(p, len(admixtures), r=r)
     top_prior=uniform_topological_prior_function(tree)
     logsum=branch_prior+no_admix_prior+top_prior-add
-    pks['branch_prior']= branch_prior
-    pks['no_admix_prior']=no_admix_prior
-    pks['top_prior']= top_prior
     return logsum
 
 def linear_admixture_proportions(admixtures):
@@ -93,7 +90,6 @@ def likelihood(x, emp_cov, b, M=12,nodes=None, pks={}):
         return -float('inf')
     if b is not None:
         par_cov+=b
-    pks['covariance']=par_cov
     if par_cov is None:
         print('illegal tree')
         return -float('inf')
@@ -135,7 +131,5 @@ class posterior_class(object):
             return -float('inf'), prior_value
         
         likelihood_value=self.lik(x, self.emp_cov,self.b, self.M, nodes=self.nodes, pks=pks)
-        pks['prior']=prior_value
-        pks['likelihood']=likelihood_value
         return likelihood_value, prior_value
 

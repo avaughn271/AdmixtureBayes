@@ -72,16 +72,12 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
     sink_key, sink_branch=possible_nodes[choice(len(possible_nodes), 1)[0]]
     if fixed_sink_source is not None:
         sink_key,sink_branch,source_key,source_branch = fixed_sink_source
-    children, other= get_all_branch_descendants_and_rest(tree, sink_key, sink_branch)
+    other= get_all_branch_descendants_and_rest(tree, sink_key, sink_branch)
     candidates=other+[('r',0)]
     ch= choice(len(candidates),1)[0]
     if fixed_sink_source is None:
         source_key, source_branch=candidates[ch]
 
-    pks['sink_key']=sink_key
-    pks['source_key']=source_key
-    pks['source_branch']=source_branch
-    pks['sink_branch']=sink_branch
     if fixed_sink_source is not None:
         new_tree, forward_density, backward_density, multip= insert_admix(new_tree, source_key, source_branch, sink_key, sink_branch, pks=pks, new_branch_length=new_branch_length, new_to_root_length=new_to_root_length, preserve_root_distance=preserve_root_distance)
     elif new_node_names is None:
@@ -89,15 +85,9 @@ def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch
     else:
         new_tree, forward_density ,backward_density, multip= insert_admix(new_tree, source_key, source_branch, sink_key, sink_branch, pks=pks, source_name=new_node_names[0], sink_name=new_node_names[1], preserve_root_distance=preserve_root_distance)
     
-    
     choices_forward=float(len(possible_nodes)*len(candidates))*2
     choices_backward=float(len(_get_removable_admixture_branches(new_tree)))
     
-    pks['forward_density']=forward_density
-    pks['backward_density']=backward_density
-    pks['forward_choices']=choices_forward
-    pks['backward_choices']=choices_backward
-
     return new_tree,forward_density/choices_forward, backward_density/choices_backward*multip 
 
     
@@ -149,25 +139,15 @@ def insert_admix(tree, source_key, source_branch, sink_key, sink_branch, source_
     if source_name is None:
         source_name=str(getrandbits(128)).strip()
     tree=insert_admixture_node_halfly(tree, sink_key, sink_branch, u2, admix_b_length=t4, new_node_name=sink_name, admixture_proportion= u3)
-    #removedprin 'tree after inserting admixture', tree
     tree=graft(tree, sink_name, source_key, u1, source_name, source_branch, remove_branch=1)
 
-    #removedprin 'old_t1', tree[sink_name][3]
     if preserve_root_distance:
         tree[sink_name], multip=readjust_length(tree[sink_name])
     else:
         multip=1.0
-    #removedprin 'new_t1', tree[sink_name][3]
     
-    new_branch=1
     if random()<0.5:
-        new_branch=0
         tree[sink_name]=change_admixture(tree[sink_name])
-    pks['t5']=t4
-    pks['t1']=u1
-    pks['sink_new_name']=sink_name
-    pks['sink_new_branch']=new_branch    
-    #removedprin 'tree after grafting', tree
     return tree,q1*q2*q3*q4,1, multip
 
 
@@ -187,18 +167,8 @@ def deladmix(tree,pks={}, fixed_remove=None, preserve_root_distance=True):
         remove_key, remove_branch = candidates[choice(len(candidates),1)[0]]
     else:
         remove_key, remove_branch = fixed_remove
-    pks['remove_key']=remove_key
-    pks['remove_branch']=remove_branch
     
     new_tree, (t1,t2,t3,t4,t5), alpha = remove_admix2(cop, remove_key, remove_branch, pks=pks)
-    #pks['sink_key']=sink_key
-    #pks['sink_branch']=sink_branch
-    #pks['removed_alpha']=alpha
-    pks['t1']=t1
-    pks['t2']=t2
-    pks['t3']=t3
-    pks['t4']=t4
-    pks['t5']=t5
     
     if preserve_root_distance:
         #removedprin t1
@@ -215,14 +185,8 @@ def deladmix(tree,pks={}, fixed_remove=None, preserve_root_distance=True):
     
     forward_choices=float(len(candidates))
     backward_choices=float(get_possible_admixture_adds(new_tree, pks['orphanota_key'], pks['orphanota_branch']))*2
-    pks['forward_choices']=forward_choices
-    pks['backward_choices']=backward_choices
-    pks['forward_density']=forward_density
-    pks['backward_density']=backward_density
     
     return new_tree, forward_density/forward_choices, backward_density/backward_choices*multip
-
-
 
 def get_backward_remove_density(t1,t2,t3,t4,t5, alpha):
     '''
@@ -252,10 +216,9 @@ def get_backward_remove_density(t1,t2,t3,t4,t5, alpha):
     
     return q1*q2*q3*q4
     
-
 def get_possible_admixture_adds(tree, sink_key,sink_branch):
     possible_nodes=_get_possible_starters(tree)
-    children, other= get_all_branch_descendants_and_rest(tree, sink_key, sink_branch)
+    other= get_all_branch_descendants_and_rest(tree, sink_key, sink_branch)
     candidates=other+[('r',0)]
     return len(possible_nodes)*len(candidates)
 

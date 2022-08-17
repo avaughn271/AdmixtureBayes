@@ -44,10 +44,6 @@ def MCMCMC(starting_trees,
         #        - a double in the interval [0,1] indicating the same parameter for all geometrically distributed prior on the number of admixture events.
                                     
     '''
-    
-    
-    if no_chains is None:
-        no_chains=cores
         
     if len(printing_schemes)==1:
         printing_schemes=[printing_schemes[0]]*no_chains
@@ -61,9 +57,6 @@ def MCMCMC(starting_trees,
     #if numpy_sxeeds is None: #Sxeeddebug
     #    numpy_sxeeds=[None]*no_chains
 
-
-    rs=[]
-    ps=[posterior_function.p]
     pool = basic_chain_pool(summaries, posterior_function, proposal_scheme, numpy_seeds)
     posteriors = [posterior_function(x) for x in xs]
 
@@ -86,9 +79,7 @@ def MCMCMC(starting_trees,
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
         if not posterior_function_list:
-            xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates,
-                                                                rs, ps,
-                                                                [posterior_function])  # trees, posteriors, range(len(trees)),[None]*len(trees)#
+            xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
         total_permutation=_update_permutation(total_permutation, permut)
         cum_iterations+=no_iterations
             
@@ -108,7 +99,6 @@ def add_to_data_frame(df_add, result_file):
     with open(result_file, 'a') as f:
         df_add.to_csv(f, header=False)
 
-
 def r_correction(x1,x2, r1,r2,p1,p2):
     (tree1,_),(tree2,_)=x1,x2
     n1=get_number_of_admixes(tree1)
@@ -120,7 +110,7 @@ def r_correction(x1,x2, r1,r2,p1,p2):
 
     return cadmix_prior12-cadmix_prior11, cadmix_prior21-cadmix_prior22
     
-def flipping(xs, posteriors, temperature_scheme, proposal_updates, rs=[],ps=[], posterior_function_list=[]):
+def flipping(xs, posteriors, temperature_scheme, proposal_updates):
     n=len(xs)
     step_permutation=list(range(n))
     count=0
@@ -129,15 +119,10 @@ def flipping(xs, posteriors, temperature_scheme, proposal_updates, rs=[],ps=[], 
         post_i,post_j=posteriors[i],posteriors[j]
         temp_i,temp_j=temperature_scheme.get_temp(i), temperature_scheme.get_temp(j)
         logalpha=-(post_i[0]-post_j[0])*(1.0/temp_i-1.0/temp_j)
-        if rs:
-            i_correction, j_correction=r_correction(xs[i],xs[j], rs[i],rs[j],ps[i],ps[j])
-            logalpha+=i_correction+j_correction
-        else:
-            i_correction, j_correction=0,0
         if logalpha>0 or random() < exp(logalpha):
             count+=1
             step_permutation[i], step_permutation[j]= step_permutation[j], step_permutation[i]
-            posteriors[j],posteriors[i]=(post_i[0],post_i[1]+i_correction),(post_j[0], post_j[1]+j_correction)
+            posteriors[j],posteriors[i]=(post_i[0],post_i[1]),(post_j[0], post_j[1])
             xs[i], xs[j] = xs[j], xs[i]
 
             proposal_updates[i], proposal_updates[j]=proposal_updates[j], proposal_updates[i]
@@ -173,4 +158,3 @@ def _unpack_everything(new_state, summaries, total_permutation):
         list_of_smaller_data_frames.append(df)
     df=pd.concat(list_of_smaller_data_frames)
     return list(xs), list(posteriors), df, list(proposal_updates)
-    

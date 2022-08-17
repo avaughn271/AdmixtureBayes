@@ -19,7 +19,6 @@ class updater(object):
 def rescale_normal(tree, sigma=0.01, pks={}):
     n=get_number_of_leaves(tree)
     k=get_number_of_admixes(tree)
-    pks['rescale_adap_param']=sigma
     new_tree=deepcopy(tree)
     updat=updater(sigma/sqrt(2*n-2+4*k))
     new_tree=update_all_branches(new_tree, updat)
@@ -41,7 +40,6 @@ class rescale_class(object):
 
 def rescale_admixtures(tree, sigma=0.01, pks={}):
     k=get_number_of_admixes(tree)
-    pks['rescale_admixtures_adap_param']=sigma
     new_tree=deepcopy(tree)
     if k>0:
         updat=updater(sigma/sqrt(k))
@@ -65,7 +63,6 @@ class rescale_admixtures_class(object):
         return rescale_admixtures(*args, **kwargs)
 
 def rescale(add, sigma=0.01, pks={}):
-    pks['rescale_add_adap_param']=sigma
     new_add=add+normal()*sigma
     if new_add<0:
         return add,1,0 #rejecting by setting backward jump probability to 0.
@@ -195,7 +192,6 @@ def get_added_branch_pieces(org, param):
 
 def rescale_constrained(x, sigma=0.01, pks={}, update_add=True):
     tree, add=x
-    pks['rescale_constrained_adap_param']=sigma
     new_tree=deepcopy(tree)
     orgs, bi,_= get_orthogonal_branch_space(new_tree, add_one_column=update_add)
     branches=reverse_dic_to_list(bi)

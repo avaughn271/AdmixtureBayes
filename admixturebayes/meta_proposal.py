@@ -96,7 +96,6 @@ class simple_adaptive_proposal(object):
         index, jforward, jbackward = draw_proposal(self.props, k, self.proportions)
         
         names=self.node_naming.next_nodes(self.props[index].new_nodes)
-        pks['proposal_type']= self.props[index].proposal_name
         self.recently_called_type=self.props[index].proposal_name
         self.recently_called_index=index
         proposal_input= self.props[index].input

@@ -34,11 +34,9 @@ def make_regraft(tree, new_node=None, pks={}):
         
     new_tree= deepcopy(tree)
     regraft_key, regraft_branch= possible_nodes[choice(len(possible_nodes), 1)[0]]
-    pks['regraft_key']=regraft_key
-    pks['regraft_branch']=regraft_branch
     new_tree, remove_distrub, remove_val, remove_par = remove_parent_attachment(new_tree, regraft_key, regraft_branch)
     q_backward=back_density(remove_distrub, remove_val, remove_par)
-    children, other= get_all_branch_descendants_and_rest(new_tree, regraft_key, regraft_branch)
+    other= get_all_branch_descendants_and_rest(new_tree, regraft_key, regraft_branch)
     candidates=thin_out_sibling(new_tree, other, regraft_key)+[('r',0)]
     ch= choice(len(candidates),1)[0]
     recipient_key, recipient_branch=candidates[ch]
@@ -243,7 +241,7 @@ def simulate_regraft_distance(param):
 
 def get_thinned_pieces(tree,regraft_key, regraft_branch, distance_to_regraft, parent_key):
     pieces= distanced_branch_lengths(tree, parent_key, visited_keys=[regraft_key], upper_cap=distance_to_regraft)
-    children, other= get_all_branch_descendants_and_rest(tree, regraft_key, regraft_branch)
+    other= get_all_branch_descendants_and_rest(tree, regraft_key, regraft_branch)
     candidates= thin_out_sibling(tree, other, regraft_key)+[('r',0)]
     thinned_pieces=[piece for piece in pieces if (piece.get_branch_key() in candidates and piece.contains_distance(distance_to_regraft) )]
     return thinned_pieces
@@ -254,9 +252,6 @@ def make_sliding_regraft(tree, new_node=None, param=0.1, resimulate_moved_branch
         
     new_tree= deepcopy(tree)
     regraft_key, regraft_branch= possible_nodes[choice(len(possible_nodes), 1)[0]]
-    pks['regraft_key']=regraft_key
-    pks['regraft_branch']=regraft_branch
-    pks['sliding_regraft_adap_param']= param
     
     distance_to_regraft= simulate_regraft_distance(param)
     parent_key= get_parent_of_branch(tree, regraft_key, regraft_branch)

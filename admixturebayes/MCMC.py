@@ -84,15 +84,8 @@ class basic_chain_pool(object):
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     
     newx,g1,g2,Jh,j1,j2=proposal(x,pks)
-    pks['proposed_tree']=newx[0]
-    pks['g1']=g1
-    pks['g2']=g2
-    pks['Jh']=Jh
-    pks['j1']=j1
-    pks['j2']=j2
     
     post_new=posterior_function(newx,pks)
-    pks['proposed_posterior']=post_new
 
     likelihood_old, prior_old = post[:2]
     likelihood_new, prior_new = post_new[:2]
@@ -105,11 +98,8 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
         mhr=float('inf')
     else:
         mhr=exp(logmhr)
-        
-    pks['mhr']=mhr
-    
+            
     u=random.random()
-    pks['U']=u
     proposal.adapt(mhr)
     if u<mhr:
         return newx,post_new

@@ -261,7 +261,7 @@ def update_specific_branch_lengths(tree, branches, new_lengths, add=False):
 def get_all_branch_descendants_and_rest(tree, key,branch):
     all_branches=get_all_branches(tree)
     descendant_branches=_get_descendant_branches(tree, key,branch)
-    return descendant_branches, list(set(all_branches)-set(descendant_branches))
+    return list(set(all_branches)-set(descendant_branches))
 
 def _get_descendant_branches(tree, key, branch):
     child_key1=tree[key][5]
@@ -693,8 +693,6 @@ def remove_admix2(tree, rkey, rbranch, pks={}):
     if source_key=='r':
         tree,_,t3,_=remove_root_attachment(tree, rkey, 0) #now sorphanota_key is new root
         del tree[rkey]
-        pks['sorphanota_key']='r'
-        pks['sorphanota_branch']=0
         return tree, (t1,t2,t3,None,t5),alpha
     del tree[rkey]
     source_node=tree[source_key]
@@ -705,8 +703,6 @@ def remove_admix2(tree, rkey, rbranch, pks={}):
         tree[sparent_key]=_update_child(tree[sparent_key], source_key, sorphanota_key)
     tree[sorphanota_key],t3=get_branch_length_and_reset(tree[sorphanota_key], source_key, t4, add=True)
     tree[sorphanota_key]=_update_parent(tree[sorphanota_key], source_key, sparent_key)
-    pks['sorphanota_key']=sorphanota_key
-    pks['sorphanota_branch']=mother_or_father(tree, sorphanota_key, sparent_key)
     del tree[source_key]
     return tree, (t1,t2,t3,t4,t5), alpha
 
