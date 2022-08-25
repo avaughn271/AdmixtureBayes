@@ -167,7 +167,7 @@ If **--write_rankings** is specified, a file with the set of all topologies and 
 
 ***admixture_estimates_i.txt*** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
 
-Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessry information for the branch estimates to be plotted. 
+Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessary information for the branch estimates to be plotted. 
 
 ## (iii) Top Minimal Topologies - input is of the form:
 
