@@ -204,6 +204,8 @@ def main(args):
     removefile("temp_start_tree.txt")
     removefile("temp_add.txt")
     removefile("covariance_and_multiplier.txt")
+    removefile(os.getcwd() + "/temp_input.txt")
+    
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
@@ -223,8 +225,6 @@ def main(args):
             multiplier=multiplier,  #numpy_seeds = random_seeds,
             result_file=options.result_file,
             n_arg=options.n, verboseee=options.verbose_level)
-
-    removefile(os.getcwd() + "/temp_input.txt")
 
     removefile("trees_tmp.txt")
     if options.continue_samples != []:
