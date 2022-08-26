@@ -203,6 +203,7 @@ def main(args):
     removefile("temp_starttree.txt")
     removefile("temp_start_tree.txt")
     removefile("temp_add.txt")
+    removefile("covariance_and_multiplier.txt")
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
