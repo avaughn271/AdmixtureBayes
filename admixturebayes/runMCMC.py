@@ -87,7 +87,7 @@ def main(args):
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
     #Here is the only thing we should be changing.
-    temp = pandas.read_csv(options.input_file, sep =" ")
+    temp = pandas.read_csv(options.input_file, sep ="\s+")
     colnames = list(temp.columns.values)
     temp = temp[sorted(colnames)]
     temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
