@@ -139,7 +139,7 @@ There are 4 different plots that can be generated:
 
 **--plot top_trees**
 
-**--posterior** This is the output file from the posterior step.
+**--posterior** This is the output file from the *analyzeSamples* step.
 
 **--top_trees_to_plot** (optional) The number of top trees to plot. If the value is greater than the total number of topologies, the total number of topologies will be used instead. Default value is 3.
 
@@ -155,7 +155,7 @@ If **--write_rankings** is specified, a file with the set of all topologies and 
 
 **--plot estimates**
 
-**--posterior** This is the output file from the posterior step.
+**--posterior** This is the output file from the *analyzeSamples* step.
 
 **--top_trees_to_estimate** (optional) The number of top trees with branch estimates to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
 
@@ -167,15 +167,15 @@ If **--write_rankings** is specified, a file with the set of all topologies and 
 
 ***admixture_estimates_i.txt*** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
 
-Important Note: In order for these plots to be produced properly, the analyzeSamples step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessary information for the branch estimates to be plotted. 
+Important Note: In order for these plots to be produced properly, the *analyzeSamples* step must also be run with the flag "--slower". This will result in an increased runtime for the analyzeSamples step but will produce the necessary information for the branch estimates to be plotted. 
 
 ## (iii) Top Minimal Topologies - input is of the form:
 
 **--plot top_minimal_topologies**
 
-**--posterior** This is the output file from the posterior step.
+**--posterior** This is the output file from the *analyzeSamples* step.
 
-**--top_minimal_topologies_to_plot** (optional) The number of top node trees to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
+**--top_minimal_topologies_to_plot** (optional) The number of minimal topologies to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
 
 **--write_rankings** (optional) The name of a file to which the minimal topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
@@ -189,11 +189,11 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 
 **--plot consensus_trees**
 
-**--posterior** This is the output file from the posterior step.
+**--posterior** This is the output file from the *analyzeSamples* step.
 
 **--consensus_thresholds** (optional) A list of values strictly between 0 and 1. For each value, a plot will be generated containing a graph formed by all nodes that have a posterior probability above that threshold. Default value is 0.25 0.5 0.75 0.9 0.95 0.99.
 
-**--write_rankings** (optional)   is specified, a file with the set of nodes and their likelihoods is generated.
+**--write_rankings** (optional)   is specified, a file with the set of nodes and their posterior probabilities is generated.
 
 ## This produces (in the current working directory)
 
