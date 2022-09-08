@@ -89,6 +89,11 @@ def main(args):
     #Here is the only thing we should be changing.
     temp = pandas.read_csv(options.input_file, sep ="\s+")
     colnames = list(temp.columns.values)
+    for pop_name in colnames:
+        assert pop_name.isalnum(), 'Population names can only contain alphanumeric characters (A-Z, a-z, and 0-9). Special characters such as commas, hyphens, and underscores are not allowed.'
+    
+    assert options.outgroup in colnames, 'The outgroup name is not in the given list of populations. Population names are case-sensitive.'
+    
     temp = temp[sorted(colnames)]
     temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
 
