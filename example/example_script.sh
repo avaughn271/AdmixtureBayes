@@ -25,6 +25,8 @@ python admixturebayes/analyzeSamples.py --mcmc_results  mcmc_samples.csv --burn_
 #Or rename the output file
 python admixturebayes/analyzeSamples.py   --mcmc_results  mcmc_samples.csv --result_file example_output.csv
 
+#And this is how we could restrict our analysis to the s1, s2, and s3 populations, excluding s4.
+python admixturebayes/analyzeSamples.py   --mcmc_results  mcmc_samples.csv --subnodes s1 s2 s3
 
 #Step 3:
 
