@@ -141,9 +141,9 @@ There are 4 different plots that can be generated:
 
 **--posterior** This is the output file from the posterior step.
 
-**--top_trees_to_plot** (optional) The number of top trees to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
+**--top_trees_to_plot** (optional) The number of top trees to plot. If the value is greater than the total number of topologies, the total number of topologies will be used instead. Default value is 3.
 
-**--write_rankings** (optional) The name of a file to which the minimal topologies and their posterior probabilities will be written. If not specified, no such file will be written.
+**--write_rankings** (optional) The name of a file to which the topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
 ## This produces (in the current working directory)
 
