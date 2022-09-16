@@ -91,7 +91,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 ## (2) analyzeSamples
 
-It is here that convergence of the MCMC sampler should be assessed, for example by examining the trace plots of the chain or Gelman-Rubin convergence diagnostics of parallel chains. We have included the sample R script EvaluateConvergence.R as a template for assessing convergence.
+It is here that convergence of the MCMC sampler should be assessed, for example by examining the trace plots of the chain or Gelman-Rubin convergence diagnostics of parallel chains. We have included the sample R script EvaluateConvergence.R as a template for assessing convergence. If convergence has not been reached, you should run the chain for more iterations (by increasing **--n**, possibly in conjunction with the **--continue_samples** argument) and/or increase the number of parallel MCMC chains being run (by increasing the **--MCMC_chains** argument).
 
 In this step, we analyze the output of the Markov chain from the previous step.  The script to run is
 
