@@ -73,7 +73,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--outgroup** The name of the population that will serve as the outgroup. For example, in the above file, "out" could be the outgroup.
 
-**--n** (optional) The number of proposal steps the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proportional to the number of proposal steps). Default value is 200.
+**--n** (optional) The number of iterations the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proportional to the number iterations. The exact number of iterations is 50*n). Default value is 200. This number should almost certainly be increased in all practical applications.
 
 **--MCMC_chains** (optional) The number of chains to run the MCMCMC with (See Matthew Darlington's great explanation of MCMCMC [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains will result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8. Must be at least 2.
 
@@ -86,7 +86,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
  ## This step produces (in the current working directory)
 
-***result_file*** This file contains the list of MCMC samples.
+***result_file*** This file contains the list of MCMC samples. Each line of the output file describes a sampled admixture graph. Many of the column values concern the internal representation of the graph, such as "tree" and "descendant_sets", and are not meant for user interpretation. However, of interest to the user might be the columns "prior", "posterior", "likelihood", "total_branch_length", "ghost_pops" (number of ghost populations), and "no_admixes" (number of admixture events). These are summary statistics of the MCMC chain and may be useful for monitoring convergence. Some thinning is done on the samples to reduce the size of the output file. The total number of samples saved will be approximately 1.25*n. 
 
 
 ## (2) analyzeSamples
