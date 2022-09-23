@@ -1,9 +1,9 @@
-from scipy.stats import chi2, gamma, uniform, expon
+from scipy.stats import chi2, uniform, expon
 from numpy.random import choice
 from copy import deepcopy
 
 from Rtree_operations import (node_is_non_admixture, get_parent_of_branch, move_node, find_rooted_nodes, get_real_children, mother_or_father,
-remove_parent_attachment, graft, get_real_parents, halfbrother_is_uncle,
+graft, get_real_parents, halfbrother_is_uncle,
 get_branch_length, get_all_branch_descendants_and_rest)
 from random import getrandbits
 
@@ -16,42 +16,8 @@ def get_possible_regrafters(tree):
                 res.append((key,branch))
     return res
 
-class regraft_class(object):
-    
-    new_nodes=1
-    proposal_name='regraft'
-    input='tree'
-    require_admixture=0
-    adaption=False
-    reverse='regraft'
-    admixture_change=0
-    
-    def __call__(self,*args, **kwargs):
-        return make_regraft(*args, **kwargs)
-
-def make_regraft(tree, new_node=None, pks={}):
-    possible_nodes= get_possible_regrafters(tree)
-        
-    new_tree= deepcopy(tree)
-    regraft_key, regraft_branch= possible_nodes[choice(len(possible_nodes), 1)[0]]
-    new_tree, remove_distrub, remove_val, remove_par = remove_parent_attachment(new_tree, regraft_key, regraft_branch)
-    q_backward=back_density(remove_distrub, remove_val, remove_par)
-    other= get_all_branch_descendants_and_rest(new_tree, regraft_key, regraft_branch)
-    candidates=thin_out_sibling(new_tree, other, regraft_key)+[('r',0)]
-    ch= choice(len(candidates),1)[0]
-    recipient_key, recipient_branch=candidates[ch]
-    new_tree, q_forward= regraft(new_tree, regraft_key, regraft_branch, recipient_key, new_node=new_node, which_branch=recipient_branch)
-
-    return new_tree, q_forward, q_backward
-
 def thin_out_sibling(tree, branches, key):
     return [(r,w) for r,w in branches if (r!='r' and tree[r][3+w]!='closed_branch' and r!=key)]
-
-def back_density(distrub, val, par):
-    if distrub=='r':
-        return expon.pdf(val)
-    if distrub=='u':
-        return uniform.pdf(val, scale=par)
 
 def simulate_and_forward_density(distrub, par=None):
     if distrub == 'r':
@@ -96,9 +62,6 @@ class piece(object):
     def get_branch_key(self):
         return (self.child_key, self.child_branch)
     
-    def get_coverage(self):
-        return self.start_distance, self.end_distance
-    
     def contains_distance(self, distance):
         if self.end_distance is None:
             return distance>=self.start_distance
@@ -111,14 +74,6 @@ class piece(object):
             return self.end_distance-distance, distance-self.start_distance
         else:
             return distance-self.start_distance, self.end_distance-distance
-        
-    def get_lattitude(self, distance):
-        if self.end_distance is None:
-            return self.start_lattitude+distance
-        elif self.direction == 'to_leaves':
-            return self.start_lattitude-distance
-        else:
-            return self.start_lattitude+distance
 
 class lineage(object):
     
@@ -131,7 +86,6 @@ class lineage(object):
         self.topological_distance=topological_distance
         
     def follow(self, tree, visited_keys=[]):
-        node=tree[self.key]
         new_lineages=[]
         pieces=[]
         for key in get_real_children(tree[self.key]):
@@ -171,50 +125,6 @@ def distanced_branch_lengths(tree, start_key, visited_keys=[], upper_cap=float('
             lineages.extend([new_lineage for new_lineage in new_lineages if new_lineage.under_cap(upper_cap)])
     del tree['r']
     return pieces
-
-def conditional_gamma_rvs(mean,shape, upper_limit):
-    shape,scale=transform_to_shape_scale(mean, shape=shape)
-    max_U= gamma.cdf(upper_limit, a=shape, scale=scale)
-    drawn_U= uniform.rvs()*max_U
-    x=gamma.ppf(drawn_U, a=shape, scale=scale)        
-    return gamma.ppf(drawn_U, a=shape, scale=scale)
-
-def conditional_gamma_logpdf(value, mean, shape, upper_limit):
-    shape,scale=transform_to_shape_scale(mean, shape=shape)
-    logprob_conditional= gamma.logcdf(upper_limit, a=shape, scale=scale)
-    return gamma.logpdf(value, a=shape, scale=scale) - logprob_conditional
-
-def rvs(t,delta_L, shape=20):
-    if delta_L<0:
-        mean= -delta_L
-        return t-conditional_gamma_rvs(mean, shape=shape, upper_limit=t)
-    else:
-        return t+clean_gamma_rvs(delta_L, shape=shape)
-
-def logpdf(x,t,delta_L, shape=20):
-    if delta_L < 0:
-        mean=-delta_L
-        simulated_part=t-x
-        return conditional_gamma_logpdf(simulated_part, mean=mean, shape=shape, upper_limit=t)
-    else:
-        simulated_part=x-t
-        return clean_gamma_logpdf(simulated_part, mean=delta_L, shape=shape)
-        
-def clean_gamma_rvs(mean, shape):
-    shape,scale=transform_to_shape_scale(mean, shape=shape)
-    return gamma.rvs(a=shape, scale=scale)
-
-def clean_gamma_logpdf(value, mean, shape):
-    shape,scale=transform_to_shape_scale(mean, shape=shape)
-    return gamma.logpdf(value, a=shape, scale=scale)
-    
-def transform_to_shape_scale(mean, variance=None, shape=None):
-    if shape is None:
-        scale=variance/mean
-        shape=mean/scale
-    else:
-        scale=mean/shape
-    return shape,scale
 
 class sliding_regraft_class_resimulate(object):
     new_nodes=1

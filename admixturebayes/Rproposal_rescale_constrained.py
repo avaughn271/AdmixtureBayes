@@ -185,15 +185,12 @@ def reverse_dic_to_list(dic):
         l_determined[i]=e
     return l_determined
 
-def get_added_branch_pieces(org, param):
-    return org.dot(normal(scale=param, size=org.shape[1]))
-
 def rescale_constrained(x, sigma=0.01, pks={}, update_add=True):
     tree, add=x
     new_tree=deepcopy(tree)
     orgs, bi,_= get_orthogonal_branch_space(new_tree, add_one_column=update_add)
     branches=reverse_dic_to_list(bi)
-    branch_pieces= get_added_branch_pieces(orgs, sigma)
+    branch_pieces= orgs.dot(normal(scale=sigma, size=orgs.shape[1]))
     if update_add:
         b=branch_pieces[:-1]
     else:

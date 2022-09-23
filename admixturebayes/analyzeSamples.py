@@ -113,7 +113,7 @@ def iterate_over_output_file(outfile,
     for n,(i,r) in enumerate(df.iterrows()):
         d_dic={colname:r[k] for k, colname in enumerate(cols)}
         d_dic.update(constant_kwargs)
-
+        print(row_summarize_functions)
         for row_summarize_function in row_summarize_functions:
             add_dic, skip=row_summarize_function(**d_dic)
             d_dic.update(add_dic)
