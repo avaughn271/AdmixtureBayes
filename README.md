@@ -59,6 +59,8 @@ AdmixtureBayes has 3 steps:
 
 (3) *makePlots* - this takes the output of the previous step and generates different plots that are useful for interpretation
 
+Notes on Runtime: Steps 2 and 3 should be very fast, regardless of the input. The runtime of step 1 is determined by how many iterations are run and the number of populations being considered. Increasing the number of populations will result in more time per iteration. Increasing the number of populations also increases the size of the state space of admixture graphs, resulting in more iterations being necessary to achieve convergence. Runtime is invariant with respect to the number of individuals in each population. Increasing the number of SNPs will keep the time per iteration the same, but will result in more time for the initial step of calculating the allele covariance matrix. Asymptotically, as the number of iterations increases, this will be a negligible fraction of the total runtime. Keep in mind that runtime necessary to achieve convergece increases exponentially with the number of populations due to the dramatic increase in the state space and the number of possible proposals per state. While AdmixtureBayes should be able to easily converge on 4 or 5 non-outgroup populations within 1 hour on a desktop, one can expect a thorough analysis on 10 populations to take dozens of hours. Usage of a computing cluster is recommended for datasets with many populations.
+
 ## (1) runMCMC
 
 In this step, we run the MCMC chain that explores the space of admixture graphs.  The script to run is
