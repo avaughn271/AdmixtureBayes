@@ -1,4 +1,4 @@
-from scipy.stats import chi2, uniform, expon
+from scipy.stats import chi2, gamma, uniform, expon
 from numpy.random import choice
 from copy import deepcopy
 
@@ -86,6 +86,7 @@ class lineage(object):
         self.topological_distance=topological_distance
         
     def follow(self, tree, visited_keys=[]):
+        node=tree[self.key]
         new_lineages=[]
         pieces=[]
         for key in get_real_children(tree[self.key]):

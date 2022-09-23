@@ -10,6 +10,8 @@ def MCMCMC(starting_trees,
            summaries,
            temperature_scheme, 
            printing_schemes, 
+           iteration_scheme, 
+           overall_thinnings, 
            proposal_scheme,
          n_arg, verboseee,
            no_chains=None,
@@ -54,25 +56,30 @@ def MCMCMC(starting_trees,
     posteriors = [posterior_function(x) for x in xs]
 
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
+    
     cum_iterations=0
-    for no_iterations in range(n_arg):
+    for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
         #letting each chain run for no_iterations:
-        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, cum_iterations, proposal_updates, multiplier)
+        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, overall_thinnings, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
         xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, summaries, total_permutation)
         df_result=_update_results(df_result, df_add)
-        if cum_iterations==0:
-            start_data_frame(df_result, result_file)
-        elif df_result.shape[0]>1000:
-            add_to_data_frame(df_result, result_file)
-            df_result=df_result[0:0]
+        if result_file is not None:
+            if cum_iterations==0:
+                start_data_frame(df_result, result_file)
+            elif df_result.shape[0]>1000:
+                add_to_data_frame(df_result, result_file)
+                df_result=df_result[0:0]
         #making the mc3 flips and updating:
         xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
-        total_permutation = [total_permutation[n] for n in permut]
-        cum_iterations+=50
+        total_permutation=_update_permutation(total_permutation, permut)
+        cum_iterations+=no_iterations
     pool.terminate()
+        
+def _update_permutation(config, permut):
+    return [config[n] for n in permut]
 
 def start_data_frame(df, result_file):
     df=df.loc[df.layer==0,:]
@@ -108,12 +115,12 @@ def _update_results(df_result, df_add):
         df_result = pd.concat([df_result, df_add])
     return df_result
 
-def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,cum_iterations, proposal_updates=None, multiplier=None):
+def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,overall_thinnings,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
     return ([x, 
              posterior,
-             50,
+             no_iterations,
              printing_scheme,
-             40,
+             overall_thinnings,
              cum_iterations,
              temperature_scheme.get_temp(i),
              proposal_update,

@@ -108,11 +108,14 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
                 sample_verbose_scheme=None, overall_thinning=1, i_start_from=0, 
                 temperature=1.0, proposal_update=None, multiplier=None):
     if proposal_update is not None:
-        proposal.node_naming.n=proposal_update['n']
+        proposal.wear_exportable_state(proposal_update)
     
     x=start_x
+    if post is None:
+        post=posterior_function(x)
     
     iteration_summary=[]
+        
     for i in range(i_start_from,i_start_from+N):
         proposal_knowledge_scraper={}
         new_x,new_post=one_jump(x, post, temperature, posterior_function, proposal, proposal_knowledge_scraper)

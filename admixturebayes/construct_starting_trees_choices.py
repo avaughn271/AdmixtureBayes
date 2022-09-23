@@ -143,6 +143,9 @@ def generate_phylogeny(size,admixes=None, p=0.5, leaf_nodes=None):
         node=_resimulate(node, factor)
     return tree
 
+def generate_add():
+    return expon.rvs()
+
 def _resimulate(node, factor=1.0):
     if node[2] is not None:
         node[2]=uniform.rvs()
@@ -281,7 +284,7 @@ def get_starting_trees(inputs,
     
     if not add_vals:
         no_pops=len(nodes) #error if nodes is not specified
-        add_vals=[expon.rvs() for _ in range(no_chains)]
+        add_vals=[generate_add() for _ in range(no_chains)]
     
     xs=match_trees_and_adds(trees, add_vals)
     

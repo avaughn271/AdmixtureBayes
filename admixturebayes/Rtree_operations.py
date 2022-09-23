@@ -1,5 +1,8 @@
 from copy import deepcopy
 
+def get_trivial_nodes(size):
+    return ['s'+str(n+1) for n in range(size)]
+
 def rename_key(tree, old_key_name, new_key_name):
     node=tree[old_key_name]
     tree[new_key_name]=node
@@ -310,6 +313,7 @@ def get_admixture_keys_and_proportions(tree):
             props.append(node[2])
     return keys, props
 
+
 def get_destination_of_lineages(tree, ready_lineages):
     single_coalescences={} #list of tuples ((key,branch),(sister_key,sister_branch))
     double_coalescences=[]
@@ -357,6 +361,7 @@ def propagate_admixtures(tree, list_of_admixtures):
         res.append((parent_key,0))
         res.append((parent_key,1))
     return res
+
 
 def mother_or_father(tree, child_key, parent_key):
     if tree[child_key][0]==parent_key:
@@ -571,7 +576,13 @@ def direct_all_admixtures(tree, smaller_than_half=True):
     return tree
 
 def other_branch(branch):
-    return(1 - branch)
+    if branch==0:
+        return 1
+    elif branch==1:
+        return 0
+    else:
+        assert False, 'illegal branch'
+
 
 def _update_parents(node, new_parents):
     if len(new_parents)==1:
@@ -583,12 +594,15 @@ def _update_parents(node, new_parents):
     if len(new_parents)==0:
         res=node[:5]+[None]*2
         return res
+    assert False, 'how many parents do you think you have?'
 
 def _update_parent(node, old_parent, new_parent):
     if node[0]==old_parent:
         node[0]=new_parent
     elif node[1]==old_parent:
         node[1]=new_parent
+    else:
+        assert False, 'parent could not be updated'
     return node
 
 def _update_child(node, old_child, new_child):
@@ -596,6 +610,8 @@ def _update_child(node, old_child, new_child):
         node[5]=new_child
     elif node[6]==old_child:
         node[6]=new_child
+    else:
+        assert False, 'child could not be updated'
     return node
 
 def remove_non_mixing_admixtures(tree, limit=1e-7):
@@ -613,6 +629,9 @@ def remove_non_mixing_admixtures(tree, limit=1e-7):
         if adm_key in tree:#it could have been removed by others
             tree=remove_admixture(tree, adm_key, adm_branch)
     return tree
+
+def get_parents(node):
+    return node[:2]
 
 def insert_admixture_node_halfly(tree, source_key, source_branch, insertion_spot, admix_b_length, new_node_name, admixture_proportion=0.51):
     '''
@@ -717,7 +736,7 @@ def get_all_admixture_origins(tree):
     res={}
     for key,node in list(tree.items()):
         if node_is_admixture(node):
-            res[key]=(node[3], (node[:2])[0])
+            res[key]=(node[3], get_parents(node)[0])
     return res
 
 def is_root(*keys):

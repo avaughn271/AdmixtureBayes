@@ -1,7 +1,7 @@
 from Rtree_operations import (get_categories, get_destination_of_lineages, propagate_married,
                               propagate_admixtures, get_branch_length,update_parent_and_branch_length,
                               insert_children_in_tree, rename_root,
-                              get_admixture_proportion,
+                              get_admixture_proportion, get_trivial_nodes,
                               get_admixture_keys_and_proportions,
                               direct_all_admixtures)
 from copy import deepcopy
@@ -35,6 +35,7 @@ def unique_identifier(tree, leaf_order=None):
         leaves_ordered=sorted(leaves)
     ready_lineages=[(key,0) for key in leaves_ordered]
     lineages=deepcopy(ready_lineages)
+    gen_to_column=list(range(len(ready_lineages)))
     list_of_gens=[]
     coalescences_on_hold=[]
     gone=[]
@@ -127,6 +128,11 @@ class generate_predefined_list_string(object):
     def __call__(self):
         return self.listi.pop(0)
 
+class uniform_generator(object):
+
+    def __call__(self):
+        return random()
+
 def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths=None, admixture_proportions=None):
     '''
     Transforms an identifier of the form qwert-uio-asdfg-jk into a dictionary tree using the generators of leaves, inner_nodes, branch_lengths and admixture_proportions.
@@ -134,7 +140,7 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     levels=identifier.split('-')
     n_leaves=len(levels[0].split('.'))
     if leaves is None:
-        leaf_values=sorted(['s'+str(n+1) for n in range(n_leaves)])
+        leaf_values=sorted(get_trivial_nodes(n_leaves))
     else:
         leaf_values=[leaves() for _ in range(n_leaves)]
     tree={leaf:[None]*5 for leaf in leaf_values}
@@ -207,8 +213,8 @@ def identifier_to_tree_clean(identifier, **kwargs):
 
 def topological_identifier_to_tree_clean(identifier, **kwargs):
     tree_good2= identifier_to_tree(identifier,
-                                   branch_lengths=random(),
-                                   admixture_proportions=random(),
+                                   branch_lengths=uniform_generator(),
+                                   admixture_proportions=uniform_generator(),
                                    **kwargs)
     return tree_good2
 
@@ -282,8 +288,11 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
                      _list_double_to_string(branch_lengths, 9),
                      _list_double_to_string(admixture_proportions, 3)])
 
+def list_to_generator(listi):
+    return generate_predefined_list(listi)
+
 def string_to_generator(stringi):
-    return generate_predefined_list(list(map(str,stringi.split('-'))))
+    return list_to_generator(list(map(str,stringi.split('-'))))
 
 def update_lineages(lists, new, gone, lineages, tree):
     for n,element in enumerate(new):

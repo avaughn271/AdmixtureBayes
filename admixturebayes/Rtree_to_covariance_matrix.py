@@ -114,10 +114,14 @@ def _thin_out_dic(dic, taken):
             del dic[key]
     return dic,ready_nodes
                 
-def make_covariance(tree, node_keys=None):
+def make_covariance(tree, node_keys=None, old_cov=False):
+    if node_keys is None:
+        node_keys=sorted(get_leaf_keys(tree))
     pops=[Population([1.0],[node]) for node in node_keys]
     ready_nodes=list(zip(node_keys,pops))
     covmat=Covariance_Matrix2({node_key:n for n,node_key in enumerate(node_keys)})
+    if old_cov:
+        covmat=Covariance_Matrix2({node_key:n for n,node_key in enumerate(node_keys)})
     waiting_nodes={}
     taken_nodes=[]
     while True:
@@ -131,6 +135,7 @@ def make_covariance(tree, node_keys=None):
             return None
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
             break
+
     return covmat.get_matrix()
 
 class dummy_covmat(object):

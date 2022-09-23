@@ -36,8 +36,8 @@ def get_summary_scheme(no_chains=1):
 
 class fixed_geometrical(object):
 
-    def __init__(self, no_chains):
-        self.temps=[1000**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
+    def __init__(self, maxT, no_chains):
+        self.temps=[maxT**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
 
     def get_temp(self,i):
         return self.temps[i]
@@ -62,22 +62,29 @@ def main(args):
     parser.add_argument('--input_file', type=str, required=True, help='the input file of the pipeline. It should be of the same type as the treemix input file with a header of population names and each line representing a snp (unless --covariance_pipeline is altered).')
     parser.add_argument('--result_file', type=str, default='mcmc_samples.csv', help='file in which to save results.')
 
-    parser.add_argument('--outgroup', type=str, default='', help='The name of the population that should be the outgroup.')
+    parser.add_argument('--outgroup', type=str, default='',
+                        help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
 
+    #Important arguments
     parser.add_argument('--MCMC_chains', type=int, default=8,
                         help='The number of chains to run the MCMCMC with. Optimally, the number of cores matches the number of chains.')
     parser.add_argument('--n', type=int, default=200, help='the number of MCMCMC flips throughout the chain.')
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
+    #convenience arguments
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
+    parser.add_argument('--thinning_coef', type=int, default=40,
+                        help=SUPPRESS)#'The number of MCMC steps between each saved instance. It has to be lower than --m.')
 
-    parser.add_argument('--continue_samples', type=str, nargs='+', default=[], help='Filenames of trees to start in.')
+    #start arguments
+    parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
+                        help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
 
     options=parser.parse_args(args)
     assert options.MCMC_chains > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
-    assert options.outgroup, 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
+    assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
     #Here is the only thing we should be changing.
     temp = pandas.read_csv(options.input_file, sep ="\s+")
@@ -189,9 +196,13 @@ def main(args):
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
+    sim_lengths=[50]*options.n
+
     posterior = posterior_class(emp_cov=covariance[0], M=df,
                                 multiplier=covariance[1], nodes=reduced_nodes)
-                                
+
+    temperature_scheme=fixed_geometrical(1000,options.MCMC_chains)
+
     removefile("covariance_without_reduce_name.txt")
     removefile("variance_correction.txt")
     removefile("temp_starttree.txt")
@@ -210,8 +221,10 @@ def main(args):
     res=MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=fixed_geometrical(options.MCMC_chains),
+            temperature_scheme=temperature_scheme,
             printing_schemes=summary_verbose_scheme,
+            iteration_scheme=sim_lengths,
+            overall_thinnings=int(options.thinning_coef),
             proposal_scheme= mp,
             no_chains=options.MCMC_chains,
             multiplier=multiplier,  #numpy_seeds = random_seeds,

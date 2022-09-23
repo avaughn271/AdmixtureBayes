@@ -14,8 +14,9 @@ from pathos.multiprocessing import Pool
 
 import numpy as np
 
-def gzip(filename):
-    new_filename=filename+'.gz'
+def gzip(filename, new_filename=None):
+    if new_filename is None:
+        new_filename=filename+'.gz'
     command=['gzip','-c',filename]
     with open(new_filename, 'w') as f:
         subprocess.call(command, stdout=f)
@@ -96,6 +97,11 @@ def bootsrap_combine_covs(covs, cores, bootstrap_samples):
     result_covs=list(map(t, list(range(bootstrap_samples))))
     return result_covs
 
+def remove_files(filenames):
+    for fil in filenames:
+        os.remove(fil)
+        os.remove(fil[:-3])
+
 def make_covariances(filenames, cores, **kwargs):
     covs=[]
     p=Pool(cores)
@@ -103,9 +109,7 @@ def make_covariances(filenames, cores, **kwargs):
         return empirical_covariance_wrapper_directly(filename, **kwargs)
     covs=list(map(t, filenames))
     try:
-        for fil in filenames:
-            os.remove(fil)
-            os.remove(fil[:-3])
+        remove_files(filenames)
     except OSError as e:
         warnings.warn('Erasing the files did not succeed',UserWarning)
     return covs
@@ -226,7 +230,7 @@ class ScaledEstimator(Estimator):
             warnings.warn('There were 0s in the allele-totals, inducing nans and slower estimation.', UserWarning)
             ps=nan_divide(xs, ns)
         else:
-            ps=xs/ns
+            ps=xs/ns 
         return self.estimate_from_p(ps, ns=ns, extra_info=extra_info)
         
     def estimate_from_p(self, p, ns=None, extra_info={}):

@@ -17,19 +17,29 @@ class new_node_naming_policy(object):
         elif no_nodes==1:
             self.n+=1
             return 'x'+str(self.n)
+              
         else:
             return ''
 
 class simple_adaption(object):
     
-    def __init__(self, start_value=0.1, count=10):
+    def __init__(self, start_value=0.1, count=10, multiplier=10, alpha=0.9, name='adap'):
         self.value=start_value
         self.count=count
+        self.multiplier=multiplier
+        self.alpha=alpha
+        self.name=name
+        
+    def get_value(self):
+        return self.value
     
     def adapt(self, mhr):
         self.value, self.count= standard_update(self.count, 
+                                                self.multiplier, 
+                                                self.alpha, 
                                                 self.value, 
-                                                mhr)
+                                                mhr, 
+                                                name=self.name)
     
 def initialize_proposals(proposals):
     all_props=[addadmix_class, deladmix_class, 
@@ -41,24 +51,24 @@ def initialize_proposals(proposals):
         res.append(all_props_dic[proposal]())
     return res
     
-def draw_proposal(props, k):
+def draw_proposal(props, k, proportions):
     
-    if k == 0:
-        legal_indices = [1,2,3,5,6]
-        new_proportions = 0.2
-    else:
-        legal_indices = [0, 1, 2, 3, 4, 5, 6]
-        new_proportions = 0.14285714285714285
-    chosen_index_i= choice(len(legal_indices), 1)[0]
+    legal_indices=[i for i,prop in enumerate(props) if prop.require_admixture<=k]    
+    normaliser=sum([proportion for n,proportion in enumerate(proportions) if n in legal_indices])
+    new_proportions=[float(proportion)/normaliser for n,proportion in enumerate(proportions) if n in legal_indices]
+    
+    chosen_index_i= choice(len(legal_indices), 1, p=new_proportions)[0]
     chosen_index=legal_indices[chosen_index_i]
+    
     effect_of_chosen_index=props[chosen_index].admixture_change
     if effect_of_chosen_index!=0:
         legal_indices2=[i for i,prop in enumerate(props) if prop.require_admixture <= k+effect_of_chosen_index]    
-        if legal_indices2[0] == 0:
-            new_proportions2 = 0.14285714285714285
-        else:
-            new_proportions2 = 0.2
-        return chosen_index, new_proportions, new_proportions2
+        normaliser2=sum([proportion for n,proportion in enumerate(proportions) if n in legal_indices2])
+        new_proportions2=[float(proportion)/normaliser2 for n,proportion in enumerate(proportions) if n in legal_indices2]
+        reverse_type= props[chosen_index].reverse
+        reverse_index= next((index for index, prop in enumerate(props) if prop.proposal_name==reverse_type))
+        reverse_index_i= next((index_i for index_i, index in enumerate(legal_indices2) if index==reverse_index))
+        return chosen_index, new_proportions[chosen_index_i], new_proportions2[reverse_index_i]
     else:
         return chosen_index, 1.96,1.96 #it is not really 1.96 and 1.96 but only the ratio between them matters and I like 1.96
     
@@ -67,8 +77,8 @@ def get_args2(names, adap_object):
     if names:
         args.append(names)
     if adap_object is not None:
-        args.append(adap_object.value)
-    return args
+        args.append(adap_object.get_value())
+    return args    
 
 class simple_adaptive_proposal(object):
     
@@ -82,7 +92,7 @@ class simple_adaptive_proposal(object):
     def __call__(self, x, pks={}):
         tree,add=x
         k=get_number_of_admixes(tree)
-        index, jforward, jbackward = draw_proposal(self.props, k)
+        index, jforward, jbackward = draw_proposal(self.props, k, self.proportions)
         
         names=self.node_naming.next_nodes(self.props[index].new_nodes)
         self.recently_called_index=index
@@ -107,10 +117,13 @@ class simple_adaptive_proposal(object):
         information={}
         information['n']=self.node_naming.n
         return information
+    
+    def wear_exportable_state(self, information):
+        self.node_naming.n=information['n']
 
-def standard_update(count, old_value, mhr):
+def standard_update(count, multiplier, alpha, old_value, mhr, name='value'):
     count+=1
-    gamma=10/count**0.9
+    gamma=multiplier/count**alpha
     change=exp(gamma*(min(1.0,mhr)-0.234))
     value=old_value*change
     return value,count
