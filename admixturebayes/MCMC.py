@@ -74,6 +74,7 @@ class basic_chain_pool(object):
         for chain, list_of_arguments in zip(self.group, list_of_lists_of_arguments):
             chain.start(list_of_arguments)
             counter+=1
+        assert counter==len(self.group)
         return [chain.complete() for chain in self.group]
     
     def terminate(self):

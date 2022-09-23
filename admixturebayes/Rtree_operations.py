@@ -62,6 +62,11 @@ def update_node(tree, key, updater, admixture_proportion_multiplier=1.0):
     tree[key]=node
     return tree
 
+def update_branch(tree, key, branch, updater):
+    tree[key][branch+3]+= updater()
+    return tree
+
+
 def update_branch_length(tree,key,branch, new_length):
     tree[key][branch+3]=new_length
 
@@ -78,6 +83,25 @@ def extend_branch(node, pkey, grand_parent_key, p_to_gp):
         return node,u,node[4]
     else:
         assert False, 'extension of branch was not possible'
+
+
+def remove_parent_attachment(tree, orphanota_key, orphanota_branch):
+    '''
+    This takes the tree and removes the parent of orphanonte_key.
+    '''
+    pkey=get_parent_of_branch(tree, orphanota_key, orphanota_branch)
+
+    if pkey=='r':
+        return remove_root_attachment(tree, orphanota_key, orphanota_branch)
+    grand_pkey=get_parents(tree[pkey])[0]
+    child_of_parent=get_other_children(tree[pkey], orphanota_key)[0]
+    sib_node=tree[child_of_parent]
+    tree[child_of_parent],u,extended_branch_length=extend_branch(sib_node, pkey, grand_pkey, tree[pkey][3])
+    del tree[pkey]
+    if grand_pkey!='r':
+        tree[grand_pkey]=_rename_child(tree[grand_pkey], pkey, child_of_parent)
+    tree[orphanota_key][orphanota_branch]=None
+    return tree,"u",u*extended_branch_length,extended_branch_length
 
 def remove_root_attachment(tree, orphanota_key, orphanota_branch):
     '''
@@ -187,6 +211,20 @@ def node_is_coalescence(node):
 def node_is_leaf_node(node):
     return (node[1] is None and node[5] is None)
 
+def get_descendants_and_rest(tree, key):
+    all_keys=list(tree.keys())
+    descendant_keys=_get_descendants(tree, key)
+    return descendant_keys, list(set(all_keys)-set(descendant_keys))
+
+def _get_descendants(tree, key):
+    if tree[key][5] is None:
+        return [key]
+    else:
+        ans=[key]+_get_descendants(tree, tree[key][5])
+        if tree[key][6] is None:
+            return ans
+        return ans+_get_descendants(tree, tree[key][6])
+
 def get_all_branches(tree):
     res=[]
     for key, node in list(tree.items()):
@@ -194,6 +232,12 @@ def get_all_branches(tree):
             res.extend([(key, 0),(key,1)])
         else:
             res.append((key,0))
+    return res
+
+def get_specific_branch_lengths(tree, branches):
+    res=[]
+    for key, branch in branches:
+        res.append(tree[key][branch+3])
     return res
 
 def update_specific_branch_lengths(tree, branches, new_lengths, add=False):
@@ -233,6 +277,18 @@ def get_other_children(node, child_key):
             res.append(n)
     return res
 
+def get_sibling_on_parent_side(tree, parent_key, child_key):
+    if parent_key=='r':
+        (child_key1, _,_), (child_key2,_,_) = find_rooted_nodes(tree)
+        if child_key==child_key1:
+            return child_key2
+        elif child_key==child_key2:
+            return child_key1
+        else:
+            assert False, 'Claimed child of root was not a child of root'
+    else:
+        return get_other_children(tree[parent_key], child_key)
+
 def get_children(node):
     return node[5:7]
 
@@ -242,6 +298,16 @@ def _get_index_of_parent(node, parent):
     if node[1]==parent:
         return 1
     return -1
+
+def has_child_admixture(tree, key):
+    node=tree[key]
+    child1,child2=get_children(node)
+    if child1 is not None:
+        if node_is_admixture(tree[child1]):
+            return True
+    if child2 is not None:
+        return (node_is_admixture(tree[child2]))
+    return False
 
 def screen_and_prune_one_in_one_out(tree):
     keys_to_check=list(tree.keys())
@@ -289,6 +355,10 @@ def get_parent_of_branch(tree, key, branch):
 def get_branch_length(tree,key,branch):
     assert key!='r', 'Tried to access the length of the root branch'
     return tree[key][branch+3]
+
+
+def get_branch_length_from_parent(tree, child_key, parent_key):
+    return tree[child_key][3+mother_or_father(tree, child_key, parent_key)]
 
 def get_admixture_proportion_from_key(tree, key):
     return tree[key][2]
@@ -393,6 +463,19 @@ def get_all_admixture_proportions(tree):
     res=[]
     for key, node in list(tree.items()):
         if node_is_admixture(node):
+            res.append(node[2])
+    return res
+
+def convert_to_vector(tree, keys=None):
+    if keys is None:
+        keys=list(tree.keys())
+    res=[]
+    for key in keys:
+        node=tree[key]
+        if node_is_non_admixture(node):
+            res.append(node[3])
+        else:
+            res.extend(node[3:5])
             res.append(node[2])
     return res
 
@@ -516,6 +599,51 @@ def get_number_of_admixes(tree):
 
 def get_number_of_leaves(tree):
     return sum((1 for node in list(tree.values()) if node_is_leaf_node(node)))
+
+def remove_admix(tree, rkey, rbranch):
+    '''
+    removes an admixture. besides the smaller tree, also the disappeared branch lengths are returned.
+    parent_key          sparent_key
+        |                |
+        |t_1             | t_4
+        |   __---- source_key
+      rkey/   t_5       \
+        |                \t_3
+        |t_2          sorphanota_key
+    orphanota_key
+    and alpha=admixture proportion. The function returns new_tree, (t1,t2,t3,t4,t5), alpha
+
+    Note that t_4 could be None if source key is root. The source_key node is not an admixture node by assumption.
+    '''
+    rnode= tree[rkey]
+    orphanota_key= get_children(rnode)[0]
+    parent_key= rnode[other_branch(rbranch)]
+    source_key= rnode[rbranch]
+    t1= rnode[3+other_branch(rbranch)]
+    t5= rnode[3+rbranch]
+    alpha=rnode[2]
+
+    tree[orphanota_key],t2=get_branch_length_and_reset(tree[orphanota_key], rkey, t1, add=True)
+    tree[orphanota_key]=_update_parent(tree[orphanota_key], rkey, parent_key)
+    orphanota_branch=_get_index_of_parent(tree[orphanota_key], parent_key)
+
+    if parent_key!='r':
+        tree[parent_key]=_update_child(tree[parent_key], old_child=rkey, new_child=orphanota_key)
+    if source_key=='r':
+        tree,_,t3,_=remove_root_attachment(tree, rkey, other_branch(rbranch)) #now sorphanota_key is new root
+        del tree[rkey]
+        return tree, (t1,t2,t3,None,t5),alpha,(orphanota_key,orphanota_branch)
+    del tree[rkey]
+    source_node=tree[source_key]
+    sorphanota_key=get_other_children(source_node, child_key=rkey)[0]
+    sparent_key=source_node[0]
+    t4=source_node[3]
+    if sparent_key!='r':
+        tree[sparent_key]=_update_child(tree[sparent_key], source_key, sorphanota_key)
+    tree[sorphanota_key],t3=get_branch_length_and_reset(tree[sorphanota_key], source_key, t4, add=True)
+    tree[sorphanota_key]=_update_parent(tree[sorphanota_key], source_key, sparent_key)
+    del tree[source_key]
+    return tree, (t1,t2,t3,t4,t5), alpha, (orphanota_key,orphanota_branch)
 
 def remove_admix2(tree, rkey, rbranch, pks={}):
     '''
