@@ -35,11 +35,6 @@ def uniform_topological_prior_function(tree):
     up=uniform_prior(get_number_of_leaves(tree))
     return up.probability(tree=tree)
 
-def logpdf(x, fro=0.0, to=1.0):
-    log_max_height=log((to-fro)*2)
-    log_frac=log( (to-(x-fro))/(to-fro) )
-    return log_max_height+log_frac
-
 def calculate_branch_prior(branches, n):
     rate=float(2*n-2)/len(branches)
     
@@ -59,9 +54,6 @@ def prior(x, p=0.5):
     top_prior=uniform_topological_prior_function(tree)
     logsum=branch_prior+no_admix_prior+top_prior-add
     return logsum
-
-def linear_admixture_proportions(admixtures):
-    return sum((logpdf(admixture) for admixture in admixtures))
 
 def no_admixes(p, admixes, hard_cutoff=20):
     if admixes>hard_cutoff:

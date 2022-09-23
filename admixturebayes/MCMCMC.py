@@ -1,5 +1,3 @@
-#os.environ["OPENBLAS_NUM_THREADS"] = "1"
-#os.environ["MKL_NUM_THREADS"] = "1"
 from pathos.multiprocessing import freeze_support
 import pandas as pd
 from MCMC import basic_chain_pool

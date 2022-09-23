@@ -251,11 +251,6 @@ class ScaledEstimator(Estimator):
             savetxt('variance_correction.txt', b)
         return m
 
-def thin_covariance(covmat, nodes_order, specified_nodes):
-    ni={node:i for i,node in enumerate(nodes_order)}
-    take_out_indices=[ni[s] for s in specified_nodes]
-    return covmat[ix_(take_out_indices,take_out_indices)]
-
 def read_freqs(new_filename):
     with open(new_filename, 'r') as f:
         names=f.readline().split()
