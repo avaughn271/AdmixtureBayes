@@ -118,9 +118,6 @@ class Node():
     def get_parents(self):
         return self.parents
     
-    def get_children(self):
-        return self.children
-    
     def get_plotting_type(self):
         if self.children:
             if len(self.parents)==0:

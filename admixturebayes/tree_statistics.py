@@ -35,7 +35,6 @@ def unique_identifier(tree, leaf_order=None):
         leaves_ordered=sorted(leaves)
     ready_lineages=[(key,0) for key in leaves_ordered]
     lineages=deepcopy(ready_lineages)
-    gen_to_column=list(range(len(ready_lineages)))
     list_of_gens=[]
     coalescences_on_hold=[]
     gone=[]

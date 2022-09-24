@@ -1,4 +1,4 @@
-from scipy.stats import chi2, gamma, uniform, expon
+from scipy.stats import chi2, uniform, expon
 from numpy.random import choice
 from copy import deepcopy
 

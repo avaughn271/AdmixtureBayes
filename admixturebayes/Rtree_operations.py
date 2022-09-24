@@ -313,7 +313,6 @@ def get_admixture_keys_and_proportions(tree):
             props.append(node[2])
     return keys, props
 
-
 def get_destination_of_lineages(tree, ready_lineages):
     single_coalescences={} #list of tuples ((key,branch),(sister_key,sister_branch))
     double_coalescences=[]
@@ -361,7 +360,6 @@ def propagate_admixtures(tree, list_of_admixtures):
         res.append((parent_key,0))
         res.append((parent_key,1))
     return res
-
 
 def mother_or_father(tree, child_key, parent_key):
     if tree[child_key][0]==parent_key:
@@ -723,14 +721,6 @@ def parent_is_sibling(tree, key, direction):
     parent_key=tree[key][direction]
     other_parent_key=tree[key][other_branch(direction)] #there is only one because key is an admixture node
     return (parent_key=='r' or other_parent_key in get_real_parents(tree[parent_key]))
-
-
-def get_admixture_branches(tree):
-    res=[]
-    for key,node in list(tree.items()):
-        if node_is_admixture(node):
-            res.append((key,0))
-            res.append((key,1))
 
 def get_all_admixture_origins(tree):
     res={}
