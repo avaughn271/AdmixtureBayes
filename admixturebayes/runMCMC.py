@@ -210,8 +210,8 @@ def main(args):
     removefile("temp_add.txt")
 
     if options.save_covariance:
-        Liness = open('covariance_and_multiplier.txt', 'r').readlines()
-        covarfile = open("covariance_matrix.txt", "a")
+        Liness = open("covariance_and_multiplier.txt", 'r').readlines()
+        covarfile = open(os.getcwd() + "/covariance_matrix.txt", "a")
         covarfile.writelines(Liness[0:len(Liness) - 1 ])
         covarfile.close()
 
