@@ -88,6 +88,8 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--verbose_level** (optional) Either "normal" or "silent". If "normal", then the total number of snps will be printed to the console along with the progress of the MCMC sampler. Every 1000th iteration, the progress towards the total number of iterations is printed. If "silent", then nothing will be printed to the console. Default value is "normal."
 
+**--save_covariance** (optional) If this flag is specified, then the allelic covariance matrix produced by considering all SNPs will be saved to the file "covariance_matrix.txt" in the current working directory. Note that this will be the covariance matrix described in the AdmixtureBayes paper, which is to say a scaled, bias-corrected transformation of the naive covariance matrix that would be suggested by Equation 4 of the main text. The user may use the input data to compute the naive covariance matrix using Equation 4 of the main text should they choose, but bear in mind that this is different than the covariance matrix AdmixtureBayes is actually using.
+
 
  ## This step produces (in the current working directory)
 
