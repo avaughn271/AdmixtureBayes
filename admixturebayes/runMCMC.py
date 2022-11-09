@@ -64,7 +64,7 @@ def main(args):
 
     parser.add_argument('--outgroup', type=str, default='',
                         help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
-
+    parser.add_argument('--save_covariance', default=False, action='store_true', help='saving the covariance matrix')
     #Important arguments
     parser.add_argument('--MCMC_chains', type=int, default=8,
                         help='The number of chains to run the MCMCMC with. Optimally, the number of cores matches the number of chains.')
@@ -208,9 +208,16 @@ def main(args):
     removefile("temp_starttree.txt")
     removefile("temp_start_tree.txt")
     removefile("temp_add.txt")
+
+    if options.save_covariance:
+        Liness = open('covariance_and_multiplier.txt', 'r').readlines()
+        covarfile = open("covariance_matrix.txt", "a")
+        covarfile.writelines(Liness[0:len(Liness) - 1 ])
+        covarfile.close()
+
     removefile("covariance_and_multiplier.txt")
     removefile(os.getcwd() + "/temp_input.txt")
-    
+
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
