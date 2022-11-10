@@ -1,5 +1,5 @@
 from copy import deepcopy
-from numpy.random import normal
+from numpy.random import normal, uniform
 from Rtree_operations import get_leaf_keys, get_all_branches, node_is_non_admixture
 from numpy import zeros, insert
 from Rtree_to_covariance_matrix import Population, _add_to_waiting, _thin_out_dic
@@ -16,14 +16,20 @@ class updater(object):
     def __call__(self):
         return normal(scale=self.sigma)
 
+class uniformupdater(object):
+    
+    def __init__(self, sigma):
+        self.sigma=sigma
+
+    def __call__(self):
+        return uniform(0.0, 1.0)
+
 def rescale_normal(tree, sigma=0.01, pks={}):
     n=get_number_of_leaves(tree)
     k=get_number_of_admixes(tree)
     new_tree=deepcopy(tree)
     updat=updater(sigma/sqrt(2*n-2+4*k))
     new_tree=update_all_branches(new_tree, updat)
-    if new_tree is None:
-        return tree,1,0 #rejecting by setting backward jump probability to 0.
     return new_tree ,1,1
 
 class rescale_class(object):
@@ -42,10 +48,8 @@ def rescale_admixtures(tree, sigma=0.01, pks={}):
     k=get_number_of_admixes(tree)
     new_tree=deepcopy(tree)
     if k>0:
-        updat=updater(sigma/sqrt(k))
-        new_tree=update_all_admixtures(new_tree, updat)
-        if new_tree is None:
-            return tree,1,0 #rejecting by setting backward jump probability to 0.
+        uniformupdate=uniformupdater(sigma)
+        new_tree=update_all_admixtures(new_tree, uniformupdate)
     else:
         return new_tree,1,0.234 #not to have to deal with the admix=0 case, I return 0.234 such that the adaptive parameter is not affected by these special cases.
     return new_tree ,1,1
@@ -65,7 +69,7 @@ class rescale_admixtures_class(object):
 def rescale(add, sigma=0.01, pks={}):
     new_add=add+normal()*sigma
     if new_add<0:
-        return add,1,0 #rejecting by setting backward jump probability to 0.
+        new_add = (-1) * new_add
     return new_add,1,1
 
 class rescale_add_class(object):

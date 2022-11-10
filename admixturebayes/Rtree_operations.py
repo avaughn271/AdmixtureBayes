@@ -28,23 +28,22 @@ def get_number_of_ghost_populations(tree):
 def update_all_branches(tree, updater):
     for key, node in list(tree.items()):
         if node_is_admixture(node):
-            node[2]+=updater()
             node[3]+=updater()
             node[4]+=updater()
-            if node[2]<0 or node[2]>1 or node[3]<0 or node[4]<0:
-                return None
+            if node[3] < 0:
+                node[3] = -node[3]
+            if node[4] < 0:
+                node[4] = -node[4]
         else:
             node[3]+=updater()
-            if node[3]<0:
-                return None
+            if node[3] < 0:
+                node[3] = -node[3]
     return tree
 
-def update_all_admixtures(tree, updater):
+def update_all_admixtures(tree, uniformupdate):
     for key, node in list(tree.items()):
         if node_is_admixture(node):
-            node[2]+=updater()
-            if node[2]<0 or node[2]>1:
-                return None
+            node[2]=uniformupdate()
     return tree
 
 def update_node(tree, key, updater, admixture_proportion_multiplier=1.0):
