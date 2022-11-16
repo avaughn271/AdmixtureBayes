@@ -1,8 +1,5 @@
 from copy import deepcopy
 
-def get_trivial_nodes(size):
-    return ['s'+str(n+1) for n in range(size)]
-
 def rename_key(tree, old_key_name, new_key_name):
     node=tree[old_key_name]
     tree[new_key_name]=node

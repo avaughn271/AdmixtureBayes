@@ -34,12 +34,7 @@ class simple_adaption(object):
         return self.value
     
     def adapt(self, mhr):
-        self.value, self.count= standard_update(self.count, 
-                                                self.multiplier, 
-                                                self.alpha, 
-                                                self.value, 
-                                                mhr, 
-                                                name=self.name)
+        self.value, self.count= standard_update(self.count, self.multiplier, self.alpha, self.value, mhr)
     
 def initialize_proposals(proposals):
     all_props=[addadmix_class, deladmix_class, 
@@ -121,7 +116,7 @@ class simple_adaptive_proposal(object):
     def wear_exportable_state(self, information):
         self.node_naming.n=information['n']
 
-def standard_update(count, multiplier, alpha, old_value, mhr, name='value'):
+def standard_update(count, multiplier, alpha, old_value, mhr):
     count+=1
     gamma=multiplier/count**alpha
     change=exp(gamma*(min(1.0,mhr)-0.234))

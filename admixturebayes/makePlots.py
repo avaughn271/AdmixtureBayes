@@ -10,9 +10,6 @@ from graphviz import Digraph
 import os
 
 from math import floor
-
-def make_readable_leaf_name(leaf_node):
-    return list(leaf_node)[0]
     
 class make_read_name(object):
     
@@ -67,7 +64,6 @@ def node_structure_to_networkx(node_structure, node_freq_dictionary=None):
     namer=make_read_name()
     inner_node_colors={}
     string_names={}
-    root_set=None
     for key,node in list(node_structure.items()):
         if key==frozenset(['']):
             continue
@@ -85,10 +81,10 @@ def node_structure_to_networkx(node_structure, node_freq_dictionary=None):
             admixture_nodes.append(string_names[key])
             inner_node_colors[string_names[key]]=colors[key]
         elif plotting_type=='leaf':
-            string_names[key]=make_readable_leaf_name(key)
+            string_names[key]=list(key)[0]
             pure_leaves.append(string_names[key])
         elif plotting_type=='admixture_leaf':
-            string_names[key]=make_readable_leaf_name(key)
+            string_names[key]=list(key)[0]
             admixture_leaves.append(string_names[key])
         elif plotting_type=='root':
             string_names[key]='r'
@@ -97,7 +93,7 @@ def node_structure_to_networkx(node_structure, node_freq_dictionary=None):
             assert False, 'unknown plotting type'+str(plotting_type)
         
     for key, node in list(node_structure.items()):
-        parents=node.get_parents()
+        parents=node.parents
         for parent in parents:
             edges.append((string_names[parent.name],string_names[key]))
     return pure_leaves, admixture_leaves, coalescence_nodes, admixture_nodes, root, edges, inner_node_colors
@@ -114,9 +110,6 @@ class Node():
         
     def add_parent(self, parent_node):
         self.parents.append(parent_node)
-    
-    def get_parents(self):
-        return self.parents
     
     def get_plotting_type(self):
         if self.children:

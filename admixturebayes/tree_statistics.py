@@ -1,7 +1,7 @@
 from Rtree_operations import (get_categories, get_destination_of_lineages, propagate_married,
                               propagate_admixtures, get_branch_length,update_parent_and_branch_length,
                               insert_children_in_tree, rename_root,
-                              get_admixture_proportion, get_trivial_nodes,
+                              get_admixture_proportion,
                               get_admixture_keys_and_proportions,
                               direct_all_admixtures)
 from copy import deepcopy
@@ -139,7 +139,7 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
     levels=identifier.split('-')
     n_leaves=len(levels[0].split('.'))
     if leaves is None:
-        leaf_values=sorted(get_trivial_nodes(n_leaves))
+        leaf_values=sorted(['s'+str(n+1) for n in range(n_leaves)])
     else:
         leaf_values=[leaves() for _ in range(n_leaves)]
     tree={leaf:[None]*5 for leaf in leaf_values}

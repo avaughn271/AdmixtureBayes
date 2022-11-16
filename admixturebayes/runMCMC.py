@@ -196,8 +196,6 @@ def main(args):
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
-    sim_lengths=[50]*options.n
-
     posterior = posterior_class(emp_cov=covariance[0], M=df,
                                 multiplier=covariance[1], nodes=reduced_nodes)
 
@@ -231,7 +229,7 @@ def main(args):
             summaries=summaries,
             temperature_scheme=temperature_scheme,
             printing_schemes=summary_verbose_scheme,
-            iteration_scheme=sim_lengths,
+            iteration_scheme=[50]*options.n,
             overall_thinnings=int(options.thinning_coef),
             proposal_scheme= mp,
             no_chains=options.MCMC_chains,
