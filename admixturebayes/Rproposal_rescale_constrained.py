@@ -83,9 +83,9 @@ class Coefficient_Matrix():
         self.bi=branch_to_index
         self.custom_list=custom_list
         if custom_list:
-            self.cofmat=zeros((len(custom_list), len(branch_to_index)))
+            self.cofmatr=zeros((len(custom_list), len(branch_to_index)))
         else:
-            self.cofmat=zeros((len(nodes_to_index), len(branch_to_index)))
+            self.cofmatr=zeros((len(nodes_to_index), len(branch_to_index)))
         
     def update(self, branch, population):
         j=self.bi[branch]
@@ -100,13 +100,10 @@ class Coefficient_Matrix():
                     elif (pop2,pop1) in self.custom_list:
                         key=(pop2,pop1)
                     if key is not None:
-                        self.cofmat[self.custom_list[key],j]=population.weights[pop1_index]*population.weights[pop2_index]
+                        self.cofmatr[self.custom_list[key],j]=population.weights[pop1_index]*population.weights[pop2_index]
         else:
             for pop, w in zip(population.members, population.weights):
-                self.cofmat[self.ni[pop],j]=w**2
-    
-    def get_matrix(self):
-        return self.cofmat
+                self.cofmatr[self.ni[pop],j]=w**2
 
 def nullspace(A):
     u, s, vh = svd(A)
@@ -150,7 +147,7 @@ def make_coefficient_matrix(tree):
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
             break
 
-    return cofmat.get_matrix(),bi
+    return cofmat.cofmatr,bi
 
 def leave_node(key, node, population, cofmat):
     if node_is_non_admixture(node):

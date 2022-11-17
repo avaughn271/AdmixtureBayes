@@ -29,9 +29,7 @@ class simple_adaption(object):
     
     def adapt(self, mhr):
         self.count+=1
-        gamma=10/self.count**0.9
-        change=exp(gamma*(min(1.0,mhr)-0.234))
-        self.value=self.value*change
+        self.value=self.value*exp((10/self.count**0.9)*(min(1.0,mhr) - 0.234))
     
 def initialize_proposals(proposals):
     all_props=[addadmix_class, deladmix_class, rescale_class, sliding_regraft_class, rescale_add_class, rescale_constrained_class,  rescale_admixtures_class]
@@ -107,4 +105,4 @@ class simple_adaptive_proposal(object):
         information={}
         information['n']=self.node_naming.n
         return information
-
+        

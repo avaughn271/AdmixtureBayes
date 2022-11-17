@@ -48,7 +48,8 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
         xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
         total_permutation=[total_permutation[n] for n in permut]
         cum_iterations+=no_iterations
-    pool.terminate()
+    for chain in pool.group:
+            chain.process.terminate()
 
 def start_data_frame(df, result_file):
     df=df.loc[df.layer==0,:]

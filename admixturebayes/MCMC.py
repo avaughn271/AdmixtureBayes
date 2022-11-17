@@ -11,15 +11,6 @@ class basic_chain_class_as_process(object):
         self.process= Process(target=self.chain)
         self.process.start()
     
-    def start(self, p):
-        self.chain.task_queue.put(p)
-    
-    def terminate(self):
-        self.process.terminate()
-        
-    def complete(self):
-        return self.chain.response_queue.get()
-    
 class basic_chain_class(object):
     
     def __init__(self, summaries, posterior_function, proposal, resxeed):
@@ -40,9 +31,7 @@ class basic_chain_class(object):
             
     def run_chain(self, p):
         start_tree, post, N, sample_verbose_scheme, overall_thinning, i_start_from, temperature, proposal_update, multiplier = p
-        return basic_chain(start_tree,  self.summaries,  self.posterior_function, 
-                           self.proposal,  post,  N,  sample_verbose_scheme,
-                           i_start_from,   temperature,  proposal_update, multiplier)
+        return basic_chain(start_tree,  self.summaries,  self.posterior_function, self.proposal,  post,  N,  sample_verbose_scheme, i_start_from, temperature, proposal_update, multiplier)
         
 class basic_chain_pool(object):
     
@@ -62,14 +51,10 @@ class basic_chain_pool(object):
         The list of arguments should math that of p in basic_chain_class.run_chain()
         '''
         counter=0
-        for chain, list_of_arguments in zip(self.group, list_of_lists_of_arguments):
-            chain.start(list_of_arguments)
+        for chainn, list_of_arguments in zip(self.group, list_of_lists_of_arguments):
+            chainn.chain.task_queue.put(list_of_arguments)
             counter+=1
-        return [chain.complete() for chain in self.group]
-    
-    def terminate(self):
-        for chain in self.group:
-            chain.terminate()
+        return [chainn.chain.response_queue.get() for chainn in self.group]
 
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     
@@ -129,8 +114,7 @@ def _calc_and_print_summaries(sample_verbose_scheme,summaries,**kwargs):
     for s in summaries:
         save_num,print_num=sample_verbose_scheme.get(s.name, (0,0))
         save_bool = (save_num!=0) and (iteration % save_num==0)
-        print_bool = (print_num!=0) and (iteration % print_num==0)
-        if save_bool or print_bool:
+        if save_bool:
             val=s(**kwargs)
             res.append(val)
         else:

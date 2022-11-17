@@ -37,37 +37,8 @@ def update_all_branches(tree, updater):
                 node[3] = -node[3]
     return tree
 
-def update_node(tree, key, updater, admixture_proportion_multiplier=1.0):
-    node=tree[key]
-    if node_is_admixture(node):
-        node[2]+=updater()*admixture_proportion_multiplier
-        node[3]+=updater()
-        node[4]+=updater()
-        if node[2]<0 or node[2]>1 or node[3]<0 or node[4]<0:
-            return None
-    else:
-        node[3]+=updater()
-        if node[3]<0:
-            return None
-    tree[key]=node
-    return tree
-
 def update_branch_length(tree,key,branch, new_length):
     tree[key][branch+3]=new_length
-
-def extend_branch(node, pkey, grand_parent_key, p_to_gp):
-    if node[0]==pkey:
-        node[0]=grand_parent_key
-        u=node[3]/(node[3]+p_to_gp)
-        node[3]+=p_to_gp
-        return node,u,node[3]
-    elif node[1]==pkey:
-        node[1]=grand_parent_key
-        u=node[4]/(node[4]+p_to_gp)
-        node[4]+=p_to_gp
-        return node,u,node[4]
-    else:
-        assert False, 'extension of branch was not possible'
 
 def remove_root_attachment(tree, orphanota_key, orphanota_branch):
     '''
@@ -563,7 +534,6 @@ def other_branch(branch):
         return 0
     else:
         assert False, 'illegal branch'
-
 
 def _update_parents(node, new_parents):
     if len(new_parents)==1:

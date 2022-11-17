@@ -7,7 +7,7 @@ class Covariance_Matrix():
     
     def __init__(self, nodes_to_index):
         self.ni=nodes_to_index
-        self.covmat=zeros((len(nodes_to_index), len(nodes_to_index)))
+        self.covmatr=zeros((len(nodes_to_index), len(nodes_to_index)))
     
     def get_indices(self, nodes):
         return [self.ni[n] for n in nodes]
@@ -17,12 +17,7 @@ class Covariance_Matrix():
     
     def update(self, branch_length, population):
         indices=self.get_indices(population.members)
-        self.covmat[ix_(indices,indices)]+=self.get_addon(branch_length, population.weights)
-        
-    def get_matrix(self):
-        return self.covmat
-    
-Covariance_Matrix2=Covariance_Matrix
+        self.covmatr[ix_(indices,indices)]+=self.get_addon(branch_length, population.weights)
 
 class Population:
     
@@ -119,9 +114,9 @@ def make_covariance(tree, node_keys=None, old_cov=False):
         node_keys=sorted(get_leaf_keys(tree))
     pops=[Population([1.0],[node]) for node in node_keys]
     ready_nodes=list(zip(node_keys,pops))
-    covmat=Covariance_Matrix2({node_key:n for n,node_key in enumerate(node_keys)})
+    covmat=Covariance_Matrix({node_key:n for n,node_key in enumerate(node_keys)})
     if old_cov:
-        covmat=Covariance_Matrix2({node_key:n for n,node_key in enumerate(node_keys)})
+        covmat=Covariance_Matrix({node_key:n for n,node_key in enumerate(node_keys)})
     waiting_nodes={}
     taken_nodes=[]
     while True:
@@ -136,7 +131,7 @@ def make_covariance(tree, node_keys=None, old_cov=False):
         if len(ready_nodes)==1 and ready_nodes[0][0]=="r":
             break
 
-    return covmat.get_matrix()
+    return covmat.covmatr
 
 class dummy_covmat(object):
     

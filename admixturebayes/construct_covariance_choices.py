@@ -11,6 +11,7 @@ import warnings
 from numpy.random import choice
 from numpy.linalg import norm as npnorm
 from numpy import var as npvar
+from scipy.optimize import minimize_scalar
 
 from pathos.multiprocessing import Pool
 
@@ -22,53 +23,19 @@ def gzip(filename, new_filename=None):
         subprocess.call(command, stdout=f)
     return new_filename
 
-#maximizes the function, function in the interval [lower_limit,\infty).
-def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
-    old_x=lower_limit
-    new_x=lower_limit*2
-    old_y=function(old_x)
-    lower_y=old_y
-    new_y=function(new_x)
-    sgn=1
-    max_step_size_increases=20
-    step_size_increases=0
-    step_size=lower_limit
-    for _ in range(20):
-        c=0
-        while new_y<old_y and c<100:
-            old_x=new_x
-            new_x+=sgn*step_size
-            old_y=new_y
-            if new_x<lower_limit:
-                new_x=lower_limit
-                new_y=lower_y
-                break
-            new_y=function(new_x)
-            c+=1
-            if c>10 and max_step_size_increases>step_size_increases:
-                c=0
-                step_size*=2
-                step_size_increases+=1
-        sgn=-sgn
-        step_size*=0.5
-        old_x=new_x
-        new_x=old_x+sgn*step_size
-        old_y=new_y
-        new_y=function(new_x)
-    return new_x
-
 def variance_mean_based(sample_of_matrices):
     mean_wishart=  mean(sample_of_matrices, axis=0)
     var_wishart= npvar(sample_of_matrices, axis=0)
-    r=mean_wishart.shape[0]
     var_rom_mean_wishart=square(mean_wishart)+outer(diag(mean_wishart),diag(mean_wishart))
-    def penalty_function(df_l):
-        df=df_l
-        val=npnorm(var_wishart-var_rom_mean_wishart/df)**2
-        return log(val)
+
+    def fff(exx):
+        return(log(npnorm(var_wishart-var_rom_mean_wishart/exx)**2))
     
-    rval=I_cant_believe_I_have_to_write_this_function_myself(penalty_function, r)
-    return rval
+    yyy = minimize_scalar(fff, method='bounded', bounds=[0,1000000]).x
+    assert yyy > 2.0, "Bootstrap Optimization Failed"
+    assert yyy < 999900, "Bootstrap Optimization Failed"
+    return yyy
+    #maximizes the function, function in the interval [lower_limit,\infty).
 
 def get_partitions(lines, blocksize):
     list_of_lists=[]
@@ -78,24 +45,12 @@ def get_partitions(lines, blocksize):
         list_of_lists.append(lines[-blocksize:])
     return list_of_lists
 
-def bootstrap_indices(k):
-    bootstrap_inds=choice(k, size=k, replace = True)
-    return bootstrap_inds
-
 def combine_covs(tuple_covs, indices):
     cov_sum, scale_sum=0.0,0.0
     for i in indices:
         cov_sum+=tuple_covs[i][0]
         scale_sum+=tuple_covs[i][1]
     return cov_sum/scale_sum
-
-def bootsrap_combine_covs(covs, cores, bootstrap_samples):
-    p=Pool(cores)
-    def t(empty):
-        indices=bootstrap_indices(len(covs))
-        return combine_covs(covs, indices)
-    result_covs=list(map(t, list(range(bootstrap_samples))))
-    return result_covs
 
 def remove_files(filenames):
     for fil in filenames:
@@ -141,9 +96,12 @@ def estimate_degrees_of_freedom_scaled_fast(filename, bootstrap_blocksize=1000,
     if len(single_files)<39:
         warnings.warn('There are only '+str(len(single_files))+' bootstrap blocks. Consider lowering the --bootstrap_blocksize or add more data.', UserWarning)
     single_covs=make_covariances(single_files, cores=cores, return_also_mscale=True, **kwargs)
-    covs=bootsrap_combine_covs(single_covs, cores=cores, bootstrap_samples=100)
-    res=variance_mean_based(covs)
-    return res
+
+    p=Pool(cores)
+    def t(empty):
+        indices=choice(len(single_covs), size=len(single_covs), replace = True)
+        return combine_covs(single_covs, indices)
+    return variance_mean_based(list(map(t, list(range(100)))))
 
 def reduce_covariance(covmat):
     reducer=insert(identity(covmat.shape[0]-1), 0, -1, axis=1)
@@ -215,7 +173,6 @@ class ScaledEstimator(object):
         return self.estimate_from_p(ps, ns=ns, extra_info=extra_info)
         
     def estimate_from_p(self, p, ns=None, extra_info={}):
-        
         p2 = self.subtract_ancestral_and_get_outgroup(p)
         if npsum(isnan(p2))>0:
             warnings.warn('Nans found in the allele frequency differences matrix => slower execution', UserWarning)
