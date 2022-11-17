@@ -416,8 +416,7 @@ def run_posterior_main(args):
 
     row_sums.append(make_Rtree(deepcopy(nodes_wo_outgroup), subnodes=subnodes_wo_outgroup, outgroup_name=''))
     name_to_rowsum_index('Rtree')
-    row_sums.append(make_full_tree(outgroup_name='',
-                                                    subnodes=options.subnodes))
+    row_sums.append(make_full_tree(outgroup_name='', subnodes=options.subnodes))
     name_to_rowsum_index('full_tree')
 
     if options.subnodes:

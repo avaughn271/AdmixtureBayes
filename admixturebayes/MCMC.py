@@ -40,18 +40,9 @@ class basic_chain_class(object):
             
     def run_chain(self, p):
         start_tree, post, N, sample_verbose_scheme, overall_thinning, i_start_from, temperature, proposal_update, multiplier = p
-        return basic_chain(start_tree,
-                           self.summaries, 
-                           self.posterior_function, 
-                           self.proposal, 
-                           post, 
-                           N, 
-                           sample_verbose_scheme, 
-                           overall_thinning, 
-                           i_start_from, 
-                           temperature, 
-                           proposal_update,
-                           multiplier)
+        return basic_chain(start_tree,  self.summaries,  self.posterior_function, 
+                           self.proposal,  post,  N,  sample_verbose_scheme,
+                           i_start_from,   temperature,  proposal_update, multiplier)
         
 class basic_chain_pool(object):
     
@@ -83,8 +74,7 @@ class basic_chain_pool(object):
 def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     
     newx,g1,g2,Jh,j1,j2=proposal(x,pks)
-    
-    post_new=posterior_function(newx,pks)
+    post_new=posterior_function(newx)
 
     likelihood_old, prior_old = post[:2]
     likelihood_new, prior_new = post_new[:2]
@@ -105,10 +95,10 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     return x,post
 
 def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=10000, 
-                sample_verbose_scheme=None, overall_thinning=1, i_start_from=0, 
+                sample_verbose_scheme=None, i_start_from=0, 
                 temperature=1.0, proposal_update=None, multiplier=None):
     if proposal_update is not None:
-        proposal.wear_exportable_state(proposal_update)
+        proposal.node_naming.n=proposal_update['n']
     
     x=start_x
     if post is None:
@@ -119,7 +109,7 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
     for i in range(i_start_from,i_start_from+N):
         proposal_knowledge_scraper={}
         new_x,new_post=one_jump(x, post, temperature, posterior_function, proposal, proposal_knowledge_scraper)
-        if overall_thinning!=0 and i%overall_thinning==0:
+        if i%40==0:
             iteration_summary.append(_calc_and_print_summaries(sample_verbose_scheme,
                                                                summaries,
                                                                tree=scale_tree_copy(new_x[0], 1.0/multiplier),
@@ -138,16 +128,11 @@ def _calc_and_print_summaries(sample_verbose_scheme,summaries,**kwargs):
     res=[iteration]
     for s in summaries:
         save_num,print_num=sample_verbose_scheme.get(s.name, (0,0))
-        save_bool = (save_num!=0) and (iteration % save_num==0) 
+        save_bool = (save_num!=0) and (iteration % save_num==0)
         print_bool = (print_num!=0) and (iteration % print_num==0)
         if save_bool or print_bool:
             val=s(**kwargs)
-            if print_bool:
-                print(str(iteration)+'. '+ s.pretty_print(val))
-            if save_bool:
-                res.append(val)
-            else:
-                res.append(None)
+            res.append(val)
         else:
             res.append(None)
     return res

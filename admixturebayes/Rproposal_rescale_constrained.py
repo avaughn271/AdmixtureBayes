@@ -5,7 +5,7 @@ from numpy import zeros, insert
 from Rtree_to_covariance_matrix import Population, _add_to_waiting, _thin_out_dic
 from scipy.linalg import svd
 
-from Rtree_operations import update_all_admixtures, update_all_branches, get_number_of_leaves, get_number_of_admixes, update_specific_branch_lengths
+from Rtree_operations import update_all_branches, get_number_of_leaves, get_number_of_admixes, update_specific_branch_lengths, node_is_admixture
 from math import sqrt
 
 class updater(object):
@@ -15,14 +15,6 @@ class updater(object):
 
     def __call__(self):
         return normal(scale=self.sigma)
-
-class uniformupdater(object):
-    
-    def __init__(self, sigma):
-        self.sigma=sigma
-
-    def __call__(self):
-        return uniform(0.0, 1.0)
 
 def rescale_normal(tree, sigma=0.01, pks={}):
     n=get_number_of_leaves(tree)
@@ -45,11 +37,11 @@ class rescale_class(object):
         return rescale_normal(*args, **kwargs)
 
 def rescale_admixtures(tree, sigma=0.01, pks={}):
-    k=get_number_of_admixes(tree)
     new_tree=deepcopy(tree)
-    if k>0:
-        uniformupdate=uniformupdater(sigma)
-        new_tree=update_all_admixtures(new_tree, uniformupdate)
+    if get_number_of_admixes(tree) > 0:
+        for key, node in list(new_tree.items()):
+            if node_is_admixture(node):
+                node[2]=uniform(0.0, 1.0)
     else:
         return new_tree,1,0.234 #not to have to deal with the admix=0 case, I return 0.234 such that the adaptive parameter is not affected by these special cases.
     return new_tree ,1,1
@@ -68,7 +60,7 @@ class rescale_admixtures_class(object):
 
 def rescale(add, sigma=0.01, pks={}):
     new_add=add+normal()*sigma
-    if new_add<0:
+    if new_add < 0:
         new_add = (-1) * new_add
     return new_add,1,1
 
@@ -127,7 +119,7 @@ def get_orthogonal_branch_space(tree, add_one_column=True):
     if add_one_column:
         cof=insert(cof, cof.shape[1], 1, axis=1)
     ad=nullspace(cof)
-    return ad, bi, cof.T
+    return ad, bi
     
 def make_coefficient_matrix(tree):
     '''
@@ -195,7 +187,7 @@ def get_added_branch_pieces(org, param):
 def rescale_constrained(x, sigma=0.01, pks={}, update_add=True):
     tree, add=x
     new_tree=deepcopy(tree)
-    orgs, bi,_= get_orthogonal_branch_space(new_tree, add_one_column=update_add)
+    orgs, bi= get_orthogonal_branch_space(new_tree, add_one_column=update_add)
     branches=reverse_dic_to_list(bi)
     branch_pieces= get_added_branch_pieces(orgs, sigma)
     if update_add:

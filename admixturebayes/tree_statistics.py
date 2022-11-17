@@ -21,15 +21,13 @@ def matchmake(single_coalescences, coalescences_on_hold):
 def make_dics_first_and_second(double_list):
     if double_list:
         firsts, seconds=list(map(list,list(zip(*double_list))))
-        dic={a:b for a,b in zip(firsts+seconds, seconds+firsts)}
-        return dic, firsts, seconds
+        return {a:b for a,b in zip(firsts+seconds, seconds+firsts)}
     else:
-        return {},[],[]
+        return {}
 
 def unique_identifier(tree, leaf_order=None):
     leaves,admixture_nodes=get_categories(tree)
     if leaf_order is not None:
-        assert set(leaves)==set(leaf_order), 'the specified leaf order did not match the leaves of the tree.'
         leaves_ordered=leaf_order
     else:
         leaves_ordered=sorted(leaves)
@@ -46,8 +44,8 @@ def unique_identifier(tree, leaf_order=None):
         waiting_coalescences, awaited_coalescences, still_on_hold = matchmake(single_coalescences, coalescences_on_hold)
         res.append((len(sames), len(waiting_coalescences), len(awaited_coalescences), len(admixtures)))
 
-        sames_dic, first_sames, second_sames = make_dics_first_and_second(sames)
-        awaited_dic, first_awaited, second_awaited = make_dics_first_and_second(awaited_coalescences)
+        sames_dic = make_dics_first_and_second(sames)
+        awaited_dic = make_dics_first_and_second(awaited_coalescences)
         gen=[]
         for n,element in enumerate(lineages):
             if element in gone:
@@ -156,9 +154,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
         admixture_proportions=g
     for level in levels:
         identifier_lineages=level.split('.')
-        assert len(trace_lineages)==len(identifier_lineages), 'the number of traced lineages did not match the number of lineages in the identifier '+\
-                                                               '\n\n'+'trace_lineages:'+'\n'+str(trace_lineages)+\
-                                                               '\n\n'+'identifier_lineages:'+'\n'+str(identifier_lineages)
         parent_index={}
         indexes_to_be_removed=[]
         for n,identifier_lineage in enumerate(identifier_lineages):
@@ -183,7 +178,6 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
                 trace_lineages[n]=(new_key,0)
                 trace_lineages.append((new_key,1))
             else:
-                ##there is a coalescence but this lineage disappears
                 try:
                     new_key=parent_index[int(identifier_lineage)]
                 except KeyError as e:
@@ -211,11 +205,7 @@ def identifier_to_tree_clean(identifier, **kwargs):
     return tree_good2
 
 def topological_identifier_to_tree_clean(identifier, **kwargs):
-    tree_good2= identifier_to_tree(identifier,
-                                   branch_lengths=uniform_generator(),
-                                   admixture_proportions=uniform_generator(),
-                                   **kwargs)
-    return tree_good2
+    return identifier_to_tree(identifier, branch_lengths=uniform_generator(), admixture_proportions=uniform_generator(), **kwargs)
 
 def unique_identifier_and_branch_lengths(tree, leaf_order=None):
     leaves,admixture_nodes=get_categories(tree)
@@ -239,8 +229,8 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
         waiting_coalescences, awaited_coalescences, still_on_hold = matchmake(single_coalescences, coalescences_on_hold)
         res.append((len(sames), len(waiting_coalescences), len(awaited_coalescences), len(admixtures)))
 
-        sames_dic, first_sames, second_sames = make_dics_first_and_second(sames)
-        awaited_dic, first_awaited, second_awaited = make_dics_first_and_second(awaited_coalescences)
+        sames_dic = make_dics_first_and_second(sames)
+        awaited_dic= make_dics_first_and_second(awaited_coalescences)
         gen=[]
         for n,element in enumerate(lineages):
             if element in gone:
@@ -287,11 +277,8 @@ def unique_identifier_and_branch_lengths(tree, leaf_order=None):
                      _list_double_to_string(branch_lengths, 9),
                      _list_double_to_string(admixture_proportions, 3)])
 
-def list_to_generator(listi):
-    return generate_predefined_list(listi)
-
 def string_to_generator(stringi):
-    return list_to_generator(list(map(str,stringi.split('-'))))
+    return generate_predefined_list(list(map(str,stringi.split('-'))))
 
 def update_lineages(lists, new, gone, lineages, tree):
     for n,element in enumerate(new):

@@ -19,7 +19,6 @@ def removefile(filename):
         os.remove(filename)
 
 def get_summary_scheme(no_chains=1):
-    
     summaries=[construct_starting_trees_choices.s_posterior(),
                construct_starting_trees_choices.s_likelihood(),
                construct_starting_trees_choices.s_prior(),
@@ -33,24 +32,6 @@ def get_summary_scheme(no_chains=1):
     sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
     return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
-
-class fixed_geometrical(object):
-
-    def __init__(self, maxT, no_chains):
-        self.temps=[maxT**(float(i)/(float(no_chains)-1.0)) for i in range(no_chains)]
-
-    def get_temp(self,i):
-        return self.temps[i]
-
-def get_nodes(input_file, reduce_node):
-    nodes=read_one_line(input_file)
-    reduced_nodes=deepcopy(nodes)
-    reduced_nodes.remove(reduce_node)
-    return nodes, reduced_nodes
-
-def read_one_line(filename):
-    with open(filename, 'r') as f:
-        return f.readline().rstrip().split()
 
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -75,9 +56,6 @@ def main(args):
     #convenience arguments
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
-    parser.add_argument('--thinning_coef', type=int, default=40,
-                        help=SUPPRESS)#'The number of MCMC steps between each saved instance. It has to be lower than --m.')
-
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
@@ -100,17 +78,14 @@ def main(args):
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
      [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
 
-    full_nodes, reduced_nodes=get_nodes(os.getcwd() + "/temp_input.txt", options.outgroup)
+    with open(os.getcwd() + "/temp_input.txt", 'r') as f:
+        full_nodes = f.readline().rstrip().split()
+    reduced_nodes=deepcopy(full_nodes)
+    reduced_nodes.remove(options.outgroup)
 
-    estimator_arguments=dict(reducer=options.outgroup, 
-                             nodes=full_nodes,
-                             add_variance_correction_to_graph=True,
-                             save_variance_correction=True)
+    estimator_arguments=dict(reducer=options.outgroup, nodes=full_nodes, add_variance_correction_to_graph=True, save_variance_correction=True)
                              
-    covariance=get_covariance(os.getcwd() + "/temp_input.txt",
-                              full_nodes=full_nodes,
-                              reduce_covariance_node=options.outgroup,
-                              estimator_arguments=estimator_arguments)
+    covariance=get_covariance(os.getcwd() + "/temp_input.txt", full_nodes=full_nodes, reduce_covariance_node=options.outgroup, estimator_arguments=estimator_arguments)
 
     estimator_arguments['save_variance_correction']=False
     df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + "/temp_input.txt",
@@ -189,17 +164,11 @@ def main(args):
                                         adds=[os.getcwd() + "/" + "temp_add.txt"],
                                         nodes=reduced_nodes)
     else:
-        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,
-                                      options.MCMC_chains,
-                                      adds=[],
-                                      nodes=reduced_nodes)
+        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples, options.MCMC_chains, adds=[], nodes=reduced_nodes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
-    posterior = posterior_class(emp_cov=covariance[0], M=df,
-                                multiplier=covariance[1], nodes=reduced_nodes)
-
-    temperature_scheme=fixed_geometrical(1000,options.MCMC_chains)
+    posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes)
 
     removefile("covariance_without_reduce_name.txt")
     removefile("variance_correction.txt")
@@ -224,13 +193,12 @@ def main(args):
         #for i in range(options.MCMC_chains):
         #    random_seeds.append(givenseed + i)
         #print(random_seeds)
-    res=MCMCMC(starting_trees=starting_trees,
+    MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=temperature_scheme,
+            temperature_scheme=[1000**(float(i)/(float(options.MCMC_chains)-1.0)) for i in range(options.MCMC_chains)],
             printing_schemes=summary_verbose_scheme,
             iteration_scheme=[50]*options.n,
-            overall_thinnings=int(options.thinning_coef),
             proposal_scheme= mp,
             no_chains=options.MCMC_chains,
             multiplier=multiplier,  #numpy_seeds = random_seeds,

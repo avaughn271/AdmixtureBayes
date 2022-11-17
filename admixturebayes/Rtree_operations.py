@@ -37,12 +37,6 @@ def update_all_branches(tree, updater):
                 node[3] = -node[3]
     return tree
 
-def update_all_admixtures(tree, uniformupdate):
-    for key, node in list(tree.items()):
-        if node_is_admixture(node):
-            node[2]=uniformupdate()
-    return tree
-
 def update_node(tree, key, updater, admixture_proportion_multiplier=1.0):
     node=tree[key]
     if node_is_admixture(node):
@@ -138,8 +132,6 @@ def rename_parent(node, old_name, new_name):
         node[0]=new_name
     elif node[1]==old_name:
         node[1]=new_name
-    else:
-        assert False, 'tried to rename a parent that didnt exist in its childs document'
     return node
 
 def find_rooted_nodes(tree):
@@ -279,11 +271,9 @@ def get_categories(tree):
     return leaves, admixture_nodes
 
 def get_parent_of_branch(tree, key, branch):
-    assert key!='r', 'Tried to access the parent of the root branch'
     return tree[key][branch]
 
 def get_branch_length(tree,key,branch):
-    assert key!='r', 'Tried to access the length of the root branch'
     return tree[key][branch+3]
 
 def get_admixture_proportion_from_key(tree, key):
@@ -291,11 +281,9 @@ def get_admixture_proportion_from_key(tree, key):
 
 def get_admixture_proportion(tree, child_key,child_branch):
     key=get_parent_of_branch(tree, child_key,child_branch)
-    assert node_is_admixture(tree[key]), 'Tried to get the admixture proportion of a non-admixture node'
     return tree[key][2]
 
 def update_parent_and_branch_length(tree, child_key, child_branch, new_parent, new_branch_length):
-    assert child_key!='r', 'Tried to update the root branch'
     tree[child_key][child_branch]=new_parent
     tree[child_key][child_branch+3]=new_branch_length
     return tree
@@ -496,7 +484,6 @@ def graft_onto_rooted_admixture(tree, insertion_spot, remove_key, root_key, remo
     return tree
 
 def change_admixture(node):
-    assert node_is_admixture(node), 'tried to change admixture branches for a node without admixture'
     new_node=[node[1],node[0],1.0-node[2],node[4],node[3]]+node[5:]
     return new_node
 
@@ -588,15 +575,12 @@ def _update_parents(node, new_parents):
     if len(new_parents)==0:
         res=node[:5]+[None]*2
         return res
-    assert False, 'how many parents do you think you have?'
 
 def _update_parent(node, old_parent, new_parent):
     if node[0]==old_parent:
         node[0]=new_parent
     elif node[1]==old_parent:
         node[1]=new_parent
-    else:
-        assert False, 'parent could not be updated'
     return node
 
 def _update_child(node, old_child, new_child):
@@ -604,8 +588,6 @@ def _update_child(node, old_child, new_child):
         node[5]=new_child
     elif node[6]==old_child:
         node[6]=new_child
-    else:
-        assert False, 'child could not be updated'
     return node
 
 def remove_non_mixing_admixtures(tree, limit=1e-7):

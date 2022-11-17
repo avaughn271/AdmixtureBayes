@@ -45,9 +45,6 @@ class deladmix_class(object):
     def __call__(self,*args, **kwargs):
         kwargs.update(self.kwargs)
         return deladmix(*args, **kwargs)
-    
-def float_equal(x,y):
-    return float((x-y)**2)<1e-5
 
 def addadmix(tree,new_node_names=None,pks={}, fixed_sink_source=None, new_branch_length=None, new_to_root_length=None, preserve_root_distance=True):
     '''
@@ -122,7 +119,6 @@ def insert_admix(tree, source_key, source_branch, sink_key, sink_branch, source_
             u1,q1 = new_to_root_length, get_root_branch_length(new_to_root_length)
     else:
         u1,q1=get_insertion_spot(length=get_branch_length(tree,source_key,source_branch))
-    t1=get_branch_length(tree,sink_key,sink_branch)
     u2,q2=get_insertion_spot(length=get_branch_length(tree,sink_key,sink_branch))
     if new_branch_length is not None:
         t4,q4= new_branch_length, get_admixture_branch_length(new_branch_length)

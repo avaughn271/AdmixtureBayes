@@ -5,44 +5,16 @@ from numpy.random import choice, random
 from math import exp
 from itertools import chain
 
-def MCMCMC(starting_trees, 
-           posterior_function,
-           summaries,
-           temperature_scheme, 
-           printing_schemes, 
-           iteration_scheme, 
-           overall_thinnings, 
-           proposal_scheme,
-         n_arg, verboseee,
-           no_chains=None,
-           numpy_seeds=None,
-           multiplier= None,
-           result_file=None):
+def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,  printing_schemes, 
+           iteration_scheme,  proposal_scheme, n_arg, verboseee,
+           no_chains=None, numpy_seeds=None, multiplier= None, result_file=None):
     '''
     this function runs a MC3 using the basic_chain_unpacker. Let no_chains=number of chains. The inputs are
         starting_trees: a list of one or more trees that the chains should be started with
-        posterior_function: one 'initialized'(see MCMC.py) unnormalized posterior function, that should be simulated from.
-        summaries: a list of instances of realization of concrete classes of the superclass Summary. It is closely linked to printing_scheme, 
-                   because they are only meaningful if specified in that.
-        temperature_scheme: one instance of a class that has the functions:
-                                    - get_temp(i): returns the the temperature for the i'th chain
-                                    - update_temp(permut): updates the temperatures for each chain using the permutation, permut
-        printing_scheme: a list of either one or no_chains dictionaries, where each dictionary gives the sample_verbose_scheme of basic_chain
-        iteration_scheme: a list that sums to the total number of iterations, where each entry is the number of MH-steps before the next flipping
-        overall_thinnings: an integer indicating how much should be skipped before each summary statistics is calculated
         proposal_scheme: a list of instances of classes that handles proposals and updates of said proposals. It has the basic functions
                                     - prop(x,pks): proposes the next tree(and returns proposal densities and statistics in pks)
-                                    - adapt(mhr): updates the proposals based on the mhr ratio, mhr
-                                    - extract_new_values(): after two chains have changed position in the flipping, this function gets the information that should be changed_later
-                                    - wear_new_values(information): the new values from extract_new_values replaces the old values.
-        #ps:     - a list of doubles in the interval [0,1] indicating the parameter of the geometrically distributed prior on the number of admixture events for each chain. Or:
-        #        - a double in the interval [0,1] indicating the same parameter for all geometrically distributed prior on the number of admixture events.
-                                    
+                                    - adapt(mhr): updates the proposals based on the mhr ratio, mhr                                    
     '''
-        
-    if len(printing_schemes)==1:
-        printing_schemes=[printing_schemes[0]]*no_chains
-        
     df_result=None
     total_permutation=list(range(no_chains))
     xs = starting_trees
@@ -62,7 +34,7 @@ def MCMCMC(starting_trees,
         if cum_iterations % 1000 == 0 and verboseee != "silent":
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
         #letting each chain run for no_iterations:
-        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, overall_thinnings, no_iterations, cum_iterations, proposal_updates, multiplier)
+        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
         xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, summaries, total_permutation)
         df_result=_update_results(df_result, df_add)
@@ -74,12 +46,9 @@ def MCMCMC(starting_trees,
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
         xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
-        total_permutation=_update_permutation(total_permutation, permut)
+        total_permutation=[total_permutation[n] for n in permut]
         cum_iterations+=no_iterations
     pool.terminate()
-        
-def _update_permutation(config, permut):
-    return [config[n] for n in permut]
 
 def start_data_frame(df, result_file):
     df=df.loc[df.layer==0,:]
@@ -97,7 +66,7 @@ def flipping(xs, posteriors, temperature_scheme, proposal_updates):
     for _ in range(40):
         i,j = choice(n,2,False)
         post_i,post_j=posteriors[i],posteriors[j]
-        temp_i,temp_j=temperature_scheme.get_temp(i), temperature_scheme.get_temp(j)
+        temp_i,temp_j=temperature_scheme[i], temperature_scheme[j]
         logalpha=-(post_i[0]-post_j[0])*(1.0/temp_i-1.0/temp_j)
         if logalpha>0 or random() < exp(logalpha):
             count+=1
@@ -115,16 +84,8 @@ def _update_results(df_result, df_add):
         df_result = pd.concat([df_result, df_add])
     return df_result
 
-def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,overall_thinnings,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
-    return ([x, 
-             posterior,
-             no_iterations,
-             printing_scheme,
-             overall_thinnings,
-             cum_iterations,
-             temperature_scheme.get_temp(i),
-             proposal_update,
-             multiplier] for i,(x,posterior,printing_scheme,proposal_update) in enumerate(zip(xs,posteriors,printing_schemes,proposal_updates)))
+def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
+    return ([x, posterior,no_iterations, printing_scheme, 40, cum_iterations, temperature_scheme[i], proposal_update, multiplier] for i,(x,posterior,printing_scheme,proposal_update) in enumerate(zip(xs,posteriors,printing_schemes,proposal_updates)))
 
 def _unpack_everything(new_state, summaries, total_permutation):
     xs,posteriors, summs, proposal_updates = list(zip(*new_state))

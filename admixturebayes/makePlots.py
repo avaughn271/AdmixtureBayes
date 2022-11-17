@@ -360,8 +360,6 @@ def main(args):
             pass #everything is good
         elif len(leaves)==no_leaves-1:
             leaves.append(options.outgroup)
-        else:
-            assert False, 'The number of leaves could not be obtained'
         leaves=sorted(leaves)
 
         if options.write_rankings:

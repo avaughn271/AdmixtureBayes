@@ -86,7 +86,6 @@ class lineage(object):
         self.topological_distance=topological_distance
         
     def follow(self, tree, visited_keys=[]):
-        node=tree[self.key]
         new_lineages=[]
         pieces=[]
         for key in get_real_children(tree[self.key]):
@@ -127,7 +126,7 @@ def distanced_branch_lengths(tree, start_key, visited_keys=[], upper_cap=float('
     del tree['r']
     return pieces
 
-class sliding_regraft_class_resimulate(object):
+class sliding_regraft_class(object):
     new_nodes=1
     input='tree'
     require_admixture=0
@@ -141,9 +140,6 @@ class sliding_regraft_class_resimulate(object):
     
     def __call__(self,*args, **kwargs):
         return make_sliding_regraft(*args, resimulate_moved_branch_length=self.param, **kwargs)
-    
-def simulate_regraft_distance(param):
-    return chi2.rvs(1)*param
 
 def get_thinned_pieces(tree,regraft_key, regraft_branch, distance_to_regraft, parent_key):
     pieces= distanced_branch_lengths(tree, parent_key, visited_keys=[regraft_key], upper_cap=distance_to_regraft)
@@ -159,7 +155,7 @@ def make_sliding_regraft(tree, new_node=None, param=0.1, resimulate_moved_branch
     new_tree= deepcopy(tree)
     regraft_key, regraft_branch= possible_nodes[choice(len(possible_nodes), 1)[0]]
     
-    distance_to_regraft= simulate_regraft_distance(param)
+    distance_to_regraft = chi2.rvs(1)*param
     parent_key= get_parent_of_branch(tree, regraft_key, regraft_branch)
     thinned_pieces_forward=get_thinned_pieces(tree, regraft_key, regraft_branch, distance_to_regraft, parent_key)
         

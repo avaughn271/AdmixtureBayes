@@ -1,5 +1,5 @@
 from Rproposal_admix import addadmix_class, deladmix_class
-from Rproposal_sliding_regraft import sliding_regraft_class_resimulate
+from Rproposal_sliding_regraft import sliding_regraft_class
 from Rproposal_rescale_constrained import rescale_constrained_class, rescale_add_class, rescale_class, rescale_admixtures_class
 from numpy.random import choice
 from Rtree_operations import get_number_of_admixes
@@ -17,29 +17,24 @@ class new_node_naming_policy(object):
         elif no_nodes==1:
             self.n+=1
             return 'x'+str(self.n)
-              
         else:
             return ''
 
 class simple_adaption(object):
     
-    def __init__(self, start_value=0.1, count=10, multiplier=10, alpha=0.9, name='adap'):
+    def __init__(self, start_value=0.1, name='adap'):
         self.value=start_value
-        self.count=count
-        self.multiplier=multiplier
-        self.alpha=alpha
+        self.count=10
         self.name=name
-        
-    def get_value(self):
-        return self.value
     
     def adapt(self, mhr):
-        self.value, self.count= standard_update(self.count, self.multiplier, self.alpha, self.value, mhr)
+        self.count+=1
+        gamma=10/self.count**0.9
+        change=exp(gamma*(min(1.0,mhr)-0.234))
+        self.value=self.value*change
     
 def initialize_proposals(proposals):
-    all_props=[addadmix_class, deladmix_class, 
-               rescale_class, sliding_regraft_class_resimulate, rescale_add_class,
-               rescale_constrained_class,  rescale_admixtures_class]
+    all_props=[addadmix_class, deladmix_class, rescale_class, sliding_regraft_class, rescale_add_class, rescale_constrained_class,  rescale_admixtures_class]
     all_props_dic={cl.proposal_name:cl for cl in all_props}
     res=[]
     for proposal in proposals:
@@ -48,7 +43,7 @@ def initialize_proposals(proposals):
     
 def draw_proposal(props, k, proportions):
     
-    legal_indices=[i for i,prop in enumerate(props) if prop.require_admixture<=k]    
+    legal_indices=[i for i,prop in enumerate(props) if prop.require_admixture<=k]
     normaliser=sum([proportion for n,proportion in enumerate(proportions) if n in legal_indices])
     new_proportions=[float(proportion)/normaliser for n,proportion in enumerate(proportions) if n in legal_indices]
     
@@ -72,7 +67,7 @@ def get_args2(names, adap_object):
     if names:
         args.append(names)
     if adap_object is not None:
-        args.append(adap_object.get_value())
+        args.append(adap_object.value)
     return args    
 
 class simple_adaptive_proposal(object):
@@ -112,13 +107,4 @@ class simple_adaptive_proposal(object):
         information={}
         information['n']=self.node_naming.n
         return information
-    
-    def wear_exportable_state(self, information):
-        self.node_naming.n=information['n']
 
-def standard_update(count, multiplier, alpha, old_value, mhr):
-    count+=1
-    gamma=multiplier/count**alpha
-    change=exp(gamma*(min(1.0,mhr)-0.234))
-    value=old_value*change
-    return value,count

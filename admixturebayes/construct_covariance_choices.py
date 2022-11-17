@@ -4,15 +4,15 @@ from numpy import insert, delete, ix_, dtype, loadtxt
 import subprocess
 import os
 
-from numpy import array, mean, zeros, diag, savetxt, nan, isnan, nanmean, identity
+from numpy import array, mean, zeros, diag, savetxt, nan, isnan, nanmean, identity, diag, log, outer, square
 from numpy import sum as npsum
 import warnings
 
 from numpy.random import choice
+from numpy.linalg import norm as npnorm
+from numpy import var as npvar
 
 from pathos.multiprocessing import Pool
-
-import numpy as np
 
 def gzip(filename, new_filename=None):
     if new_filename is None:
@@ -58,14 +58,14 @@ def I_cant_believe_I_have_to_write_this_function_myself(function, lower_limit):
     return new_x
 
 def variance_mean_based(sample_of_matrices):
-    mean_wishart=  np.mean(sample_of_matrices, axis=0)
-    var_wishart= np.var(sample_of_matrices, axis=0)
+    mean_wishart=  mean(sample_of_matrices, axis=0)
+    var_wishart= npvar(sample_of_matrices, axis=0)
     r=mean_wishart.shape[0]
-    var_rom_mean_wishart=np.square(mean_wishart)+np.outer(np.diag(mean_wishart),np.diag(mean_wishart))
+    var_rom_mean_wishart=square(mean_wishart)+outer(diag(mean_wishart),diag(mean_wishart))
     def penalty_function(df_l):
         df=df_l
-        val=np.linalg.norm(var_wishart-var_rom_mean_wishart/df)**2
-        return np.log(val)
+        val=npnorm(var_wishart-var_rom_mean_wishart/df)**2
+        return log(val)
     
     rval=I_cant_believe_I_have_to_write_this_function_myself(penalty_function, r)
     return rval
@@ -134,11 +134,8 @@ def make_single_files(filename,blocksize, verbose_level='normal'):
         filenames.append(gzipped_filename)
     return filenames
 
-def estimate_degrees_of_freedom_scaled_fast(filename,
-                                            bootstrap_blocksize=1000,
-                                            cores=1,
-                                            verbose_level='normal',
-                                            **kwargs):
+def estimate_degrees_of_freedom_scaled_fast(filename, bootstrap_blocksize=1000,
+                                            cores=1,  verbose_level='normal',  **kwargs):
     single_files=make_single_files(filename, blocksize=bootstrap_blocksize, verbose_level=verbose_level)
     assert len(single_files)>1, 'There are ' +str(len(single_files)) + ' bootstrapped SNP blocks and that is not enough. Either add more data or lower the --bootstrap_blocksize'
     if len(single_files)<39:
@@ -147,17 +144,6 @@ def estimate_degrees_of_freedom_scaled_fast(filename,
     covs=bootsrap_combine_covs(single_covs, cores=cores, bootstrap_samples=100)
     res=variance_mean_based(covs)
     return res
-
-class Estimator(object):
-    
-    def __init__(self):
-        pass
-    
-    def __call__(self,xs,ns, names=None, extra_info={}):
-        '''
-        Should return the covariance estimate and possibly set the variable fitted_value
-        '''
-        pass
 
 def reduce_covariance(covmat):
     reducer=insert(identity(covmat.shape[0]-1), 0, -1, axis=1)
@@ -211,13 +197,8 @@ def reduced_covariance_bias_correction(p,n,n_outgroup=0):
     outgroup_b=Bs.pop(n_outgroup)
     return diag(array(Bs))+outgroup_b
 
-class ScaledEstimator(Estimator):
-    def __init__(self,
-                 add_variance_correction_to_graph=False,
-                 save_variance_correction=True,
-                 nodes=None):
-        super(ScaledEstimator, self).__init__()
-        self.variance_correction='unbiased'
+class ScaledEstimator(object):
+    def __init__(self, add_variance_correction_to_graph=False, save_variance_correction=True, nodes=None):
         self.add_variance_correction_to_graph=add_variance_correction_to_graph
         self.nodes=nodes
         self.save_variance_correction=save_variance_correction
@@ -324,21 +305,13 @@ def unzip(filename, overwrite=False, new_filename=None):
         subprocess.call(command, stdout=f)
     return new_filename
 
-def make_estimator( nodes, 
-                   reducer,
-                   add_variance_correction_to_graph=False,
-                   save_variance_correction=True):
-    
-    est=ScaledEstimator(add_variance_correction_to_graph=add_variance_correction_to_graph,
-                 save_variance_correction=save_variance_correction)
-    return(est)
+def make_estimator( nodes,  reducer, add_variance_correction_to_graph=False, save_variance_correction=True):
+    return ScaledEstimator(add_variance_correction_to_graph=add_variance_correction_to_graph, save_variance_correction=save_variance_correction)
 
 def rescale_empirical_covariance(m):
     n=m.shape[0]
-    actual_trace=m.trace()
     max_expected_trace=n*(n+1)/2-1
-    
-    multiplier= max_expected_trace/actual_trace
+    multiplier= max_expected_trace/m.trace()
     
     return m*multiplier, multiplier
 
@@ -367,36 +340,21 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
         return cov, extra_info_dic['m_scale']
     return cov
 
-def normaliser_wrapper(covariance, **kwargs):
-    return rescale_empirical_covariance(covariance)
-
-dictionary_of_transformations={ (6,8):empirical_covariance_wrapper_directly, (8,9):normaliser_wrapper }
-
 dictionary_of_reasonable_names = { 8:'covariance_without_reduce_name', 9:'covariance_and_multiplier'}
 
-def save_stage(value, stage_number, after_reduce_nodes):
-    save_word=dictionary_of_reasonable_names[stage_number]
-    filename=save_word+'.txt'
-    if stage_number==8:
-        emp_cov_to_file(value, filename, after_reduce_nodes)
-    else:
-        emp_cov_to_file(value[0], filename, after_reduce_nodes)
-        with open(filename, 'a') as f:
-            f.write('multiplier='+str(value[1]))
-
-def get_covariance(input, full_nodes=None,
-                   reduce_covariance_node=None,
-                   estimator_arguments={}):
-
+def get_covariance(input, full_nodes=None, reduce_covariance_node=None, estimator_arguments={}):
     kwargs={}
     after_reduce_nodes=deepcopy(full_nodes)
     after_reduce_nodes.remove(reduce_covariance_node)
     kwargs['est']=estimator_arguments
 
-    stages_to_go_through = [6,8,9]
     statistic = input
-    for stage_from, stage_to in zip(stages_to_go_through[:-1], stages_to_go_through[1:]):
-        transformer_function=dictionary_of_transformations[(stage_from, stage_to)]
-        statistic=transformer_function(statistic, **kwargs)
-        save_stage(statistic, stage_to, after_reduce_nodes)
+    statistic = empirical_covariance_wrapper_directly(statistic, **kwargs)
+    emp_cov_to_file(statistic, 'covariance_without_reduce_name.txt', after_reduce_nodes)
+
+    statistic=rescale_empirical_covariance(statistic)
+    filename='covariance_and_multiplier.txt'
+    emp_cov_to_file(statistic[0], filename, after_reduce_nodes)
+    with open(filename, 'a') as f:
+        f.write('multiplier='+str(statistic[1]))
     return statistic
