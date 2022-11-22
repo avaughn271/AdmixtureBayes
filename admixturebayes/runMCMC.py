@@ -26,9 +26,9 @@ def get_summary_scheme(no_chains=1):
                construct_starting_trees_choices.s_variable('add', output='double'), 
                construct_starting_trees_choices.s_total_branch_length(),
                construct_starting_trees_choices.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
-               construct_starting_trees_choices.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string')]
-    summaries.append(construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'))
-    summaries.append(construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string'))
+               construct_starting_trees_choices.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string'),
+               construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'),
+               construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string')]
     sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
     return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
@@ -85,7 +85,10 @@ def main(args):
 
     estimator_arguments=dict(reducer=options.outgroup, nodes=full_nodes, add_variance_correction_to_graph=True, save_variance_correction=True)
                              
-    covariance=get_covariance(os.getcwd() + "/temp_input.txt", full_nodes=full_nodes, reduce_covariance_node=options.outgroup, estimator_arguments=estimator_arguments)
+    covariance=get_covariance(os.getcwd() + "/temp_input.txt", 
+    full_nodes=full_nodes,
+     reduce_covariance_node=options.outgroup,
+     estimator_arguments=estimator_arguments)
 
     estimator_arguments['save_variance_correction']=False
     df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + "/temp_input.txt",

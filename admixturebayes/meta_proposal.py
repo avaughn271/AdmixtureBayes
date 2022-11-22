@@ -1,6 +1,4 @@
-from Rproposal_admix import addadmix_class, deladmix_class
-from Rproposal_sliding_regraft import sliding_regraft_class
-from Rproposal_rescale_constrained import rescale_constrained_class, rescale_add_class, rescale_class, rescale_admixtures_class
+from mcmc_proposals import addadmix_class, deladmix_class, sliding_regraft_class, rescale_class, rescale_admixtures_class, rescale_constrained_class, rescale_add_class
 from numpy.random import choice
 from Rtree_operations import get_number_of_admixes
 from math import exp
