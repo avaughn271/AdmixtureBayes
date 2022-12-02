@@ -183,7 +183,7 @@ def main(args):
         removefile(os.getcwd() + "/covariance_matrix.txt")
         Liness = open("covariance_and_multiplier.txt", 'r').readlines()
         covarfile = open(os.getcwd() + "/covariance_matrix.txt", "a")
-        covarfile.writelines(Liness[0:len(Liness) - 1 ])
+        covarfile.writelines(Liness)
         covarfile.close()
 
     removefile("covariance_and_multiplier.txt")
