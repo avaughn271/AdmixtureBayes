@@ -104,4 +104,4 @@ legend("topright", legend=c("Posterior", "Total Branch Length", "Number of Admix
 #We can also plot the plots of the autocorrelation after the burn-in
 par(mfcol=c(2,1))
 acf(Post1Burn,lag.max = 500 , ci = -1, col ="steelblue4", ylim = c(-0.2,1), main = "Autocorrelation of Posterior (Chain 1)", ylab = "Autocorrelation")
-acf(Branches1,lag.max = 500 , ci = -1, col ="limegreen", ylim = c(-0.2,1), main = "Autocorrelation of Total Branch Length (Chain 1)", ylab = "Autocorrelation")
+acf(Branches1Burn,lag.max = 500 , ci = -1, col ="limegreen", ylim = c(-0.2,1), main = "Autocorrelation of Total Branch Length (Chain 1)", ylab = "Autocorrelation")
