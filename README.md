@@ -93,7 +93,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
  ## This step produces (in the current working directory)
 
-***result_file*** This file contains the list of MCMC samples. Each line of the output file describes a sampled admixture graph. Many of the column values concern the internal representation of the graph, such as "tree" and "descendant_sets", and are not meant for user interpretation. However, of interest to the user might be the columns "prior", "posterior", "likelihood", "total_branch_length", "ghost_pops" (number of ghost populations), and "no_admixes" (number of admixture events). These are summary statistics of the MCMC chain and may be useful for monitoring convergence. Some thinning is done on the samples to reduce the size of the output file. The total number of samples saved will be approximately 1.25*n. 
+***result_file*** This file contains the list of MCMC samples. Each line of the output file describes a sampled admixture graph. Many of the column values concern the internal representation of the graph, such as "tree" and "descendant_sets", and are not meant for user interpretation. However, of interest to the user might be the columns "prior" (the log-prior), "posterior" (the log-posterior), "likelihood" (the log-likelihood), "total_branch_length", "ghost_pops" (number of ghost populations), and "no_admixes" (number of admixture events). These are summary statistics of the MCMC chain and may be useful for monitoring convergence. Some thinning is done on the samples to reduce the size of the output file. The total number of samples saved will be approximately 1.25*n. 
 
 
 ## (2) analyzeSamples
