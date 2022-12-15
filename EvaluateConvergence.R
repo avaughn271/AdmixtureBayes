@@ -42,7 +42,7 @@ admixes3Burn = admixes3[-(1:round(BurnInFraction*length(admixes3)))]
 
 #We plot our trace plots (these include all samples,
 #including those in the burn-in period)
-plot(Post1, type = "l", col ="steelblue4", xlab = "", ylab = "Posterior", main = "Chain 1")
+plot(Post1, type = "l", col ="steelblue4", xlab = "", ylab = "log-Posterior", main = "Chain 1")
 plot(Post2, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 2")
 plot(Post3, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 3")
 
