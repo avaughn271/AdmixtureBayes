@@ -47,17 +47,12 @@ def no_admixes(p, admixes, hard_cutoff=20):
 
 def likelihood(x, emp_cov, b, M=12,nodes=None):
     tree, add= x
-    r=emp_cov.shape[0]
-    if nodes is None:
-        nodes=["s"+str(i) for i in range(1,r+1)]
     par_cov=make_covariance(tree, nodes)
     if par_cov is None:
         print('illegal tree')
         return -float('inf')
-    if b is not None:
-        par_cov+=b
+    par_cov+=b
     if par_cov is None:
-        print('illegal tree')
         return -float('inf')
     try:
         d=wishart.logpdf(emp_cov, df=M, scale= (par_cov+add)/M)

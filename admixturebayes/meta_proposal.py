@@ -37,24 +37,25 @@ def initialize_proposals(proposals):
         res.append(all_props_dic[proposal]())
     return res
     
-def draw_proposal(props, k, proportions):
+def draw_proposal(props, k):
     
-    legal_indices=[i for i,prop in enumerate(props) if prop.require_admixture<=k]
-    normaliser=sum([proportion for n,proportion in enumerate(proportions) if n in legal_indices])
-    new_proportions=[float(proportion)/normaliser for n,proportion in enumerate(proportions) if n in legal_indices]
-    
-    chosen_index_i= choice(len(legal_indices), 1, p=new_proportions)[0]
-    chosen_index=legal_indices[chosen_index_i]
+    if k == 0: # which indices are legal will depend on the whether there is admixture or not
+        legal_indices = [1,2,3,5,6]
+        new_proportions = 1/5
+    else:
+        legal_indices = [0,1,2,3,4,5,6]
+        new_proportions = 1/7
+
+    chosen_index = choice(legal_indices, 1)[0]
     
     effect_of_chosen_index=props[chosen_index].admixture_change
-    if effect_of_chosen_index!=0:
-        legal_indices2=[i for i,prop in enumerate(props) if prop.require_admixture <= k+effect_of_chosen_index]    
-        normaliser2=sum([proportion for n,proportion in enumerate(proportions) if n in legal_indices2])
-        new_proportions2=[float(proportion)/normaliser2 for n,proportion in enumerate(proportions) if n in legal_indices2]
-        reverse_type= props[chosen_index].reverse
-        reverse_index= next((index for index, prop in enumerate(props) if prop.proposal_name==reverse_type))
-        reverse_index_i= next((index_i for index_i, index in enumerate(legal_indices2) if index==reverse_index))
-        return chosen_index, new_proportions[chosen_index_i], new_proportions2[reverse_index_i]
+    if effect_of_chosen_index != 0:
+        if k + effect_of_chosen_index > 0:
+            new_proportions2 = 1/7
+        else:
+            new_proportions2 = 1/5
+
+        return chosen_index, new_proportions, new_proportions2
     else:
         return chosen_index, 1.96,1.96 #it is not really 1.96 and 1.96 but only the ratio between them matters and I like 1.96
     
@@ -64,13 +65,12 @@ def get_args2(names, adap_object):
         args.append(names)
     if adap_object is not None:
         args.append(adap_object.value)
-    return args    
+    return args 
 
 class simple_adaptive_proposal(object):
     
-    def __init__(self, proposals, proportions):
+    def __init__(self, proposals):
         self.props=initialize_proposals(proposals)
-        self.proportions=proportions
         self.adaps=[simple_adaption() if prop.adaption else None for prop in self.props]
         self.node_naming=new_node_naming_policy()
         self.recently_called_index=None
@@ -78,7 +78,7 @@ class simple_adaptive_proposal(object):
     def __call__(self, x, pks={}):
         tree,add=x
         k=get_number_of_admixes(tree)
-        index, jforward, jbackward = draw_proposal(self.props, k, self.proportions)
+        index, jforward, jbackward = draw_proposal(self.props, k)
         
         names=self.node_naming.next_nodes(self.props[index].new_nodes)
         self.recently_called_index=index

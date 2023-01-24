@@ -5,7 +5,7 @@ from numpy.random import choice, random
 from math import exp
 from itertools import chain
 
-def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,  printing_schemes, 
+def MCMCMC(starting_trees,    posterior_function, temperature_scheme,  printing_schemes, 
            iteration_scheme,  proposal_scheme, n_arg, verboseee,
            no_chains=None, numpy_seeds=None, multiplier= None, result_file=None):
     '''
@@ -24,11 +24,10 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
     #if numpy_sxeeds is None: #Sxeeddebug
     #    numpy_sxeeds=[None]*no_chains
 
-    pool = basic_chain_pool(summaries, posterior_function, proposal_scheme, numpy_seeds)
+    pool = basic_chain_pool(posterior_function, proposal_scheme, numpy_seeds)
     posteriors = [posterior_function(x) for x in xs]
 
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
-    
     cum_iterations=0
     for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
@@ -36,14 +35,14 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
         #letting each chain run for no_iterations:
         iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
-        xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, summaries, total_permutation)
+        xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, total_permutation)
+
         df_result=_update_results(df_result, df_add)
-        if result_file is not None:
-            if cum_iterations==0:
-                start_data_frame(df_result, result_file)
-            elif df_result.shape[0]>1000:
-                add_to_data_frame(df_result, result_file)
-                df_result=df_result[0:0]
+        if cum_iterations==0:
+            start_data_frame(df_result, result_file)
+        elif df_result.shape[0]>1000:
+            add_to_data_frame(df_result, result_file)
+            df_result=df_result[0:0]
         #making the mc3 flips and updating:
         xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
         total_permutation=[total_permutation[n] for n in permut]
@@ -88,14 +87,14 @@ def _update_results(df_result, df_add):
 def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
     return ([x, posterior,no_iterations, printing_scheme, 40, cum_iterations, temperature_scheme[i], proposal_update, multiplier] for i,(x,posterior,printing_scheme,proposal_update) in enumerate(zip(xs,posteriors,printing_schemes,proposal_updates)))
 
-def _unpack_everything(new_state, summaries, total_permutation):
+def _unpack_everything(new_state, total_permutation):
     xs,posteriors, summs, proposal_updates = list(zip(*new_state))
     list_of_smaller_data_frames=[]
+    summary_names = ["posterior","likelihood","prior","no_admixes","add","total_branch_length","ghost_pops", "descendant_sets","tree","admixtures"]
     for summ_data, n, i in zip(summs, total_permutation, list(range(len(total_permutation)))):
         iter_chain=chain((('iteration', summ_data[0]),),
-                         ((summ_object.name,summ_col) for summ_object,summ_col in zip(summaries,summ_data[1:])))
+                         ((summ_object,summ_col) for summ_object,summ_col in zip(summary_names,summ_data[1:])))
         df=pd.DataFrame.from_dict(dict(iter_chain))
-        df['origin']=n
         df['layer']=i
         list_of_smaller_data_frames.append(df)
     df=pd.concat(list_of_smaller_data_frames)

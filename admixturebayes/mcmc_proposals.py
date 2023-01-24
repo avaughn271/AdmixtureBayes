@@ -28,7 +28,6 @@ class rescale_add_class(object):
     proposal_name='rescale_add'
     adaption=True
     input='add'
-    require_admixture=0
     reverse='rescale_add'
     admixture_change=0
     
@@ -166,7 +165,6 @@ class rescale_constrained_class(object):
     proposal_name='rescale_constrained'
     adaption=True
     input='both'
-    require_admixture=0
     admixture_change=0
     reverse='rescale_constrained'
     
@@ -192,7 +190,6 @@ class rescale_admixtures_class(object):
     proposal_name='rescale_admixtures'
     adaption=True
     input='tree'
-    require_admixture=1
     admixture_change=0
     reverse='rescale_admixtures'
     
@@ -220,7 +217,6 @@ class rescale_class(object):
     proposal_name='rescale'
     adaption=True
     input='tree'
-    require_admixture=0
     reverse='rescale'
     admixture_change=0
     
@@ -349,7 +345,6 @@ def distanced_branch_lengths(tree, start_key, visited_keys=[], upper_cap=float('
 class sliding_regraft_class(object):
     new_nodes=1
     input='tree'
-    require_admixture=0
     admixture_change=0
     proposal_name='sliding_regraft'
     adaption=True
@@ -399,7 +394,6 @@ class addadmix_class(object):
     proposal_name='addadmix'
     adaption=False
     input='tree'
-    require_admixture=0
     admixture_change=1
     reverse='deladmix'
     
@@ -416,7 +410,6 @@ class deladmix_class(object):
     adaption=False
     proposal_name='deladmix'
     input='tree'
-    require_admixture=1
     admixture_change=-1
     reverse='addadmix'
     
