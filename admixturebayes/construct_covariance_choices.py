@@ -145,8 +145,7 @@ def m_scaler(allele_freqs):
     return scaler
 
 def var(p,n):
-    entries=array([pi*(1-pi)/(ni-1) for pi,ni in zip(p,n) if ni>1])
-    return mean(entries)
+    return mean(array([pi*(1-pi)/(ni-1) for pi,ni in zip(p,n) if ni>1]))
 
 def reduced_covariance_bias_correction(p,n,n_outgroup=0):
     Bs=[]
@@ -161,9 +160,6 @@ class ScaledEstimator(object):
         self.nodes=nodes
         self.save_variance_correction=save_variance_correction
         
-    def subtract_ancestral_and_get_outgroup(self,p):
-        return p-p[0,:]
-        
     def __call__(self, xs, ns, extra_info={}):
         if 0 in ns:
             warnings.warn('There were 0s in the allele-totals, inducing nans and slower estimation.', UserWarning)
@@ -173,7 +169,7 @@ class ScaledEstimator(object):
         return self.estimate_from_p(ps, ns=ns, extra_info=extra_info)
         
     def estimate_from_p(self, p, ns=None, extra_info={}):
-        p2 = self.subtract_ancestral_and_get_outgroup(p)
+        p2 = p-p[0,:]
         if npsum(isnan(p2))>0:
             warnings.warn('Nans found in the allele frequency differences matrix => slower execution', UserWarning)
             m=nan_product(p2, p2.T)
@@ -217,8 +213,6 @@ def get_xs_and_ns_from_treemix_file(snp_file):
     return xs,ns,names
 
 def order_covariance(xnn_tuple, outgroup=''):
-    if not outgroup:
-        return xnn_tuple
     xs,ns,names=xnn_tuple
     assert outgroup in names, 'The outgroup was not found in the data. Did you spell it correctly?'
     n_outgroup=next((n for n, e in enumerate(names) if e==outgroup))
@@ -285,19 +279,15 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
     extra_info_dic={}
     cov=est(xs,ns, extra_info_dic)
     cov=reorder_reduced_covariance(cov, names, est_args['nodes'], outgroup=est_args['reducer'])
-    if ('add_variance_correction_to_graph' in est_args and
-        est_args['add_variance_correction_to_graph'] and
-        'save_variance_correction' in est_args and
-        est_args['save_variance_correction']):
+
+    if est_args['save_variance_correction']:
         filename='variance_correction.txt'
         vc=loadtxt(filename)
         vc=reorder_reduced_covariance(vc, names, est_args['nodes'], outgroup=est_args['reducer'])
         savetxt(filename, vc)
-    if 'return_also_mscale' in kwargs and kwargs['return_also_mscale']:
+    if 'return_also_mscale' in kwargs:
         return cov, extra_info_dic['m_scale']
     return cov
-
-dictionary_of_reasonable_names = { 8:'covariance_without_reduce_name', 9:'covariance_and_multiplier'}
 
 def get_covariance(input, full_nodes=None, reduce_covariance_node=None, estimator_arguments={}):
     kwargs={}

@@ -29,14 +29,6 @@ class simple_adaption(object):
         self.count+=1
         self.value=self.value*exp((10/self.count**0.9)*(min(1.0,mhr) - 0.234))
     
-def initialize_proposals(proposals):
-    all_props=[addadmix_class, deladmix_class, rescale_class, sliding_regraft_class, rescale_add_class, rescale_constrained_class,  rescale_admixtures_class]
-    all_props_dic={cl.proposal_name:cl for cl in all_props}
-    res=[]
-    for proposal in proposals:
-        res.append(all_props_dic[proposal]())
-    return res
-    
 def draw_proposal(props, k):
     
     if k == 0: # which indices are legal will depend on the whether there is admixture or not
@@ -69,8 +61,9 @@ def get_args2(names, adap_object):
 
 class simple_adaptive_proposal(object):
     
-    def __init__(self, proposals):
-        self.props=initialize_proposals(proposals)
+    def __init__(self):
+        self.props= [deladmix_class(), addadmix_class(), rescale_class(), 
+     rescale_add_class(), rescale_admixtures_class(), rescale_constrained_class(), sliding_regraft_class()]
         self.adaps=[simple_adaption() if prop.adaption else None for prop in self.props]
         self.node_naming=new_node_naming_policy()
         self.recently_called_index=None

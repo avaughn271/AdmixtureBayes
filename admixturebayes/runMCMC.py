@@ -15,12 +15,6 @@ def removefile(filename):
     if os.path.exists(filename):
         os.remove(filename)
 
-def get_summary_scheme(no_chains=1):
-    sample_verbose_scheme={summary:(1,0) for summary in ["posterior","likelihood","prior", 
-    "no_admixes","add","total_branch_length","ghost_pops", "descendant_sets","tree","admixtures"]}
-    sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
-    return [sample_verbose_scheme_first]+[{}]*(no_chains-1)
-
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
     os.environ["MKL_NUM_THREADS"] = "1"
@@ -62,8 +56,6 @@ def main(args):
     
     temp = temp[sorted(colnames)]
     temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
-
-    mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft']) for _ in range(options.MCMC_chains)]
 
     with open(os.getcwd() + "/temp_input.txt", 'r') as f:
         full_nodes = f.readline().rstrip().split()
@@ -156,9 +148,6 @@ def main(args):
     else:
         starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples, options.MCMC_chains, adds=[], nodes=reduced_nodes)
 
-    summary_verbose_scheme=get_summary_scheme(no_chains=options.MCMC_chains)
-
-
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes)
 
     removefile("covariance_without_reduce_name.txt")
@@ -183,13 +172,13 @@ def main(args):
         #random_seeds = []
         #for i in range(options.MCMC_chains):
         #    random_seeds.append(givenseed + i)
-        #print(random_seeds)
+        #psrint(random_seeds)
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             temperature_scheme=[1000**(float(i)/(float(options.MCMC_chains)-1.0)) for i in range(options.MCMC_chains)],
-            printing_schemes=summary_verbose_scheme,
+            printing_schemes=[1]+[0]*(options.MCMC_chains-1),
             iteration_scheme=[50]*options.n,
-            proposal_scheme= mp,
+            proposal_scheme= [simple_adaptive_proposal() for _ in range(options.MCMC_chains)] ,
             no_chains=options.MCMC_chains,
             multiplier=multiplier,  #numpy_seeds = random_seeds,
             result_file=options.result_file,

@@ -326,7 +326,7 @@ def main(args):
             node_count_dic={frozenset(k.split('.')):float(v)/N for k,v in list(seen_combinations.items())}
             for i, final_node_combinations in enumerate(node_combinations):
                 final_node_structure = node_combinations_to_node_structure(final_node_combinations)
-                plot_node_structure_as_directed_graph(final_node_structure, drawing_name='consensus_'+str(int(100*options.consensus_thresholds[i]))+'.png', node_dic=node_count_dic,  popup=options.popup)
+                plot_node_structure_as_directed_graph(final_node_structure, drawing_name='consensus_'+str(int(100*options.consensus_thresholds[i]))+'.png', node_dic=node_count_dic,  popup=False)
             if options.write_rankings:
                 with open(options.write_rankings, 'w') as f:
                     c = Counter(seen_combinations)
@@ -345,7 +345,7 @@ def main(args):
             for i, (to_plot,count) in enumerate(to_plots):
                 node_structure = node_combinations_to_node_structure(to_plot.split('-'))
                 plot_node_structure_as_directed_graph(node_structure, drawing_name='minimal_topology_' +str(i+1)+'.png',
-                                                        node_dic=node_count_dic,  popup=options.popup)
+                                                        node_dic=node_count_dic,  popup=False)
     elif options.plot=='top_trees':
         df = pd.read_csv(options.posterior, sep=',', usecols=['pops','topology'])
         trees_list = df['topology'].tolist()
@@ -369,7 +369,7 @@ def main(args):
 
         for i, (to_plot, count) in enumerate(to_plots):
             tree=topological_identifier_to_tree_clean(to_plot, leaves=generate_predefined_list_string(deepcopy(leaves)))
-            plot_as_directed_graph(tree,drawing_name='topology_' + str(i + 1) + '.png', popup=options.popup)
+            plot_as_directed_graph(tree,drawing_name='topology_' + str(i + 1) + '.png', popup=False)
     elif options.plot=='estimates':
         try:
             df = pd.read_csv(options.posterior, sep=',', usecols=['string_tree', 'topology', 'pops'])
@@ -417,7 +417,7 @@ def main(args):
             adm_interpretation={}
             for key, (branch_name, node_destination) in list(adms.items()):
                 adm_interpretation[key]='For the lineages that pass through {}, this is the proportion that follows branch {} to node {}'.format(key, branch_name,node_destination)
-            plot_as_directed_graph(tree, drawing_name='topology_labels_' + str(i + 1) + '.png', plot_edge_lengths=True,  popup=options.popup)
+            plot_as_directed_graph(tree, drawing_name='topology_labels_' + str(i + 1) + '.png', plot_edge_lengths=True,  popup=False)
             if options.write_estimates_to_file:
                 branch_file=options.write_estimates_to_file[i*2+0]
                 admixtures_file=options.write_estimates_to_file[i*2+1]

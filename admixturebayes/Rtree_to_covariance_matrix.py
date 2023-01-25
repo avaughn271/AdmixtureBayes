@@ -16,7 +16,7 @@ class Covariance_Matrix():
         return branch_length*outer(weights, weights)
     
     def update(self, branch_length, population):
-        indices=self.get_indices(population.members)
+        indices = [self.ni[n] for n in population.members]
         self.covmatr[ix_(indices,indices)]+=self.get_addon(branch_length, population.weights)
 
 class Population:

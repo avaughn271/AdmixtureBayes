@@ -35,16 +35,12 @@ class basic_chain_class(object):
         
 class basic_chain_pool(object):
     
-    def __init__(self, posterior_function, proposals, seeds, posterior_function_list=[]): #SxEEDDEBUG
+    def __init__(self, posterior_function, proposals, seeds): #SxEEDDEBUG
         if seeds is None:
                 seeds=[None]*len(proposals)
-        if posterior_function_list:
-            self.group = [basic_chain_class_as_process(
-                basic_chain_class( post_function, proposal, seed)) for proposal, seed, post_function in
-                zip(proposals, seeds, posterior_function_list)]
-        else:
-            self.group=[basic_chain_class_as_process(
-                basic_chain_class(posterior_function, proposal,seed)) for proposal,seed in zip(proposals,seeds)]
+
+        self.group=[basic_chain_class_as_process(
+            basic_chain_class(posterior_function, proposal,seed)) for proposal,seed in zip(proposals,seeds)]
 
     def order_calculation(self, list_of_lists_of_arguments):
         '''
@@ -100,7 +96,7 @@ def basic_chain(start_x, posterior_function, proposal, post=None, N=10000,
 
 def _calc_and_print_summaries(sample_verbose_scheme,iteration, tree, add, posterior):
     res=[iteration]
-    if len(sample_verbose_scheme) != 0:
+    if sample_verbose_scheme != 0:
         res.extend([sum(posterior[:2]),posterior[0],posterior[1],get_number_of_admixes(tree),add,
         sum(get_all_branch_lengths(tree)), get_number_of_ghost_populations(tree), get_populations_string(tree),
         unique_identifier_and_branch_lengths(tree), get_admixture_proportion_string(tree)])
