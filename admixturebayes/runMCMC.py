@@ -5,11 +5,9 @@ from construct_covariance_choices import get_covariance, estimate_degrees_of_fre
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 import os
-from numpy import random
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
-import Rtree_operations
 import tree_statistics
 import Rtree_to_covariance_matrix
 from copy import deepcopy
@@ -18,20 +16,16 @@ def removefile(filename):
     if os.path.exists(filename):
         os.remove(filename)
 
-def get_summary_scheme(no_chains=1):
+def get_summary_scheme():
     summaries=[construct_starting_trees_choices.s_posterior(),
                construct_starting_trees_choices.s_likelihood(),
                construct_starting_trees_choices.s_prior(),
-               construct_starting_trees_choices.s_no_admixes(),
-               construct_starting_trees_choices.s_variable('add', output='double'), 
-               construct_starting_trees_choices.s_total_branch_length(),
-               construct_starting_trees_choices.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
                construct_starting_trees_choices.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string'),
                construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'),
                construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string')]
     sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
     sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
-    return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
+    return [sample_verbose_scheme_first], summaries
 
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -47,8 +41,6 @@ def main(args):
                         help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
     parser.add_argument('--save_covariance', default=False, action='store_true', help='saving the covariance matrix')
     #Important arguments
-    parser.add_argument('--MCMC_chains', type=int, default=8,
-                        help='The number of chains to run the MCMCMC with. Optimally, the number of cores matches the number of chains.')
     parser.add_argument('--n', type=int, default=200, help='the number of MCMCMC flips throughout the chain.')
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
@@ -56,12 +48,8 @@ def main(args):
     #convenience arguments
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
-    #start arguments
-    parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
-                        help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
 
     options=parser.parse_args(args)
-    assert options.MCMC_chains > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
     #Here is the only thing we should be changing.
@@ -76,7 +64,7 @@ def main(args):
     temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
 
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
-     [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
+     [1, 1, 1, 1, 1, 1, 1]) for _ in range(1)]
 
     with open(os.getcwd() + "/temp_input.txt", 'r') as f:
         full_nodes = f.readline().rstrip().split()
@@ -93,83 +81,15 @@ def main(args):
     estimator_arguments['save_variance_correction']=False
     df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + "/temp_input.txt",
                                             bootstrap_blocksize=options.bootstrap_blocksize,
-                                            cores=options.MCMC_chains,
+                                            cores=1,
                                             est=estimator_arguments, 
                                             verbose_level=options.verbose_level)
 
     multiplier=covariance[1]
     
-    if options.continue_samples != []:
-        #This is where the continuation is all happening.
-        #We first save the tree to a temporary file
-        removefile(os.getcwd() + "/" +  "temp_start_tree.txt")
-        temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
-        temp2 = (temp[["tree"]])
-        f = open(os.getcwd() + "/" +  "temp_start_tree.txt", "a")
-        f.write("\n")
-        f.write(temp2.iloc[len(temp2.index) - 1, 0])
-        f.write("\n")
-        f.close()
+    starting_trees=construct_starting_trees_choices.get_starting_trees( 1, adds=[], nodes=reduced_nodes)
 
-        removefile(os.getcwd() + "/" +  "temp_starttree.txt")
-        gii = open(os.getcwd() + "/" + "covariance_and_multiplier.txt", "r")
-        g = gii.readlines()
-        g = g[len(g)-1]
-        g = g.split("=")
-        multiplier = float(g[len(g)-1])
-        gii.close()
-        fff = open(os.getcwd() + "/" + "temp_start_tree.txt", "r")
-
-        f = fff.readlines()
-        secondline = f[1]
-        splitted = secondline.split(";")
-
-        FinalString = "\n" + splitted[0] + ";"
-
-        relevantbranches = splitted[1]
-        splitbranches = relevantbranches.split("-")
-
-        #This part is new
-        while(True):
-            for i in range(len(splitbranches) - 1):
-                currentstring = splitbranches[i]
-                nexstring = splitbranches[i+1]
-                if currentstring[len(currentstring) - 1] == "e":
-                    splitbranches[i] = currentstring + "-" + nexstring
-                    splitbranches.pop(i + 1)
-                    break
-            break
-        for i in range(len(splitbranches)):
-            splitbranches[i] = "{:.9f}".format(float(splitbranches[i]))
-
-        for i in splitbranches:
-            FinalString = FinalString + "{:.12f}".format(float(i) * multiplier) + "-"
-
-        FinalString = FinalString[0:(len(FinalString)-1)]
-        FinalString = FinalString + ";" + splitted[2]
-        fff.close()
-        gg = open(os.getcwd() + "/" +  "temp_starttree.txt", "a")
-        gg.write(FinalString)
-        gg.close()
-
-        temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
-        addvalue = (temp[["add"]])
-        addvalue = float(addvalue.iloc[len(addvalue.index) - 1, 0])
-
-        removefile(os.getcwd() + "/" + "temp_add.txt")
-        f = open(os.getcwd() + "/" + "temp_add.txt", "a")
-        f.write(str(addvalue) + "\n")
-        f.close()
-
-        #compute addfile as a file with a number
-        starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
-                                        options.MCMC_chains,
-                                        adds=[os.getcwd() + "/" + "temp_add.txt"],
-                                        nodes=reduced_nodes)
-    else:
-        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples, options.MCMC_chains, adds=[], nodes=reduced_nodes)
-
-    summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
+    summary_verbose_scheme, summaries=get_summary_scheme()
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes)
 
@@ -192,29 +112,16 @@ def main(args):
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
-        #random_seeds = []
-        #for i in range(options.MCMC_chains):
-        #    random_seeds.append(givenseed + i)
-        #print(random_seeds)
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=[1000**(float(i)/(float(options.MCMC_chains)-1.0)) for i in range(options.MCMC_chains)],
+            temperature_scheme=[1000],
             printing_schemes=summary_verbose_scheme,
             iteration_scheme=[50]*options.n,
             proposal_scheme= mp,
-            no_chains=options.MCMC_chains,
-            multiplier=multiplier,  #numpy_seeds = random_seeds,
+            multiplier=multiplier,
             result_file=options.result_file,
             n_arg=options.n, verboseee=options.verbose_level)
-
-    removefile("trees_tmp.txt")
-    if options.continue_samples != []:
-        oldcsv = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
-        newcsv = pandas.read_csv(os.getcwd() + "/" + options.result_file)
-        result = pandas.concat([oldcsv,newcsv])
-        removefile(os.getcwd() + "/" + options.result_file)
-        result.to_csv(os.getcwd() + "/" + options.result_file, index = False)
 
 if __name__=='__main__':
     import sys

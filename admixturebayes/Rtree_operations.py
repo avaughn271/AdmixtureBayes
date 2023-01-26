@@ -322,17 +322,6 @@ def mother_or_father(tree, child_key, parent_key):
     elif tree[child_key][1]==parent_key:
         return 1
 
-def insert_children_in_tree(tree):
-    children={key:[] for key in tree}
-    for key in tree:
-        parents = get_real_parents(tree[key])
-        for parent in parents:
-            if parent!='r':
-                children[parent].append(key)
-    for key in tree:
-        tree[key]=_update_parents(tree[key], children[key])
-    return tree
-
 def get_all_branch_lengths(tree):
     res=[]
     for key, node in list(tree.items()):
@@ -519,14 +508,6 @@ def remove_admix2(tree, rkey, rbranch, pks={}):
     del tree[source_key]
     return tree, (t1,t2,t3,t4,t5), alpha
 
-def direct_all_admixtures(tree, smaller_than_half=True):
-    for key, node in list(tree.items()):
-        if node_is_admixture(node):
-            alpha=get_admixture_proportion_from_key(tree, key)
-            if (smaller_than_half and alpha<0.5) or (not smaller_than_half and alpha>0.5):
-                tree[key]=change_admixture(node)
-    return tree
-
 def other_branch(branch):
     if branch==0:
         return 1
@@ -559,22 +540,6 @@ def _update_child(node, old_child, new_child):
     elif node[6]==old_child:
         node[6]=new_child
     return node
-
-def remove_non_mixing_admixtures(tree, limit=1e-7):
-    '''
-    Trees can have admixture events with admixture proportion very close to 0 or 1. This will remove those admixture proportions.
-    '''
-    admixtures_to_remove=[]
-    for key, node in list(tree.items()):
-        if node_is_admixture(node):
-            if node[2]<limit:
-                admixtures_to_remove.append((key,0))
-            elif node[2]>1.0-limit:
-                admixtures_to_remove.append((key,1))
-    for adm_key, adm_branch in admixtures_to_remove:
-        if adm_key in tree:#it could have been removed by others
-            tree=remove_admixture(tree, adm_key, adm_branch)
-    return tree
 
 def get_parents(node):
     return node[:2]
@@ -680,25 +645,3 @@ def get_all_admixture_origins(tree):
 def is_root(*keys):
     ad=[key=='r' for key in list(keys)]
     return any(ad)
-
-def to_networkx_format(tree):
-    edges=[]
-    admixture_nodes=[]
-    leaves=[]
-    root=['r']
-    coalescence_nodes=[]
-    edge_lengths=[]
-    for key,node in list(tree.items()):
-        if node_is_leaf_node(node):
-            leaves.append(key)
-        else:
-            if node_is_coalescence(node):
-                coalescence_nodes.append(key)
-            if node_is_admixture(node):
-                admixture_nodes.append(key)
-        ps=get_real_parents(node)
-        for p in ps:
-            edges.append((p,key))
-            branch=mother_or_father(tree, key, p)
-            edge_lengths.append(get_branch_length(tree, key, branch))
-    return leaves, admixture_nodes, coalescence_nodes, root, edges, edge_lengths

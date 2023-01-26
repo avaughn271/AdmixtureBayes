@@ -1,12 +1,8 @@
-from tree_statistics import identifier_to_tree_clean, generate_predefined_list_string
 from Rtree_operations import rename_root, get_number_of_leaves
-from copy import deepcopy
-
+#ALLGOOD
 from numpy.random import choice
 from collections import Counter
-from scipy.stats import uniform, expon, geom
-
-from Rtree_operations import get_number_of_admixes, get_all_branch_lengths
+from scipy.stats import uniform, expon
 
 class Summary(object):
        
@@ -28,34 +24,6 @@ class s_basic_tree_statistics(Summary):
     def __call__(self, **kwargs):
         tree=kwargs['tree']
         return self.function(tree, *self.args_extra)
-    
-class s_no_admixes(Summary):
-    
-    def __init__(self):
-        super(s_no_admixes,self).__init__('no_admixes', output='integer')
-
-    def __call__(self, **kwargs):
-        old_tree=kwargs['tree']
-        return get_number_of_admixes(old_tree)
-
-class s_total_branch_length(Summary):
-
-    def __init__(self):
-        super(s_total_branch_length,self).__init__('total_branch_length')
-
-    def __call__(self, **kwargs):
-        tree=kwargs['tree']
-        return sum(get_all_branch_lengths(tree))
-
-class s_variable(Summary):
-    
-    def __init__(self, variable, pandable=True, output='double'):
-        super(s_variable, self).__init__(variable, pandable, output)
-
-    def __call__(self, **kwargs):
-        if self.name not in kwargs:
-            return None
-        return kwargs[self.name]
     
 class s_posterior(Summary):
     
@@ -102,11 +70,11 @@ def update_node(node, **kwargs):
         node[factor_to_index_number[factor]]=value
     return node
 
-def generate_admix_topology(size, admixes, leaf_nodes=None):
+def generate_admix_topology(size, leaf_nodes=None):
     if leaf_nodes is None:
         leaf_nodes = [ 's'+str(i+1) for i in range(size)]
-    free_admixes=admixes
-    no_totally_free_coalescences=size-1+admixes
+    free_admixes=0
+    no_totally_free_coalescences=size-1
     
     ready_lineages=[(leaf_node,0) for leaf_node in leaf_nodes]
     tree={key:[None]*7 for key in leaf_nodes}
@@ -115,6 +83,7 @@ def generate_admix_topology(size, admixes, leaf_nodes=None):
     node_name=_get_node_name()
     
     while True:
+        print(free_admixes)
         ready_lineages, tree, no_totally_free_coalescences, halfly_free_coalescences, free_admixes = simulate_generation(no_totally_free_coalescences, 
                                                                                                                          halfly_free_coalescences, 
                                                                                                                          free_admixes, 
@@ -130,12 +99,10 @@ def generate_admix_topology(size, admixes, leaf_nodes=None):
             tree=rename_root(tree,key)
     return tree
 
-def generate_phylogeny(size,admixes=None, p=0.5, leaf_nodes=None):
-    if admixes is None:
-        admixes=geom.rvs(p=p)-1
-    tree=generate_admix_topology(size, admixes, leaf_nodes)
+def generate_phylogeny(size, p=0.5, leaf_nodes=None):
+    tree=generate_admix_topology(size, leaf_nodes)
     n=get_number_of_leaves(tree)
-    factor=float(2*n-2+3*admixes)/float(2*n-2)
+    factor=float(2*n-2)/float(2*n-2)
     for node in list(tree.values()):
         node=_resimulate(node, factor)
     return tree
@@ -244,12 +211,6 @@ def simulate_generation(no_totally_free, halfly_frees, no_admixes, lineages, tre
             halfly_frees.remove(parent_key)
             tree[parent_key]=update_node(tree[parent_key], child_key2=key)
             new_lineages.append((parent_key,0))
-        if typ=='admixture':
-            no_admixes-=1
-            tree[key]=set_outgoing_branch(tree[key], parent_key, branch, 0.12)
-            tree[parent_key]=create_node(admixture_proportion=0.6, child_key=key)
-            new_lineages.append((parent_key,0))
-            new_lineages.append((parent_key,1))
     return new_lineages, tree, no_totally_free, halfly_frees, no_admixes
                     
 def _classify_type(index, n_frees, n_halfs, n_admixs):
@@ -259,46 +220,13 @@ def _classify_type(index, n_frees, n_halfs, n_admixs):
         return 'half'
     return 'admix'
 
-def get_starting_trees(inputs, 
-                       no_chains, 
-                       adds=[], 
-                       nodes=None):
-    add_vals=[]
-    if adds:
-        for add in adds:
-            with open(add, 'r') as f:
-                add_vals.append(float(f.readline()))
-    trees=[]
-    for input in inputs:
-        trees.append(input_to_tree(input, nodes))
+def get_starting_trees(no_chains, adds=[],  nodes=None):
+    no_pops=len(nodes)
+    trees=[generate_phylogeny(no_pops, leaf_nodes=nodes) for _ in range(no_chains)]
+    
+    add_vals=[expon.rvs() for _ in range(no_chains)]
         
-    if not trees:
-        no_pops=len(nodes) #error if nodes is not specified
-        trees=[generate_phylogeny(no_pops, leaf_nodes=nodes) for _ in range(no_chains)]
-    
-    if not add_vals:
-        no_pops=len(nodes) #error if nodes is not specified
-        add_vals=[expon.rvs() for _ in range(no_chains)]
-    
-    xs=match_trees_and_adds(trees, add_vals)
-    
-    if len(xs)==1 and no_chains>1:
-        tmp=[deepcopy(xs[0]) for _ in range(no_chains)]
-        xs=tmp
-    
-    return xs
+    return match_trees_and_adds(trees, add_vals)
 
 def match_trees_and_adds(list_of_trees, list_of_adds):
-    if len(list_of_adds)==0:
-        return [(t,0) for t in list_of_trees]
-    elif len(list_of_adds)==1:
-        return [(t, list_of_adds[0]) for t in list_of_trees]
-    elif len(list_of_adds)==len(list_of_trees):
-        return [(t,a) for t,a in zip(list_of_trees, list_of_adds)]
-    else:
-        assert False, 'couldnt match adds and trees in starting_trees'
- 
-def input_to_tree(input, nodes):
-    with open(input, 'r') as f:
-        f.readline() #removing empty file
-        return identifier_to_tree_clean(f.readline().rstrip(), leaves=generate_predefined_list_string(deepcopy(nodes)))
+    return [(t,a) for t,a in zip(list_of_trees, list_of_adds)]

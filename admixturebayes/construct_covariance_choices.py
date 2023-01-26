@@ -1,3 +1,5 @@
+
+#ALLGOOD
 from copy import deepcopy
 
 from numpy import insert, delete, ix_, dtype, loadtxt
@@ -296,8 +298,6 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
     if 'return_also_mscale' in kwargs and kwargs['return_also_mscale']:
         return cov, extra_info_dic['m_scale']
     return cov
-
-dictionary_of_reasonable_names = { 8:'covariance_without_reduce_name', 9:'covariance_and_multiplier'}
 
 def get_covariance(input, full_nodes=None, reduce_covariance_node=None, estimator_arguments={}):
     kwargs={}

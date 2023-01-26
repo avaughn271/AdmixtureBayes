@@ -1,7 +1,6 @@
 from mcmc_proposals import addadmix_class, deladmix_class, sliding_regraft_class, rescale_class, rescale_admixtures_class, rescale_constrained_class, rescale_add_class
 from numpy.random import choice
 from Rtree_operations import get_number_of_admixes
-from math import exp
 
 class new_node_naming_policy(object):
     
@@ -17,17 +16,6 @@ class new_node_naming_policy(object):
             return 'x'+str(self.n)
         else:
             return ''
-
-class simple_adaption(object):
-    
-    def __init__(self, start_value=0.1, name='adap'):
-        self.value=start_value
-        self.count=10
-        self.name=name
-    
-    def adapt(self, mhr):
-        self.count+=1
-        self.value=self.value*exp((10/self.count**0.9)*(min(1.0,mhr) - 0.234))
     
 def initialize_proposals(proposals):
     all_props=[addadmix_class, deladmix_class, rescale_class, sliding_regraft_class, rescale_add_class, rescale_constrained_class,  rescale_admixtures_class]
@@ -58,12 +46,10 @@ def draw_proposal(props, k, proportions):
     else:
         return chosen_index, 1.96,1.96 #it is not really 1.96 and 1.96 but only the ratio between them matters and I like 1.96
     
-def get_args2(names, adap_object):
+def get_args2(names):
     args=[]
     if names:
         args.append(names)
-    if adap_object is not None:
-        args.append(adap_object.value)
     return args    
 
 class simple_adaptive_proposal(object):
@@ -71,7 +57,6 @@ class simple_adaptive_proposal(object):
     def __init__(self, proposals, proportions):
         self.props=initialize_proposals(proposals)
         self.proportions=proportions
-        self.adaps=[simple_adaption() if prop.adaption else None for prop in self.props]
         self.node_naming=new_node_naming_policy()
         self.recently_called_index=None
         
@@ -83,7 +68,7 @@ class simple_adaptive_proposal(object):
         names=self.node_naming.next_nodes(self.props[index].new_nodes)
         self.recently_called_index=index
         proposal_input= self.props[index].input
-        args=get_args2(names, self.adaps[index])
+        args=get_args2(names)
         
         if proposal_input=='add':
             new_add, forward, backward = self.props[index](add, *args, pks=pks)
@@ -94,10 +79,6 @@ class simple_adaptive_proposal(object):
         else:
             new_x, forward, backward = self.props[index](x, *args, pks=pks)
             return new_x, forward, backward, 1.0, jforward, jbackward
-        
-    def adapt(self, mhr):
-        if self.props[self.recently_called_index].adaption:
-            self.adaps[self.recently_called_index].adapt(mhr)
         
     def get_exportable_state(self):
         information={}

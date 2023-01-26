@@ -14,10 +14,6 @@ class basic_chain_class_as_process(object):
 class basic_chain_class(object):
     
     def __init__(self, summaries, posterior_function, proposal, resxeed):
-        if resxeed is None: #if not applied the different chains will run with the same seexd, putting the assumptions of the model in danger.
-            random.seed()
-        elif isinstance(resxeed, int): #SxEEDINGDEBUG
-            random.seed(resxeed)
         self.summaries=summaries
         self.posterior_function=posterior_function
         self.proposal=proposal
@@ -27,6 +23,7 @@ class basic_chain_class(object):
     def __call__(self):
         while True:
             input = self.task_queue.get()
+            #print(input)
             self.response_queue.put(self.run_chain(input))
             
     def run_chain(self, p):
@@ -74,7 +71,6 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
         mhr=exp(logmhr)
             
     u=random.random()
-    proposal.adapt(mhr)
     if u<mhr:
         return newx,post_new
     return x,post
