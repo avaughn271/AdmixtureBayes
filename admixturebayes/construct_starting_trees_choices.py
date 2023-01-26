@@ -1,4 +1,4 @@
-from Rtree_operations import rename_root, get_number_of_leaves
+from Rtree_operations import rename_root, get_number_of_leaves, get_number_of_admixes
 #ALLGOOD
 from numpy.random import choice
 from collections import Counter
@@ -25,6 +25,15 @@ class s_basic_tree_statistics(Summary):
         tree=kwargs['tree']
         return self.function(tree, *self.args_extra)
     
+class s_no_admixes(Summary):
+    
+    def __init__(self):
+        super(s_no_admixes,self).__init__('no_admixes', output='integer')
+
+    def __call__(self, **kwargs):
+        old_tree=kwargs['tree']
+        return get_number_of_admixes(old_tree)
+    
 class s_posterior(Summary):
     
     def __init__(self):
@@ -41,6 +50,16 @@ class s_likelihood(Summary):
     def __call__(self, **kwargs):
         return kwargs['posterior'][0]
     
+class s_variable(Summary):
+    
+    def __init__(self, variable, pandable=True, output='double'):
+        super(s_variable, self).__init__(variable, pandable, output)
+
+    def __call__(self, **kwargs):
+        if self.name not in kwargs:
+            return None
+        return kwargs[self.name]
+
 class s_prior(Summary):
     
     def __init__(self):
@@ -83,7 +102,6 @@ def generate_admix_topology(size, leaf_nodes=None):
     node_name=_get_node_name()
     
     while True:
-        print(free_admixes)
         ready_lineages, tree, no_totally_free_coalescences, halfly_free_coalescences, free_admixes = simulate_generation(no_totally_free_coalescences, 
                                                                                                                          halfly_free_coalescences, 
                                                                                                                          free_admixes, 

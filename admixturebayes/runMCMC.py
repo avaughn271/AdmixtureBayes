@@ -5,6 +5,7 @@ from construct_covariance_choices import get_covariance, estimate_degrees_of_fre
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 import os
+import math
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
@@ -20,12 +21,12 @@ def get_summary_scheme():
     summaries=[construct_starting_trees_choices.s_posterior(),
                construct_starting_trees_choices.s_likelihood(),
                construct_starting_trees_choices.s_prior(),
+               construct_starting_trees_choices.s_no_admixes(),
+               construct_starting_trees_choices.s_variable('add', output='double'),
                construct_starting_trees_choices.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string'),
                construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'),
                construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string')]
-    sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
-    sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
-    return [sample_verbose_scheme_first], summaries
+    return summaries
 
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -41,7 +42,6 @@ def main(args):
                         help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
     parser.add_argument('--save_covariance', default=False, action='store_true', help='saving the covariance matrix')
     #Important arguments
-    parser.add_argument('--n', type=int, default=200, help='the number of MCMCMC flips throughout the chain.')
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
@@ -89,8 +89,6 @@ def main(args):
     
     starting_trees=construct_starting_trees_choices.get_starting_trees( 1, adds=[], nodes=reduced_nodes)
 
-    summary_verbose_scheme, summaries=get_summary_scheme()
-
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes)
 
     removefile("covariance_without_reduce_name.txt")
@@ -112,16 +110,20 @@ def main(args):
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
-    MCMCMC(starting_trees=starting_trees,
+    StartingTemp = 100
+    EndingTemp = 0.001
+    TempDecrease = 0.8
+    NumberAtEach = 1000
+
+    MCMCMC(TempDecrease, starting_trees=starting_trees,
             posterior_function= posterior,
-            summaries=summaries,
-            temperature_scheme=[1000],
-            printing_schemes=summary_verbose_scheme,
-            iteration_scheme=[50]*options.n,
+            summaries=get_summary_scheme(),
+            temperature_scheme=[StartingTemp],
+            iteration_scheme=[NumberAtEach]*int(math.log(EndingTemp / StartingTemp) / math.log(TempDecrease)),
             proposal_scheme= mp,
             multiplier=multiplier,
             result_file=options.result_file,
-            n_arg=options.n, verboseee=options.verbose_level)
+            n_arg=int(math.log(EndingTemp / StartingTemp) / math.log(TempDecrease)), verboseee=options.verbose_level)
 
 if __name__=='__main__':
     import sys

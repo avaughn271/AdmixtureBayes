@@ -2,23 +2,23 @@ import pandas as pd
 from MCMC import basic_chain_pool
 from itertools import chain
 
-def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,  printing_schemes, 
+def MCMCMC(coolerMultiple, starting_trees,    posterior_function, summaries, temperature_scheme, 
            iteration_scheme,  proposal_scheme, n_arg, verboseee,
-            numpy_seeds=None, multiplier= None, result_file=None):
+           multiplier= None, result_file=None):
     df_result=None
     xs = starting_trees
 
-    pool = basic_chain_pool(summaries, posterior_function, proposal_scheme, numpy_seeds)
+    pool = basic_chain_pool(summaries, posterior_function, proposal_scheme)
     posteriors = [posterior_function(x) for x in xs]
 
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
-    
+
     cum_iterations=0
+    print(n_arg)
     for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
-        #letting each chain run for no_iterations:
-        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
+        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
 
         xs, posteriors, df_add, proposal_updates = _unpack_everything(new_state, summaries)
@@ -30,6 +30,7 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
                 add_to_data_frame(df_result, result_file)
                 df_result=df_result[0:0]
         cum_iterations+=no_iterations
+        temperature_scheme[0] = temperature_scheme[0] * coolerMultiple
     for chain in pool.group:
             chain.process.terminate()
 
@@ -49,8 +50,10 @@ def _update_results(df_result, df_add):
         df_result = pd.concat([df_result, df_add])
     return df_result
 
-def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
-    return ([x, posterior,no_iterations, printing_scheme, 40, cum_iterations, temperature_scheme[i], proposal_update, multiplier] for i,(x,posterior,printing_scheme,proposal_update) in enumerate(zip(xs,posteriors,printing_schemes,proposal_updates)))
+def _pack_everything(xs, posteriors, temperature_scheme,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
+    return ([x, posterior,no_iterations, 40, 
+    cum_iterations, temperature_scheme[i], proposal_update, multiplier] for i,(x, 
+    posterior,proposal_update) in enumerate(zip(xs,posteriors,proposal_updates)))
 
 def _unpack_everything(new_state, summaries):
     xs,posteriors, summs, proposal_updates = list(zip(*new_state))
