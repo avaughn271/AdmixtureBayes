@@ -2,7 +2,7 @@ from pathos.multiprocessing import freeze_support
 import pandas as pd
 from MCMC import basic_chain_pool
 from numpy.random import choice, random
-from math import exp
+from math import exp, log
 from itertools import chain
 
 def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,  printing_schemes, 
@@ -30,6 +30,10 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
     
     cum_iterations=0
+    totalMC3Acceptance = 0
+    totalMC3FlipPropososals = 0
+    chain0acceptance = 0
+    chain0proposals = 0
     for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
@@ -45,8 +49,11 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
                 add_to_data_frame(df_result, result_file)
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
-        xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
+        xs, posteriors, permut, proposal_updates, totalMC3Acceptance, chain0acceptance, chain0proposals = flipping(xs, posteriors, temperature_scheme, proposal_updates, totalMC3Acceptance,chain0acceptance, chain0proposals)
         total_permutation=[total_permutation[n] for n in permut]
+        totalMC3FlipPropososals = totalMC3FlipPropososals + 1
+        if cum_iterations % 1000 == 0 and verboseee != "silent":
+            print("Total MC3 Acceptance is: ", totalMC3Acceptance / totalMC3FlipPropososals, chain0acceptance/chain0proposals )
         cum_iterations+=no_iterations
     for chain in pool.group:
             chain.process.terminate()
@@ -60,23 +67,29 @@ def add_to_data_frame(df_add, result_file):
     with open(result_file, 'a') as f:
         df_add.to_csv(f, header=False)
     
-def flipping(xs, posteriors, temperature_scheme, proposal_updates):
+def flipping(xs, posteriors, temperature_scheme, proposal_updates, totalMC3Acceptance,chain0acceptance, chain0proposals):
     n=len(xs)
     step_permutation=list(range(n))
     count=0
-    for _ in range(40):
+    for _ in range(1):
         i,j = choice(n,2,False)
+        if (i == 0 or j == 0):
+            chain0proposals = chain0proposals + 1
         post_i,post_j=posteriors[i],posteriors[j]
         temp_i,temp_j=temperature_scheme[i], temperature_scheme[j]
-        logalpha=-(post_i[0]-post_j[0])*(1.0/temp_i-1.0/temp_j)
-        if logalpha>0 or random() < exp(logalpha):
+        logalpha = (1.0/temp_j - 1.0/temp_i) * (post_i[0] + post_i[1])  + (1.0/temp_i - 1.0/temp_j) * (post_j[0] + post_j[1])
+        if log(random()) < logalpha:
             count+=1
             step_permutation[i], step_permutation[j]= step_permutation[j], step_permutation[i]
             posteriors[j],posteriors[i]=(post_i[0],post_i[1]),(post_j[0], post_j[1])
             xs[i], xs[j] = xs[j], xs[i]
+            if (i == 0 or j == 0):
+                chain0acceptance = chain0acceptance + 1
+                print("switching 0")
 
             proposal_updates[i], proposal_updates[j]=proposal_updates[j], proposal_updates[i]
-    return xs, posteriors, step_permutation, proposal_updates
+    totalMC3Acceptancenew = totalMC3Acceptance + count
+    return xs, posteriors, step_permutation, proposal_updates, totalMC3Acceptancenew, chain0acceptance, chain0proposals
 
 def _update_results(df_result, df_add):
     if df_result is None:

@@ -67,7 +67,7 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     if g2<=0 or j2<=0:
         logmhr=-float('inf')
     else:
-        logmhr=(likelihood_new-likelihood_old)/temperature+(prior_new-prior_old)+log(g2)+log(j2)-log(j1)-log(g1)+log(Jh)
+        logmhr=(likelihood_new-likelihood_old+prior_new-prior_old)/temperature+log(g2)+log(j2)-log(j1)-log(g1)+log(Jh)
     if logmhr>100:
         mhr=float('inf')
     else:
