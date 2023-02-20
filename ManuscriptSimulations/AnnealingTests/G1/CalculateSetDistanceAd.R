@@ -48,18 +48,8 @@ for (j in 1:args)  {
   maptree = read.table(paste0("TemporaryFiles/MAPtree" , jj , ".txt"))
   truetree = read.table(paste0("TemporaryFiles/Truetree" , jj , ".txt"))
   
-MAP = (length(setdiff(caltopsets(maptree), caltopsets(truetree)))) + 
-  (length(setdiff(caltopsets(truetree), caltopsets(maptree))))
+MAP = (length(setdiff(caltopsets(maptree), caltopsets(truetree)))) + (length(setdiff(caltopsets(truetree), caltopsets(maptree))))
 
-#results = c()
-#for (i in 0:99) {
-#  reltree = read.table(paste0("TemporaryFiles/Tree" , toString(i+1) ,"_"  , jj , ".txt"))
-#    results = c(results, length(setdiff(caltopsets(reltree), caltopsets(truetree)))
-#      + length(setdiff(caltopsets(truetree), caltopsets(reltree))) )
-#}
-#MEAN = mean(results)
-#write.table(data.frame( MAP, MEAN ), file = paste0("TemporaryFiles/SetDistance" , jj, ".txt"),
-#            row.names = F, quote = F)
 write.table(MAP, file = paste0("TemporaryFiles/SetDistance" , jj, ".txt"), row.names = F, quote = F)
 
 }

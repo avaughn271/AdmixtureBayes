@@ -60,5 +60,3 @@ rm mcmc_samples.csv
 
 rm MAPadd.txt
 rm MAPtree.txt
-
-
