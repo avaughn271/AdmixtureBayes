@@ -6,9 +6,6 @@ checkequality = function(tree1, tree2, tree2orig) {
   if (length(tree1) == 2 & length(tree2) == 2 & tree1[1] == tree2[1] &  tree1[2] == tree2[2]) {
     return(1)
   }
-#  if (length(tree1) == 2 & length(tree2) == 2  ) { ### recently added
-#    return(0)
-#  }
 
   if (nrow(tree1) != nrow(tree2)) {return(0)}
   

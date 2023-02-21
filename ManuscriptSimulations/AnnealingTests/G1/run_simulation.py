@@ -92,7 +92,7 @@ demography.add_population_split(time=6000, derived=["E", "outgroup"], ancestral=
 demography.sort_events()
 ts = msprime.sim_ancestry(
     {"pop1": 15,"pop2": 15, "pop3": 15, "pop4": 15,  "outgroup": 15}, 
-      demography=demography, sequence_length=200000000, recombination_rate = 1e-8)      #PLACE3 ENDS
+      demography=demography, sequence_length=20000000, recombination_rate = 1e-8)      #PLACE3 ENDS
 ######################################################################
 outgroup = 1 - exp(-6000/(outgroupsize + outgroupsize)) + 1 - exp(-1000/(-(1000/2)/log(1-.139)-(1000/2)/log(1-.139) ))
 mts = msprime.sim_mutations(ts, rate = 1e-8)

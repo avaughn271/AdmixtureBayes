@@ -46,7 +46,7 @@ args = as.numeric(commandArgs(trailingOnly=TRUE)[1])
 for (j in 1:args)  {
   jj = toString(j)
   maptree = read.table(paste0("TemporaryFiles/MAPtree" , jj , ".txt"))
-  truetree = read.table(paste0("TemporaryFiles/Truetree" , jj , ".txt"))
+  truetree = read.table(paste0("TemporaryFiles/Truetree.txt"))
   
 MAP = (length(setdiff(caltopsets(maptree), caltopsets(truetree)))) + (length(setdiff(caltopsets(truetree), caltopsets(maptree))))
 

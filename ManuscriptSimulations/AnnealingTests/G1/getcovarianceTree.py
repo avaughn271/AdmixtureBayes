@@ -192,4 +192,4 @@ def getcovariance(inputt, outputt, addfile, add_Corr):
 
     (pandas.DataFrame((make_covariance(treee) +  b))).to_csv(outputt,  header=False, index = False)
 
-getcovariance('TemporaryFiles/TrueTree1.txt', "TemporaryFiles/TrueCov1.txt", 'TemporaryFiles/TrueAdd1.txt', False)
+getcovariance('TemporaryFiles/TrueTree.txt', "TemporaryFiles/TrueCov.txt", 'TemporaryFiles/TrueAdd.txt', False)
