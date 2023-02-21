@@ -1,5 +1,3 @@
-
-#ALLGOOD
 from copy import deepcopy
 
 from numpy import insert, delete, ix_, dtype, loadtxt

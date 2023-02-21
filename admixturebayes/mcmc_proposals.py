@@ -1,6 +1,5 @@
 from numpy.random import choice, random, normal
 from copy import deepcopy
-#ALLGOOD
 from Rtree_operations import (node_is_admixture, insert_admixture_node_halfly,  find_rooted_nodes, get_number_of_leaves,
                               graft, node_is_non_admixture, get_real_parents, move_node, get_number_of_admixes,
                               parent_is_spouse, halfbrother_is_uncle, get_parent_of_branch, update_specific_branch_lengths,
@@ -27,6 +26,7 @@ def rescale(add, sigma=0.01, pks={}):
 class rescale_add_class(object):
     new_nodes=0
     proposal_name='rescale_add'
+    adaption=True
     input='add'
     require_admixture=0
     reverse='rescale_add'
@@ -164,6 +164,7 @@ def rescale_constrained(x, sigma=0.01, pks={}, update_add=True):
 class rescale_constrained_class(object):
     new_nodes=0
     proposal_name='rescale_constrained'
+    adaption=True
     input='both'
     require_admixture=0
     admixture_change=0
@@ -189,6 +190,7 @@ def rescale_admixtures(tree, sigma=0.01, pks={}):
 class rescale_admixtures_class(object):
     new_nodes=0
     proposal_name='rescale_admixtures'
+    adaption=True
     input='tree'
     require_admixture=1
     admixture_change=0
@@ -216,6 +218,7 @@ def rescale_normal(tree, sigma=0.01, pks={}):
 class rescale_class(object):
     new_nodes=0
     proposal_name='rescale'
+    adaption=True
     input='tree'
     require_admixture=0
     reverse='rescale'
@@ -349,6 +352,7 @@ class sliding_regraft_class(object):
     require_admixture=0
     admixture_change=0
     proposal_name='sliding_regraft'
+    adaption=True
     reverse='sliding_regraft'
     
     def __init__(self, param=False):
@@ -393,6 +397,7 @@ class addadmix_class(object):
     
     new_nodes=2
     proposal_name='addadmix'
+    adaption=False
     input='tree'
     require_admixture=0
     admixture_change=1
@@ -408,6 +413,7 @@ class addadmix_class(object):
 class deladmix_class(object):
     
     new_nodes=0
+    adaption=False
     proposal_name='deladmix'
     input='tree'
     require_admixture=1

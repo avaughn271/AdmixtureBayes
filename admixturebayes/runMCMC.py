@@ -5,10 +5,12 @@ from construct_covariance_choices import get_covariance, estimate_degrees_of_fre
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 import os
+from numpy import random
 import math
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
+import Rtree_operations
 import tree_statistics
 import Rtree_to_covariance_matrix
 from copy import deepcopy
@@ -17,16 +19,20 @@ def removefile(filename):
     if os.path.exists(filename):
         os.remove(filename)
 
-def get_summary_scheme():
+def get_summary_scheme(no_chains=1):
     summaries=[construct_starting_trees_choices.s_posterior(),
                construct_starting_trees_choices.s_likelihood(),
                construct_starting_trees_choices.s_prior(),
                construct_starting_trees_choices.s_no_admixes(),
-               construct_starting_trees_choices.s_variable('add', output='double'),
+               construct_starting_trees_choices.s_variable('add', output='double'), 
+               construct_starting_trees_choices.s_total_branch_length(),
+               construct_starting_trees_choices.s_basic_tree_statistics(Rtree_operations.get_number_of_ghost_populations, 'ghost_pops', output='integer'),
                construct_starting_trees_choices.s_basic_tree_statistics(Rtree_to_covariance_matrix.get_populations_string, 'descendant_sets', output='string'),
                construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.unique_identifier_and_branch_lengths, 'tree', output='string'),
                construct_starting_trees_choices.s_basic_tree_statistics(tree_statistics.get_admixture_proportion_string, 'admixtures', output='string')]
-    return summaries
+    sample_verbose_scheme={summary.name:(1,0) for summary in summaries}
+    sample_verbose_scheme_first=deepcopy(sample_verbose_scheme)
+    return [sample_verbose_scheme_first]+[{}]*(no_chains-1), summaries
 
 def main(args):
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -46,8 +52,18 @@ def main(args):
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
     #convenience arguments
+    parser.add_argument('--starting_temp', type=str, required=True, help='the inputuu')
+
+    parser.add_argument('--ending_temp', type=str, required=True, help='the inputppp')
+
+    parser.add_argument('--temp_scaling', type=str, required=True, help='the inputnnn')
+
+    parser.add_argument('--iter_per_temp', type=str, required=True, help='the inputxx')
+
+    #convenience arguments
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
+
 
     options=parser.parse_args(args)
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
@@ -86,8 +102,10 @@ def main(args):
                                             verbose_level=options.verbose_level)
 
     multiplier=covariance[1]
-    
-    starting_trees=construct_starting_trees_choices.get_starting_trees( 1, adds=[], nodes=reduced_nodes)
+    #NEWEDIT, change the thing below to False, then []
+    starting_trees=construct_starting_trees_choices.get_starting_trees([], 1, adds=[], nodes=reduced_nodes)
+
+    summary_verbose_scheme, summaries=get_summary_scheme(no_chains=1)
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes)
 
@@ -110,15 +128,18 @@ def main(args):
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
 
-    StartingTemp = 100
-    EndingTemp = 0.001
-    TempDecrease = 0.8
-    NumberAtEach = 1000
+
+    
+    StartingTemp =  float(options.starting_temp) #    100  
+    EndingTemp = float(options.ending_temp) #  0.0001
+    TempDecrease = float(options.temp_scaling) # 0.9
+    NumberAtEach = int(options.iter_per_temp) # 5000
 
     MCMCMC(TempDecrease, starting_trees=starting_trees,
             posterior_function= posterior,
-            summaries=get_summary_scheme(),
+            summaries=summaries,
             temperature_scheme=[StartingTemp],
+            printing_schemes=summary_verbose_scheme,
             iteration_scheme=[NumberAtEach]*int(math.log(EndingTemp / StartingTemp) / math.log(TempDecrease)),
             proposal_scheme= mp,
             multiplier=multiplier,
