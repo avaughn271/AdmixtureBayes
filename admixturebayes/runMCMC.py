@@ -16,13 +16,10 @@ import pandas as pd
 
 from tree_statistics import (identifier_to_tree_clean, get_admixture_proportion_string, generate_predefined_list_string, admixture_sorted_unique_identifier, unique_identifier_and_branch_lengths,topological_identifier_to_tree_clean, identifier_to_tree)
 
-
 from collections import Counter
 from Rtree_operations import node_is_admixture, rename_key, get_admixture_proportion_from_key, get_all_admixture_origins, to_networkx_format,change_admixture, get_categories, get_number_of_ghost_populations
 
 from graphviz import Digraph
-
-
 
 
 class make_read_name(object):
@@ -145,7 +142,7 @@ def plot_node_structure_as_directed_graph(node_structure, drawing_name='tmp_.png
         else:
             print("The file does not exist")
         
-def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_lengths=False, verbose=True ,labeldict = {}, admixturegroup = {}, valtostring=[]):
+def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_lengths=False, verbose=True ,labeldict = {}, admixturegroup = {}, valtostring=[], ISLABELS = False, outgrooupp = "", disttt = 0):
 
     leaves, admixture_nodes, coalescence_nodes, root, edges, edge_lengths= to_networkx_format(tree)
     filename, image_format= drawing_name.split('.')
@@ -159,7 +156,6 @@ def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_l
         
     admixture_graph=Digraph()
     admixture_graph.node_attr.update(style='filled', fillcolor='coral1', shape='box')
-    print(admixture_nodes)
     for adm_n in admixture_nodes:
         if len(valtostring) == 0:
             admixture_graph.node(adm_n)
@@ -191,6 +187,9 @@ def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_l
                     G.edge(to_node, from_node, label=  str(round(labeldict[label], 4)))
     else:
         G.edges(edges)
+    if ISLABELS:
+        G.node(outgrooupp, shape='diamond', color='gray', style='filled')
+        G.edge( outgrooupp, 'r', dir="none", label = str(round(disttt, 4)))
     G.format = image_format
     G.render(view=popup)
     if verbose:
@@ -230,7 +229,7 @@ def branch_and_proportion_quantiles(list_of_string_trees):
             aresults.append(('ax'+str(n+1), mean[0]))
     return bresults, aresults
 
-def main_plot(plottype):
+def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
 
     def combine_nodes(node_structure, new_node, seen_sets):
         candidate=new_node.name
@@ -281,7 +280,7 @@ def main_plot(plottype):
             node_count_dic={frozenset(key.split('.')):float(count)/N for key,count in c.most_common(1000)}
             for i, (to_plot,count) in enumerate(to_plots):
                 node_structure = node_combinations_to_node_structure(to_plot.split('-'))
-                plot_node_structure_as_directed_graph(node_structure, drawing_name='minimal_topology_' +str(i+1)+'.png',
+                plot_node_structure_as_directed_graph(node_structure, drawing_name= outputprefix + '_minimal_topology.png',
                                                         node_dic=node_count_dic,  popup=False)
     elif plottype=='top_trees':
         df = pd.read_csv("thinned_samples_annealing.csv", sep=',', usecols=['pops','topology'])
@@ -296,7 +295,7 @@ def main_plot(plottype):
 
         for i, (to_plot, count) in enumerate(to_plots):
             tree=topological_identifier_to_tree_clean(to_plot, leaves=generate_predefined_list_string(deepcopy(leaves)))
-            plot_as_directed_graph(tree,drawing_name='topology_' + str(i + 1) + '.png', popup=False )
+            plot_as_directed_graph(tree,drawing_name=outputprefix+'_topology_.png', popup=False )
     elif plottype=='estimates':
         try:
             df = pd.read_csv("thinned_samples_annealing.csv", sep=',', usecols=['string_tree', 'topology', 'pops'])
@@ -342,7 +341,7 @@ def main_plot(plottype):
                 adm_interpretation[key]='For the lineages that pass through {}, this is the proportion that follows branch {} to node {}'.format(key, branch_name,node_destination)
             
 
-            plot_as_directed_graph(tree, drawing_name='topology_labels_' + str(i + 1) + '.png', plot_edge_lengths=True,  popup=False, labeldict = LabelLengthDictionary, admixturegroup = adms, valtostring= admixture_proportion_intervals)
+            plot_as_directed_graph(tree, drawing_name=outputprefix+'_topology_labels.png', plot_edge_lengths=True,  popup=False, labeldict = LabelLengthDictionary, admixturegroup = adms, valtostring= admixture_proportion_intervals, ISLABELS = True, outgrooupp = outtttname, disttt = disttooutgroup)
 
 
 def identity(x):
@@ -622,7 +621,7 @@ def main(args):
     #input/output options
     parser.add_argument('--input_file', type=str, required=True, help='the input file of the pipeline. It should be of the same type as the treemix input file with a header of population names and each line representing a snp (unless --covariance_pipeline is altered).')
     parser.add_argument('--result_file', type=str, default='mcmc_samples_annealing.csv', help='file in which to save results.')
-
+    parser.add_argument('--output_prefix', type=str, default='out', help='file in which to save results.')
     parser.add_argument('--outgroup', type=str, default='',
                         help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
     parser.add_argument('--save_covariance', default=False, action='store_true', help='saving the covariance matrix')
@@ -630,19 +629,16 @@ def main(args):
     parser.add_argument('--bootstrap_blocksize', type=int, default=1000,
                         help='the size of the blocks to bootstrap in order to estimate the degrees of freedom in the wishart distribution')
 
-    #convenience arguments
+    #annealing
     parser.add_argument('--starting_temp', type=str, required=True, help='the inputuu')
-
     parser.add_argument('--ending_temp', type=str, required=True, help='the inputppp')
-
     parser.add_argument('--temp_scaling', type=str, required=True, help='the inputnnn')
-
     parser.add_argument('--iter_per_temp', type=str, required=True, help='the inputxx')
+    parser.add_argument('--dontcleanup', default = False, action='store_true', help='the inputxx')
 
     #convenience arguments
     parser.add_argument('--verbose_level', default='normal', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
-
 
     options=parser.parse_args(args)
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
@@ -706,10 +702,8 @@ def main(args):
 
     if os.path.exists(os.getcwd() + "/temp_adbayes"):
         os.rmdir(os.getcwd() + "/temp_adbayes")
-
-
     
-    StartingTemp =  float(options.starting_temp) #    100  
+    StartingTemp =  float(options.starting_temp) #    100
     EndingTemp = float(options.ending_temp) #  0.0001
     TempDecrease = float(options.temp_scaling) # 0.9
     NumberAtEach = int(options.iter_per_temp) # 5000
@@ -724,18 +718,36 @@ def main(args):
             multiplier=multiplier,
             result_file=options.result_file,
             n_arg=int(math.log(EndingTemp / StartingTemp) / math.log(TempDecrease)), verboseee=options.verbose_level)
+    return(options.outgroup, options.output_prefix, multiplier, options.dontcleanup)
 
 if __name__=='__main__':
     import sys, os
-    main(sys.argv[1:])
+    outtname, outputprefixx, multiplierrr, dontcleanup = main(sys.argv[1:])
     run_posterior_main()
-    main_plot("top_minimal_topologies")
-    main_plot("top_trees")
-    main_plot("estimates")
 
     mainnnoutput()
+
+    scaleddistancetooutgroup = (pd.read_csv("MAPadd.txt", header = None))[0][0]
+
+    actualoutgroupdistance = scaleddistancetooutgroup / multiplierrr
+
+    outputprefixx
+    with open(outputprefixx + '_outgroup.txt', 'w') as ffff:
+        ffff.write(str(actualoutgroupdistance) + "\n")
+
+    main_plot("top_minimal_topologies", "out", outputprefixx, 0)
+    main_plot("top_trees", "out", outputprefixx, 0)
+    main_plot("estimates", outtname, outputprefixx, actualoutgroupdistance)
+
+    (pd.read_csv("MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
 
     if os.path.exists("mcmc_samples_annealing.csv"):
         os.remove("mcmc_samples_annealing.csv")
     if os.path.exists("thinned_samples_annealing.csv"):
         os.remove("thinned_samples_annealing.csv")
+    
+    if not dontcleanup:
+        if os.path.exists("MAPadd.txt"):
+            os.remove("MAPadd.txt")
+        if os.path.exists("MAPtree.txt"):
+            os.remove("MAPtree.txt")
