@@ -132,6 +132,8 @@ def identifier_to_tree(identifier, leaves=None, inner_nodes=None, branch_lengths
 df = pandas.read_csv('mcmc_samples.csv')
 posteriorr = df['posterior'].values.tolist()
 modetree = ((df[["tree"]]).iloc[posteriorr.index(max(posteriorr))])[0]
+print(df.shape, "total number of rows")
+print(posteriorr.index(max(posteriorr)), "index of posterior mode")
 ff = open("MAPadd.txt", "w")
 ff.write(str((df[["add"]]).iloc[posteriorr.index(max(posteriorr))][0] ) +  "\n")
 ff.close
