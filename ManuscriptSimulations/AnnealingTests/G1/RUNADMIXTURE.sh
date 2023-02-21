@@ -4,7 +4,7 @@ NUMBEROFSIMS=3   #PLACE 7
 for (( c=1; c<=NUMBEROFSIMS; c++ ))
 do
 
-python3 ~/desktop/AdmixtureBayes-Annealing/admixturebayes/runMCMC.py --input_file TemporaryFiles/adbayesinput${c}.txt --outgroup pop5  --save_covariance --starting_temp 100 --ending_temp 0.0001  --temp_scaling 0.95  --iter_per_temp 500
+python3 ~/desktop/AdmixtureBayes-Annealing/admixturebayes/runMCMC.py --input_file TemporaryFiles/adbayesinput${c}.txt --outgroup pop5  --save_covariance --starting_temp 100 --ending_temp 0.0001  --temp_scaling 0.95  --iter_per_temp 5000
 
 ####python GetAdBayesResults.py
 mv covariance_matrix.txt TemporaryFiles/covariance_matrix${c}.txt 
