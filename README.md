@@ -228,7 +228,7 @@ This takes approximately 5-15 minutes per chain on a desktop computer, depending
 Rscript EvaluateConvergence.R
 ```
 
-Note that the names of the output files to analyze are hardcoded as chain1.txt, chain2.txt, and chain3.txt. You will need to change these in the script if you change the output file names. The output of this script should look like the convergence plots presented in the AdmixtureBayes paper (S11 Fig, S12 Fig, and S12 Fig).  Trace plots should stabilize to an equilibrium distribution, Gelman-Rubin statistics should be near 0, and autocorrelation plots should converge to 0.
+Note that the names of the output files to analyze are hardcoded as chain1.txt, chain2.txt, and chain3.txt. You will need to change these in the script if you change the output file names. The output of this script should look like the convergence plots presented in the AdmixtureBayes paper (S11 Fig, S12 Fig, and S12 Fig).  Trace plots should stabilize to an equilibrium distribution, Gelman-Rubin statistics should be near 1, and autocorrelation plots should converge to 0.
 
 If the chains have all indeed converged, then we should filter our output graphs with the command 
 
