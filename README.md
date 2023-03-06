@@ -252,8 +252,11 @@ Now that you are familiar with the output of AdmixtureBayes and with assessing c
 The most common problem users may experience when using AdmixtureBayes is a lack of convergence of the MCMC chain. This can have many different causes including but not limited to:
 
 A value of --n that is too small
+
 A value of --MCMC_chains that is too small
+
 A very large number of populations
+
 A very large number of effectively independent SNPs
 
 The most obvious way in which lack of convergence displays, apart from analyzing the convergence plots using the script provided, is in observed values for the number of admixture events that are too high (for example 20 admixture events for a dataset with 5 non-outgroup populations). This is because AdmixtureBayes often works by adding admixture events to the starting graph, shuffling around the topology, and then removing admixture events. If there is not sufficient mixing, then the algorithm only finishes the first and possibly second steps. This problem should be resolved by increasing the value of --n and/or increasing the value of --MCMC_chains. This should not be a problem for datasets with a small number of populations, which is why we recommend running AdmixtureBayes on a subset of populations from your dataset first. If mixing problems persist, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
