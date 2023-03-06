@@ -207,3 +207,55 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 ***consensus_i.pdf*** One such plot will be produced for all *i* in the list of thresholds.
 
 If **--write_rankings** is specified, a file  containing a list of all nodes and their posterior probabilities is generated.
+
+
+## Getting Started and Troubleshooting
+
+# 1) Example dataset
+
+The first thing you should do is to try and run AdmixtureBayes on the provided example dataset to get a feel for how to assess convergence and interpret the output. 
+
+You can run 3 independent chains by running the following 3 commands.
+
+```bash
+python PATH/admixturebayes/runMCMC.py --input_file PATH/example/allele_counts.txt --outgroup out --n 10000 --result_file chain1.txt
+python PATH/admixturebayes/runMCMC.py --input_file PATH/example/allele_counts.txt --outgroup out --n 10000 --result_file chain2.txt
+python PATH/admixturebayes/runMCMC.py --input_file PATH/example/allele_counts.txt --outgroup out --n 10000 --result_file chain3.txt
+```
+This takes approximately 5-15 minutes per chain on a desktop computer, depending on processor speed and the number of cores present. Then, we can assess convergence by running 
+
+```bash
+Rscript EvaluateConvergence.R
+```
+
+Note that the names of the output files to analyze are hardcoded as chain1.txt, chain2.txt, and chain3.txt. You will need to change these in the script if you change the output file names. The output of this script should look like the convergence plots presented in the AdmixtureBayes paper (S11 Fig, S12 Fig, and S12 Fig).  Trace plots should stabilize to an equilibrium distribution, Gelman-Rubin statistics should be near 0, and autocorrelation plots should converge to 0.
+
+If the chains have all indeed converged, then we should filter our output graphs with the command 
+
+```bash
+python PATH/admixturebayes/analyzeSamples.py --mcmc_results chain1.txt
+```
+
+and plot the top sampled topologies and their rankings with the following command
+
+```bash
+python PATH/admixturebayes/makePlots.py --plot top_trees --posterior thinned_samples.csv --write_rankings chain1rankings.txt
+```
+
+
+# 2) Running AdmixtureBayes on your dataset
+
+Now that you are familiar with the output of AdmixtureBayes and with assessing convergence, you can run AdmixtureBayes on your dataset. If your number of populations is larger than 5, we recommend initially running AdmixtureBayes on a subset of your data, 3 or 4 non-outgroup populations for example. This is because AdmixtureBayes should converge very rapidly on this smaller dataset, and it will enable you to work out any data conversion problems or mixing problems rather quickly. Once you are confident that AdmixtureBayes is performing properly on your data, you can move on to your full dataset. AdmixtureBayes, when using 32 parallel chains through the --MCMC_chains option, takes about 50 hours to do a complete run on our Arctic dataset of 11 non-outgroup populations (we used --n 450000). The state space of admixture graph topologies grows super-exponentially in the number of populations, so be aware that when considering 15 or 20 populations, the time necessary to achieve convergence may increase considerably. 
+
+# 3) Mixing problems/still not working
+
+The most common problem users may experience when using AdmixtureBayes is a lack of convergence of the MCMC chain. This can have many different causes including but not limited to:
+
+A value of --n that is too small
+A value of --MCMC_chains that is too small
+A very large number of populations
+A very large number of effectively independent SNPs
+
+The most obvious way in which lack of convergence displays, apart from analyzing the convergence plots using the script provided, is in observed values for the number of admixture events that are too high (for example 20 admixture events for a dataset with 5 non-outgroup populations). This is because AdmixtureBayes often works by adding admixture events to the starting graph, shuffling around the topology, and then removing admixture events. If there is not sufficient mixing, then the algorithm only finishes the first and possibly second steps. This problem should be resolved by increasing the value of --n and/or increasing the value of --MCMC_chains. This should not be a problem for datasets with a small number of populations, which is why we recommend running AdmixtureBayes on a subset of populations from your dataset first. If mixing problems persist, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
+
+
