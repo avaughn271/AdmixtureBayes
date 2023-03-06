@@ -211,7 +211,7 @@ If **--write_rankings** is specified, a file  containing a list of all nodes and
 
 ## Getting Started and Troubleshooting
 
-# 1) Example dataset
+### 1) Example dataset
 
 The first thing you should do is to try and run AdmixtureBayes on the provided example dataset to get a feel for how to assess convergence and interpret the output. 
 
@@ -243,11 +243,11 @@ python PATH/admixturebayes/makePlots.py --plot top_trees --posterior thinned_sam
 ```
 
 
-# 2) Running AdmixtureBayes on your dataset
+### 2) Running AdmixtureBayes on your dataset
 
 Now that you are familiar with the output of AdmixtureBayes and with assessing convergence, you can run AdmixtureBayes on your dataset. If your number of populations is larger than 5, we recommend initially running AdmixtureBayes on a subset of your data, 3 or 4 non-outgroup populations for example. This is because AdmixtureBayes should converge very rapidly on this smaller dataset, and it will enable you to work out any data conversion problems or mixing problems rather quickly. Once you are confident that AdmixtureBayes is performing properly on your data, you can move on to your full dataset. AdmixtureBayes, when using 32 parallel chains through the --MCMC_chains option, takes about 50 hours to do a complete run on our Arctic dataset of 11 non-outgroup populations (we used --n 450000). The state space of admixture graph topologies grows super-exponentially in the number of populations, so be aware that when considering 15 or 20 populations, the time necessary to achieve convergence may increase considerably. 
 
-# 3) Mixing problems/still not working
+### 3) Mixing problems/still not working
 
 The most common problem users may experience when using AdmixtureBayes is a lack of convergence of the MCMC chain. This can have many different causes including but not limited to:
 
