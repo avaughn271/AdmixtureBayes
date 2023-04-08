@@ -49,16 +49,11 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     likelihood_old, prior_old = post[:2]
     likelihood_new, prior_new = post_new[:2]
     
-    if g2<=0 or j2<=0:
-        logmhr=-float('inf')
-    else:
-        TargetDensitynew = likelihood_new + prior_new
-        TargetOld = prior_old + likelihood_old
-        print(TargetDensitynew, TargetOld)
-        if TargetDensitynew == -float('inf'):
-            return(x, post)
-        print(temperature)
-        logmhr = TargetDensitynew/temperature - TargetOld/temperature # maybe only change this and no MC^3 switches and no adaption.
+    TargetDensitynew = likelihood_new + prior_new
+    TargetOld = prior_old + likelihood_old
+    if TargetDensitynew == -float('inf'):
+        return(x, post, 0, 1)
+    logmhr = TargetDensitynew/temperature - TargetOld/temperature # maybe only change this and no MC^3 switches and no adaption.
     if logmhr>100:
         mhr=float('inf')
     else:
@@ -66,8 +61,8 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
             
     u=random.random()
     if u<mhr:
-        return newx,post_new
-    return x,post
+        return newx,post_new,1,TargetOld>TargetDensitynew
+    return x,post,0,TargetOld>TargetDensitynew
 
 def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=10000, 
                 sample_verbose_scheme=None, i_start_from=0, 
@@ -80,10 +75,17 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
         post=posterior_function(x)
     
     iteration_summary=[]
-        
+    NumberOfAcceptedUphillMoves = 0
+    NumberOfUphillProposals = 0
+    NumberOfAcceptedTotal = 0
+    NumberOfProposals = 0
     for i in range(i_start_from,i_start_from+N):
         proposal_knowledge_scraper={}
-        new_x,new_post=one_jump(x, post, temperature, posterior_function, proposal, proposal_knowledge_scraper)
+        new_x,new_post,acceptedd,wasuphill=one_jump(x, post, temperature, posterior_function, proposal, proposal_knowledge_scraper)
+        NumberOfProposals = NumberOfProposals + 1
+        NumberOfAcceptedTotal = NumberOfAcceptedTotal + acceptedd
+        NumberOfUphillProposals = NumberOfUphillProposals + wasuphill
+        NumberOfAcceptedUphillMoves = NumberOfAcceptedUphillMoves + wasuphill * acceptedd
         if i%40==0:
             iteration_summary.append(_calc_and_print_summaries(sample_verbose_scheme,
                                                                summaries,
@@ -95,7 +97,7 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
                                                                iteration_number=i,**proposal_knowledge_scraper))
         x=new_x
         post=new_post
-    
+    print("Accepted " + str(NumberOfAcceptedUphillMoves) + " out of " + str(NumberOfUphillProposals) + " uphill moves (" +str(round(NumberOfAcceptedUphillMoves/NumberOfUphillProposals,4)*100)[0:5] + "%) at temperature=" + '{:.3e}'.format(temperature))
     return x, post, list(zip(*iteration_summary)),proposal.get_exportable_state()
 
 def _calc_and_print_summaries(sample_verbose_scheme,summaries,**kwargs):

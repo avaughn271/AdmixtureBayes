@@ -21,8 +21,6 @@ def MCMCMC(coolerMultiple, starting_trees,    posterior_function, summaries, tem
     
     cum_iterations=0
     for no_iterations in iteration_scheme:
-        if cum_iterations % 1000 == 0 and verboseee != "silent":
-            print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
         #letting each chain run for no_iterations:
         iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
