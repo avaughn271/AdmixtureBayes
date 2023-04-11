@@ -1255,6 +1255,16 @@ if __name__=='__main__':
 
     (pd.read_csv(outputprefixx + "/MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
     
+    if os.path.exists(outputprefixx + "/MAPadd.txt"):
+        os.remove(outputprefixx + "/MAPadd.txt")
+    if os.path.exists(outputprefixx + "/MAPtree.txt"):
+        os.remove(outputprefixx + "/MAPtree.txt")
+    if os.path.exists(outputprefixx + "/mcmc_samples_annealing.csv"):
+        os.remove(outputprefixx + "/mcmc_samples_annealing.csv")
+    if os.path.exists(outputprefixx + "/thinned_samples_annealing.csv"):
+        os.remove(outputprefixx + "/thinned_samples_annealing.csv")
+    if os.path.exists(outputprefixx):
+        os.rmdir(outputprefixx)
     if not dontcleanup:
         if os.path.exists("MAPadd.txt"):
             os.remove("MAPadd.txt")
