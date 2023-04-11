@@ -362,14 +362,14 @@ def branch_and_proportion_quantiles_process(list_of_string_trees):
             aresults.append(('ax'+str(n+1), mean))
     return bresults, aresults
 
-def mainnnoutput():
-    df = pd.read_csv('mcmc_samples_annealing.csv')
+def mainnnoutput(outtputtprefix):
+    df = pd.read_csv(outtputtprefix + '/mcmc_samples_annealing.csv')
     totalnummmofrows = df.shape[0]
     posteriorr = df['posterior'].values.tolist()
     modetree = ((df[["tree"]]).iloc[totalnummmofrows-1])[0]
     print(df.shape, "total number of rows", posteriorr[totalnummmofrows-1] )
     print(posteriorr.index(max(posteriorr)), "index of posterior mode",  max(posteriorr))
-    ff = open("MAPadd.txt", "w")
+    ff = open(outtputtprefix + "/MAPadd.txt", "w")
     ff.write(str((df[["add"]]).iloc[totalnummmofrows-1][0] ) +  "\n")
     ff.close
     leaves = sorted(list(set([leaf for node in (df['descendant_sets'].tolist()[0].split('-')) for leaf in node.split('.')])))
@@ -385,7 +385,7 @@ def mainnnoutput():
 
     tree = identifier_to_tree_process(temptopology, leaves=generate_predefined_list_string_process(deepcopy(leaves)), branch_lengths=generate_predefined_list_string_process(deepcopy(branch_names)), admixture_proportions=generate_predefined_list_string_process(deepcopy(admixture_names)))
 
-    f = open("MAPtree.txt", "w")
+    f = open(outtputtprefix + "/MAPtree.txt", "w")
 
     for node in tree:
         if (tree[node][2] is not None):
@@ -745,7 +745,7 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
         return node_structure
 
     if plottype=='top_minimal_topologies':
-        df = pd.read_csv("thinned_samples_annealing.csv", sep=',', usecols=['pops'])
+        df = pd.read_csv(outputprefix + "/thinned_samples_annealing.csv", sep=',', usecols=['pops'])
         nodes_list = df['pops'].tolist()
         seen_combinations = {}
         for nodes in nodes_list:
@@ -762,7 +762,7 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
                 plot_node_structure_as_directed_graph(node_structure, drawing_name= outputprefix + '_minimal_topology.png',
                                                         node_dic=node_count_dic,  popup=False)
     elif plottype=='top_trees':
-        df = pd.read_csv("thinned_samples_annealing.csv", sep=',', usecols=['pops','topology'])
+        df = pd.read_csv(outputprefix + "/thinned_samples_annealing.csv", sep=',', usecols=['pops','topology'])
         trees_list = df['topology'].tolist()
         N=len(trees_list)
         c = Counter(trees_list)
@@ -777,10 +777,10 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
             plot_as_directed_graph(tree,drawing_name=outputprefix+'_topology_.png', popup=False )
     elif plottype=='estimates':
         try:
-            df = pd.read_csv("thinned_samples_annealing.csv", sep=',', usecols=['string_tree', 'topology', 'pops'])
+            df = pd.read_csv(outputprefix + "/thinned_samples_annealing.csv", sep=',', usecols=['string_tree', 'topology', 'pops'])
         except ValueError as e:
             raise Exception('Unexpected columns in the posterior_distribution file. Did you turn on the --faster flag in AdmixtureBayes posterior?')
-        maptree = pd.read_csv("MAPtree.txt", sep=' ', header = None)
+        maptree = pd.read_csv(outputprefix + "/MAPtree.txt", sep=' ', header = None)
         reviseddashedspecifier = {}
         firstcol = maptree.iloc[:, 0].tolist()
         secondcol = maptree.iloc[:, 1].tolist()
@@ -1022,13 +1022,13 @@ def get_possible_permutation_strees(tree):
         n_trees.append(n_tree)
     return n_trees
     
-def run_posterior_main():
+def run_posterior_main(outputprefix):
 
     subnodes_with_outgroup=[]
     subnodes_wo_outgroup=[]
 
     totallist = []
-    a = pd.read_csv("mcmc_samples_annealing.csv", nrows=3)
+    a = pd.read_csv(outputprefix + "/mcmc_samples_annealing.csv", nrows=3)
     stringg = (a.loc[0,["descendant_sets"]])[0]
     stringg = (stringg.split('-'))
     for i in stringg:
@@ -1078,14 +1078,14 @@ def run_posterior_main():
 
     def save_thin_columns(d_dic):
         return {summ:d_dic[summ] for summ in list(set(['no_admixes', 'topology', 'pops','string_tree']+[]))}
-    all_results=iterate_over_output_file("mcmc_samples_annealing.csv",
+    all_results=iterate_over_output_file(outputprefix + "/mcmc_samples_annealing.csv",
                                              cols=['tree', 'add', 'layer', 'no_admixes'],
                                              row_summarize_functions=row_sums,
                                              thinned_d_dic=save_thin_columns)
 
     if True:
         summaries=list(all_results[0].keys())
-        with open("thinned_samples_annealing.csv", 'w') as f:
+        with open(outputprefix + "/thinned_samples_annealing.csv", 'w') as f:
             f.write(','.join(summaries)+'\n')
             for row in all_results:
                 s_summs=[str(row[summ]) for summ in summaries]
@@ -1118,7 +1118,6 @@ def main(args):
 
     #input/output options
     parser.add_argument('--input_file', type=str, required=True, help='the input file of the pipeline. It should be of the same type as the treemix input file with a header of population names and each line representing a snp (unless --covariance_pipeline is altered).')
-    parser.add_argument('--result_file', type=str, default='mcmc_samples_annealing.csv', help='file in which to save results.')
     parser.add_argument('--output_prefix', type=str, default='out', help='file in which to save results.')
     parser.add_argument('--outgroup', type=str, default='',
                         help='The name of the population that should be outgroup for the covariance matrix. If the covariance matrix is supplied at stage 8 , this argument is not needed.')
@@ -1220,7 +1219,7 @@ def main(args):
             iteration_scheme=[NumberAtEach]*int(log(EndingTemp / StartingTemp) / log(TempDecrease)),
             proposal_scheme= mp,
             multiplier=multiplier,
-            result_file=options.result_file,
+            result_file = temporaryfoldername + "/mcmc_samples_annealing.csv",
             n_arg=int(log(EndingTemp / StartingTemp) / log(TempDecrease)), verboseee=options.verbose_level)
     
     removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "covariance_and_multiplier.txt")
@@ -1228,8 +1227,8 @@ def main(args):
     removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "variance_correction.txt")
     if os.path.exists(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" ):
         os.rmdir(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" )
-    if os.path.exists(os.getcwd() +"/"+ temporaryfoldername):
-        os.rmdir(os.getcwd() +"/"+ temporaryfoldername)
+    #if os.path.exists(os.getcwd() +"/"+ temporaryfoldername):
+    #    os.rmdir(os.getcwd() +"/"+ temporaryfoldername)
         
     return(options.outgroup, options.output_prefix, multiplier, options.dontcleanup)
 
@@ -1238,11 +1237,11 @@ if __name__=='__main__':
 
     #We here run the main algorithm
     outtname, outputprefixx, multiplierrr, dontcleanup = main(sys.argv[1:])
-    run_posterior_main()
+    run_posterior_main(outputprefixx)
 
-    mainnnoutput()
+    mainnnoutput(outputprefixx)
 
-    scaleddistancetooutgroup = (pd.read_csv("MAPadd.txt", header = None))[0][0]
+    scaleddistancetooutgroup = (pd.read_csv(outputprefixx + "/MAPadd.txt", header = None))[0][0]
 
     actualoutgroupdistance = scaleddistancetooutgroup / multiplierrr
 
@@ -1254,12 +1253,7 @@ if __name__=='__main__':
     main_plot("top_trees", "out", outputprefixx, 0) #most of the admixture should go to the side of the tree with 2 leaf nodes
     main_plot("estimates", outtname, outputprefixx, actualoutgroupdistance)
 
-    (pd.read_csv("MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
-
-    if os.path.exists("mcmc_samples_annealing.csv"):
-        os.remove("mcmc_samples_annealing.csv")
-    if os.path.exists("thinned_samples_annealing.csv"):
-        os.remove("thinned_samples_annealing.csv")
+    (pd.read_csv(outputprefixx + "/MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
     
     if not dontcleanup:
         if os.path.exists("MAPadd.txt"):
