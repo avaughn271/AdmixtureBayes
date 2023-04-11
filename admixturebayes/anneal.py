@@ -8,6 +8,7 @@ from numpy.random import choice
 
 from itertools import chain
 from numpy import random
+import numpy
 from math import exp, log
 
 import Rtree_to_covariance_matrix
@@ -366,8 +367,8 @@ def mainnnoutput():
     totalnummmofrows = df.shape[0]
     posteriorr = df['posterior'].values.tolist()
     modetree = ((df[["tree"]]).iloc[totalnummmofrows-1])[0]
-    #print(df.shape, "total number of rows")
-    #print(posteriorr.index(max(posteriorr)), "index of posterior mode")
+    print(df.shape, "total number of rows", posteriorr[totalnummmofrows-1] )
+    print(posteriorr.index(max(posteriorr)), "index of posterior mode",  max(posteriorr))
     ff = open("MAPadd.txt", "w")
     ff.write(str((df[["add"]]).iloc[totalnummmofrows-1][0] ) +  "\n")
     ff.close
@@ -609,7 +610,7 @@ def plot_node_structure_as_directed_graph(node_structure, drawing_name='tmp_.png
         else:
             print("The file does not exist")
         
-def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_lengths=False, verbose=True ,labeldict = {}, admixturegroup = {}, valtostring=[], ISLABELS = False, outgrooupp = "", disttt = 0):
+def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_lengths=False, verbose=True ,labeldict = {}, admixturegroup = {}, valtostring=[], ISLABELS = False, outgrooupp = "", disttt = 0, dashess = {}):
 
     leaves, admixture_nodes, coalescence_nodes, root, edges, edge_lengths= to_networkx_format(tree)
     filename, image_format= drawing_name.split('.')
@@ -629,7 +630,7 @@ def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_l
         else:
             for jjjj in valtostring:
                 if jjjj[0] == adm_n:
-                    admixture_graph.node(adm_n, label = str(round(jjjj[1], 3)))
+                    admixture_graph.node(adm_n, label = str(round(   min(jjjj[1]  ,1-jjjj[1]  ), 3)))
         
     coalescence_graph=Digraph()
     coalescence_graph.node_attr.update(style='filled', fillcolor='greenyellow')
@@ -642,21 +643,32 @@ def plot_as_directed_graph(tree, drawing_name='tmp.png', popup=True, plot_edge_l
     G.node('r', shape='egg', color='black', style='filled', fontcolor='white')
     if plot_edge_lengths:
         for (to_node, from_node),label in zip(edges, edge_lengths):
-            if labeldict[label] < 0.0001:
-                if from_node in admixturegroup and admixturegroup[from_node][1] == to_node:
-                    G.edge(to_node, from_node, label=  f'{labeldict[label]:.2e}', style = "dashed")
-                else:
-                    G.edge(to_node, from_node, label=  f'{labeldict[label]:.2e}')
+            if to_node[0] == "a" and to_node[1] == "x" and to_node[2] in ["0","1","2","3","4","5","6","7","8","9"]:
+                tonodecheck = "a" + to_node[2:]
             else:
-                if from_node in admixturegroup and admixturegroup[from_node][1] == to_node:
-                    G.edge(to_node, from_node, label=  str(round(labeldict[label], 4)), style = "dashed")
+                tonodecheck = to_node
+            if from_node[0] == "a" and from_node[1] == "x" and from_node[2] in ["0","1","2","3","4","5","6","7","8","9"]:
+                from_nodecheck = "a" + from_node[2:]
+            else:
+                from_nodecheck = from_node
+            if from_nodecheck in dashess and dashess[from_nodecheck][0] == tonodecheck and dashess[from_nodecheck][1] != dashess[from_nodecheck][0]:
+                if dashess[from_nodecheck][2] < 0.0001:
+                    G.edge(to_node, from_node, label=  f'{dashess[from_nodecheck][2]:.2e}', style = "dashed")
                 else:
-                    G.edge(to_node, from_node, label=  str(round(labeldict[label], 4)))
+                    G.edge(to_node, from_node, label=  str(round(dashess[from_nodecheck][2], 4)), style = "dashed")
+            else:
+                if dashess[from_nodecheck][3] < 0.0001:
+                    G.edge(to_node, from_node, label=  f'{dashess[from_nodecheck][3]:.2e}')
+                else:
+                    G.edge(to_node, from_node, label=  str(round(dashess[from_nodecheck][3], 4)))
     else:
         G.edges(edges)
     if ISLABELS:
         G.node(outgrooupp, shape='diamond', color='gray', style='filled')
-        G.edge( outgrooupp, 'r', dir="none", label = str(round(disttt, 4)))
+        if disttt < 0.0001:
+            G.edge( outgrooupp, 'r', dir="none", label = f'{disttt:.2e}')
+        else:
+            G.edge( outgrooupp, 'r', dir="none", label = str(round(disttt, 4)))
     G.format = image_format
     G.render(view=popup)
     if verbose:
@@ -768,7 +780,29 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
             df = pd.read_csv("thinned_samples_annealing.csv", sep=',', usecols=['string_tree', 'topology', 'pops'])
         except ValueError as e:
             raise Exception('Unexpected columns in the posterior_distribution file. Did you turn on the --faster flag in AdmixtureBayes posterior?')
+        maptree = pd.read_csv("MAPtree.txt", sep=' ', header = None)
+        reviseddashedspecifier = {}
+        firstcol = maptree.iloc[:, 0].tolist()
+        secondcol = maptree.iloc[:, 1].tolist()
+        thirdcol = maptree.iloc[:, 2].tolist()
+        fourthcol =  maptree.iloc[:, 3].tolist()
 
+        for iiiiii in range(len(firstcol)):
+            if firstcol.count(firstcol[iiiiii]) > 1:
+                indicess = numpy.where(numpy.array(firstcol) == firstcol[iiiiii])[0]
+                indexx1 = indicess[0]
+                indexx2 = indicess[1]
+                if fourthcol[indexx2] > 0.5: # 1 is lower
+                    reviseddashedspecifier[firstcol[indexx1]] = (secondcol[indexx1], secondcol[indexx2], thirdcol[indexx1], thirdcol[indexx2] )
+                else:
+                    reviseddashedspecifier[firstcol[indexx1]] = (secondcol[indexx2], secondcol[indexx1], thirdcol[indexx2], thirdcol[indexx1] )
+            else:
+                reviseddashedspecifier[firstcol[iiiiii]] = (secondcol[iiiiii], secondcol[iiiiii], thirdcol[iiiiii], thirdcol[iiiiii] )
+
+
+        #for index, row in maptree.iterrows():
+        #    if maptree.loc[index,3] < 0.5:
+        #        reviseddashedspecifier[maptree.loc[index,0]] =  maptree.loc[index,1]
         topologies_list = df['topology'].tolist()
         string_tree_list=df['string_tree'].tolist()
         c = Counter(topologies_list)
@@ -806,8 +840,7 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
                 LabelLengthDictionary[iiiii[0]] = iiiii[1]
             for key, (branch_name, node_destination) in list(adms.items()):
                 adm_interpretation[key]='For the lineages that pass through {}, this is the proportion that follows branch {} to node {}'.format(key, branch_name,node_destination)
-            
-            plot_as_directed_graph(tree, drawing_name=outputprefix+'_topology_labels.png', plot_edge_lengths=True,  popup=False, labeldict = LabelLengthDictionary, admixturegroup = adms, valtostring= admixture_proportion_intervals, ISLABELS = True, outgrooupp = outtttname, disttt = disttooutgroup)
+            plot_as_directed_graph(tree, drawing_name=outputprefix+'_topology_labels.png', plot_edge_lengths=True,  popup=False, labeldict = LabelLengthDictionary, admixturegroup = adms, valtostring= admixture_proportion_intervals, ISLABELS = True, outgrooupp = outtttname, disttt = disttooutgroup, dashess = reviseddashedspecifier)
 
 def identity(x):
     return x
@@ -1202,8 +1235,8 @@ if __name__=='__main__':
     with open(outputprefixx + '_outgroup.txt', 'w') as ffff:
         ffff.write(str(actualoutgroupdistance) + "\n")
 
-    main_plot("top_minimal_topologies", "out", outputprefixx, 0)
-    main_plot("top_trees", "out", outputprefixx, 0)
+    main_plot("top_minimal_topologies", "out", outputprefixx, 0) ####file is right, picture is wrong, jsut read in map tree and edit it there!!!
+    main_plot("top_trees", "out", outputprefixx, 0) #most of the admixture should go to the side of the tree with 2 leaf nodes
     main_plot("estimates", outtname, outputprefixx, actualoutgroupdistance)
 
     (pd.read_csv("MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
