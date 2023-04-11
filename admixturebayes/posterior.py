@@ -67,7 +67,7 @@ def likelihood(x, emp_cov, b, M=12,nodes=None):
 
 class posterior_class(object):
     
-    def __init__(self,  emp_cov,  M=10,  multiplier=None,  nodes=None):
+    def __init__(self,  emp_cov,  M=10,  multiplier=None,  nodes=None, varcovname = ""):
         '''
         M can either be a float - the degrees of freedom in the wishart distribution or the constant variance in the normal approximation of the covariance matrix.
         or M can be a matrix - the same size of emp_cov where each entry is the variance of that entry. 
@@ -76,7 +76,7 @@ class posterior_class(object):
         self.M=M
         self.p=0.5
         self.nodes=nodes
-        self.b=loadtxt('variance_correction.txt') * multiplier
+        self.b=loadtxt(varcovname) * multiplier
 
     def __call__(self, x):
         prior_value = prior(x,p=self.p)

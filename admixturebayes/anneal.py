@@ -1139,6 +1139,11 @@ def main(args):
                         help='this will set the amount of status out prints throughout running the program.')
 
     options=parser.parse_args(args)
+
+    temporaryfoldername =  options.output_prefix
+    os.mkdir(os.getcwd() + "/" + temporaryfoldername)
+
+    
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
 
     #Here is the only thing we should be changing.
@@ -1150,39 +1155,40 @@ def main(args):
     assert options.outgroup in colnames, 'The outgroup name is not in the given list of populations. Population names are case-sensitive.'
     
     temp = temp[sorted(colnames)]
-    temp.to_csv(os.getcwd() + "/temp_input.txt", sep =" ", index = False)
+    temp.to_csv(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", sep =" ", index = False)
 
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
      [1, 1, 1, 1, 1, 1, 1]) for _ in range(1)]
 
-    with open(os.getcwd() + "/temp_input.txt", 'r') as f:
+    with open(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", 'r') as f:
         full_nodes = f.readline().rstrip().split()
     reduced_nodes=deepcopy(full_nodes)
     reduced_nodes.remove(options.outgroup)
 
     estimator_arguments=dict(reducer=options.outgroup, nodes=full_nodes, add_variance_correction_to_graph=True, save_variance_correction=True)
                              
-    covariance=get_covariance(os.getcwd() + "/temp_input.txt", 
+    covariance=get_covariance(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", 
+    varcovfilename = os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt",
     full_nodes=full_nodes,
      reduce_covariance_node=options.outgroup,
-     estimator_arguments=estimator_arguments)
-
+     estimator_arguments=estimator_arguments,filename =  os.getcwd() +"/"+ temporaryfoldername + "/covariance_and_multiplier.txt")
     estimator_arguments['save_variance_correction']=False
-    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + "/temp_input.txt",
+    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt",
+                                               varcovfilename = os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt",
                                             bootstrap_blocksize=options.bootstrap_blocksize,
-                                            cores=1,
+                                            cores=2,
                                             est=estimator_arguments, 
                                             verbose_level=options.verbose_level)
-
     multiplier=covariance[1]
+
     #NEWEDIT, change the thing below to False, then []
     starting_trees=construct_starting_trees_choices.get_starting_trees([], 1, adds=[], nodes=reduced_nodes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=1)
 
-    posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes)
-
-    removefile("covariance_without_reduce_name.txt")
+    posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
+                                 varcovname=os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt")
+    
     removefile("variance_correction.txt")
     removefile("temp_starttree.txt")
     removefile("temp_start_tree.txt")
@@ -1190,7 +1196,7 @@ def main(args):
 
     if options.save_covariance:
         removefile(os.getcwd() + "/covariance_matrix.txt")
-        Liness = open("covariance_and_multiplier.txt", 'r').readlines()
+        Liness = open(os.getcwd() +"/"+ temporaryfoldername +"/covariance_and_multiplier.txt", 'r').readlines()
         covarfile = open(os.getcwd() + "/covariance_matrix.txt", "a")
         covarfile.writelines(Liness)
         covarfile.close()
@@ -1216,6 +1222,15 @@ def main(args):
             multiplier=multiplier,
             result_file=options.result_file,
             n_arg=int(log(EndingTemp / StartingTemp) / log(TempDecrease)), verboseee=options.verbose_level)
+    
+    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "covariance_and_multiplier.txt")
+    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "temp_input.txt")
+    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "variance_correction.txt")
+    if os.path.exists(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" ):
+        os.rmdir(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" )
+    if os.path.exists(os.getcwd() +"/"+ temporaryfoldername):
+        os.rmdir(os.getcwd() +"/"+ temporaryfoldername)
+        
     return(options.outgroup, options.output_prefix, multiplier, options.dontcleanup)
 
 if __name__=='__main__':

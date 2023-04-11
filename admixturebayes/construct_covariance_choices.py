@@ -57,11 +57,11 @@ def remove_files(filenames):
         os.remove(fil)
         os.remove(fil[:-3])
 
-def make_covariances(filenames, cores, **kwargs):
+def make_covariances(filenames, varcovfilename, cores, **kwargs):
     covs=[]
     p=Pool(cores)
     def t(filename):
-        return empirical_covariance_wrapper_directly(filename, **kwargs)
+        return empirical_covariance_wrapper_directly(filename, varcovfilename, **kwargs)
     covs=list(map(t, filenames))
     try:
         remove_files(filenames)
@@ -69,10 +69,10 @@ def make_covariances(filenames, cores, **kwargs):
         warnings.warn('Erasing the files did not succeed',UserWarning)
     return covs
 
-def make_single_files(filename,blocksize, verbose_level='normal'):
+def make_single_files(filename,blocksize, verbose_level='normal', fileprefix = ""):
     filenames=[]
-    os.mkdir(os.getcwd() + "/temp_adbayes")
-    filename_reduced=os.getcwd() + "/temp_adbayes/" +filename.split(os.sep)[-1]+'boot.'
+    os.mkdir(fileprefix + "/temp_adbayes")
+    filename_reduced=fileprefix + "/temp_adbayes/" +filename.split(os.sep)[-1]+'boot.'
     with open(filename, 'r') as f:
         first_line=f.readline()
         lines=f.readlines()
@@ -89,13 +89,14 @@ def make_single_files(filename,blocksize, verbose_level='normal'):
         filenames.append(gzipped_filename)
     return filenames
 
-def estimate_degrees_of_freedom_scaled_fast(filename, bootstrap_blocksize=1000,
+def estimate_degrees_of_freedom_scaled_fast(filename, varcovfilename = "", bootstrap_blocksize=1000,
                                             cores=1,  verbose_level='normal',  **kwargs):
-    single_files=make_single_files(filename, blocksize=bootstrap_blocksize, verbose_level=verbose_level)
+
+    single_files=make_single_files(filename, blocksize=bootstrap_blocksize, verbose_level=verbose_level, fileprefix = (varcovfilename[0:(len(varcovfilename)-24)]))
     assert len(single_files)>1, 'There are ' +str(len(single_files)) + ' bootstrapped SNP blocks and that is not enough. Either add more data or lower the --bootstrap_blocksize'
     if len(single_files)<39:
         warnings.warn('There are only '+str(len(single_files))+' bootstrap blocks. Consider lowering the --bootstrap_blocksize or add more data.', UserWarning)
-    single_covs=make_covariances(single_files, cores=cores, return_also_mscale=True, **kwargs)
+    single_covs=make_covariances(single_files, varcovfilename=varcovfilename, cores=cores, return_also_mscale=True, **kwargs)
 
     p=Pool(cores)
     def t(empty):
@@ -156,10 +157,11 @@ def reduced_covariance_bias_correction(p,n,n_outgroup=0):
     return diag(array(Bs))+outgroup_b
 
 class ScaledEstimator(object):
-    def __init__(self, add_variance_correction_to_graph=False, save_variance_correction=True, nodes=None):
+    def __init__(self, add_variance_correction_to_graph=False, save_variance_correction=True, nodes=None, varcovname = ""):
         self.add_variance_correction_to_graph=add_variance_correction_to_graph
         self.nodes=nodes
         self.save_variance_correction=save_variance_correction
+        self.variancecorrectionname = varcovname
         
     def subtract_ancestral_and_get_outgroup(self,p):
         return p-p[0,:]
@@ -186,7 +188,7 @@ class ScaledEstimator(object):
         m=reduce_covariance(m)
         b=reduced_covariance_bias_correction(p, ns, 0)/scaling_factor
         if self.save_variance_correction:
-            savetxt('variance_correction.txt', b)
+            savetxt(self.variancecorrectionname, b)
         return m
 
 def read_freqs(new_filename):
@@ -262,8 +264,8 @@ def unzip(filename, overwrite=False, new_filename=None):
         subprocess.call(command, stdout=f)
     return new_filename
 
-def make_estimator( nodes,  reducer, add_variance_correction_to_graph=False, save_variance_correction=True):
-    return ScaledEstimator(add_variance_correction_to_graph=add_variance_correction_to_graph, save_variance_correction=save_variance_correction)
+def make_estimator( nodes,  reducer, add_variance_correction_to_graph=False, save_variance_correction=True, varcovname = ""):
+    return ScaledEstimator(add_variance_correction_to_graph=add_variance_correction_to_graph, save_variance_correction=save_variance_correction, varcovname=varcovname)
 
 def rescale_empirical_covariance(m):
     n=m.shape[0]
@@ -272,14 +274,15 @@ def rescale_empirical_covariance(m):
     
     return m*multiplier, multiplier
 
-def empirical_covariance_wrapper_directly(snp_data_file, **kwargs):
+def empirical_covariance_wrapper_directly(snp_data_file, varcovfilename, **kwargs):
     xnn_tuple=get_xs_and_ns_from_treemix_file(snp_data_file)
-    return xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs)
+    return xnn_to_covariance_wrapper_directly(xnn_tuple, varcovfilename, **kwargs)
 
-def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
+def xnn_to_covariance_wrapper_directly(xnn_tuple, varcovfilename, **kwargs):
     est_args=kwargs['est']
     xnn_tuple=order_covariance(xnn_tuple, outgroup=est_args['reducer'])
     xs,ns,names=xnn_tuple
+    est_args['varcovname']  = varcovfilename
 
     est= make_estimator( **est_args)
     extra_info_dic={}
@@ -289,7 +292,7 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
         est_args['add_variance_correction_to_graph'] and
         'save_variance_correction' in est_args and
         est_args['save_variance_correction']):
-        filename='variance_correction.txt'
+        filename=varcovfilename
         vc=loadtxt(filename)
         vc=reorder_reduced_covariance(vc, names, est_args['nodes'], outgroup=est_args['reducer'])
         savetxt(filename, vc)
@@ -297,18 +300,16 @@ def xnn_to_covariance_wrapper_directly(xnn_tuple, **kwargs):
         return cov, extra_info_dic['m_scale']
     return cov
 
-def get_covariance(input, full_nodes=None, reduce_covariance_node=None, estimator_arguments={}):
+def get_covariance(input, varcovfilename= "", full_nodes=None, reduce_covariance_node=None, estimator_arguments={}, filename = ""):
     kwargs={}
     after_reduce_nodes=deepcopy(full_nodes)
     after_reduce_nodes.remove(reduce_covariance_node)
     kwargs['est']=estimator_arguments
 
     statistic = input
-    statistic = empirical_covariance_wrapper_directly(statistic, **kwargs)
-    emp_cov_to_file(statistic, 'covariance_without_reduce_name.txt', after_reduce_nodes)
+    statistic = empirical_covariance_wrapper_directly(statistic, varcovfilename, **kwargs)
 
     statistic=rescale_empirical_covariance(statistic)
-    filename='covariance_and_multiplier.txt'
     emp_cov_to_file(statistic[0], filename, after_reduce_nodes)
     with open(filename, 'a') as f:
         f.write('multiplier='+str(statistic[1]))
