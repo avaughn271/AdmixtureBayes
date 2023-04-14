@@ -363,13 +363,13 @@ def branch_and_proportion_quantiles_process(list_of_string_trees):
     return bresults, aresults
 
 def mainnnoutput(outtputtprefix):
-    df = pd.read_csv(outtputtprefix + '/mcmc_samples_annealing.csv')
+    df = pd.read_csv(outtputtprefix + os.sep +'mcmc_samples_annealing.csv')
     totalnummmofrows = df.shape[0]
     posteriorr = df['posterior'].values.tolist()
     modetree = ((df[["tree"]]).iloc[totalnummmofrows-1])[0]
     print(df.shape, "total number of rows", posteriorr[totalnummmofrows-1] )
     print(posteriorr.index(max(posteriorr)), "index of posterior mode",  max(posteriorr))
-    ff = open(outtputtprefix + "/MAPadd.txt", "w")
+    ff = open(outtputtprefix + os.sep  + "MAPadd.txt", "w")
     ff.write(str((df[["add"]]).iloc[totalnummmofrows-1][0] ) +  "\n")
     ff.close
     leaves = sorted(list(set([leaf for node in (df['descendant_sets'].tolist()[0].split('-')) for leaf in node.split('.')])))
@@ -385,7 +385,7 @@ def mainnnoutput(outtputtprefix):
 
     tree = identifier_to_tree_process(temptopology, leaves=generate_predefined_list_string_process(deepcopy(leaves)), branch_lengths=generate_predefined_list_string_process(deepcopy(branch_names)), admixture_proportions=generate_predefined_list_string_process(deepcopy(admixture_names)))
 
-    f = open(outtputtprefix + "/MAPtree.txt", "w")
+    f = open(outtputtprefix + os.sep  + "MAPtree.txt", "w")
 
     for node in tree:
         if (tree[node][2] is not None):
@@ -745,7 +745,7 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
         return node_structure
 
     if plottype=='top_minimal_topologies':
-        df = pd.read_csv(outputprefix + "/thinned_samples_annealing.csv", sep=',', usecols=['pops'])
+        df = pd.read_csv(outputprefix + os.sep  + "thinned_samples_annealing.csv", sep=',', usecols=['pops'])
         nodes_list = df['pops'].tolist()
         seen_combinations = {}
         for nodes in nodes_list:
@@ -762,7 +762,7 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
                 plot_node_structure_as_directed_graph(node_structure, drawing_name= outputprefix + '_minimal_topology.png',
                                                         node_dic=node_count_dic,  popup=False)
     elif plottype=='top_trees':
-        df = pd.read_csv(outputprefix + "/thinned_samples_annealing.csv", sep=',', usecols=['pops','topology'])
+        df = pd.read_csv(outputprefix + os.sep  + "thinned_samples_annealing.csv", sep=',', usecols=['pops','topology'])
         trees_list = df['topology'].tolist()
         N=len(trees_list)
         c = Counter(trees_list)
@@ -777,10 +777,10 @@ def main_plot(plottype, outtttname, outputprefix, disttooutgroup):
             plot_as_directed_graph(tree,drawing_name=outputprefix+'_topology_.png', popup=False )
     elif plottype=='estimates':
         try:
-            df = pd.read_csv(outputprefix + "/thinned_samples_annealing.csv", sep=',', usecols=['string_tree', 'topology', 'pops'])
+            df = pd.read_csv(outputprefix + os.sep   +"thinned_samples_annealing.csv", sep=',', usecols=['string_tree', 'topology', 'pops'])
         except ValueError as e:
             raise Exception('Unexpected columns in the posterior_distribution file. Did you turn on the --faster flag in AdmixtureBayes posterior?')
-        maptree = pd.read_csv(outputprefix + "/MAPtree.txt", sep=' ', header = None)
+        maptree = pd.read_csv(outputprefix + os.sep   + "MAPtree.txt", sep=' ', header = None)
         reviseddashedspecifier = {}
         firstcol = maptree.iloc[:, 0].tolist()
         secondcol = maptree.iloc[:, 1].tolist()
@@ -1028,7 +1028,7 @@ def run_posterior_main(outputprefix):
     subnodes_wo_outgroup=[]
 
     totallist = []
-    a = pd.read_csv(outputprefix + "/mcmc_samples_annealing.csv", nrows=3)
+    a = pd.read_csv(outputprefix + os.sep  + "mcmc_samples_annealing.csv", nrows=3)
     stringg = (a.loc[0,["descendant_sets"]])[0]
     stringg = (stringg.split('-'))
     for i in stringg:
@@ -1078,14 +1078,14 @@ def run_posterior_main(outputprefix):
 
     def save_thin_columns(d_dic):
         return {summ:d_dic[summ] for summ in list(set(['no_admixes', 'topology', 'pops','string_tree']+[]))}
-    all_results=iterate_over_output_file(outputprefix + "/mcmc_samples_annealing.csv",
+    all_results=iterate_over_output_file(outputprefix + os.sep  + "mcmc_samples_annealing.csv",
                                              cols=['tree', 'add', 'layer', 'no_admixes'],
                                              row_summarize_functions=row_sums,
                                              thinned_d_dic=save_thin_columns)
 
     if True:
         summaries=list(all_results[0].keys())
-        with open(outputprefix + "/thinned_samples_annealing.csv", 'w') as f:
+        with open(outputprefix + os.sep   +"thinned_samples_annealing.csv", 'w') as f:
             f.write(','.join(summaries)+'\n')
             for row in all_results:
                 s_summs=[str(row[summ]) for summ in summaries]
@@ -1140,7 +1140,7 @@ def main(args):
     options=parser.parse_args(args)
 
     temporaryfoldername =  options.output_prefix
-    os.mkdir(os.getcwd() + "/" + temporaryfoldername)
+    os.mkdir(os.getcwd() + os.sep  + temporaryfoldername)
 
     
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
@@ -1154,26 +1154,26 @@ def main(args):
     assert options.outgroup in colnames, 'The outgroup name is not in the given list of populations. Population names are case-sensitive.'
     
     temp = temp[sorted(colnames)]
-    temp.to_csv(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", sep =" ", index = False)
+    temp.to_csv(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_input.txt", sep =" ", index = False)
 
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
      [1, 1, 1, 1, 1, 1, 1]) for _ in range(1)]
 
-    with open(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", 'r') as f:
+    with open(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_input.txt", 'r') as f:
         full_nodes = f.readline().rstrip().split()
     reduced_nodes=deepcopy(full_nodes)
     reduced_nodes.remove(options.outgroup)
 
     estimator_arguments=dict(reducer=options.outgroup, nodes=full_nodes, add_variance_correction_to_graph=True, save_variance_correction=True)
                              
-    covariance=get_covariance(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", 
-    varcovfilename = os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt",
+    covariance=get_covariance(os.getcwd() +os.sep + temporaryfoldername + os.sep   +"temp_input.txt", 
+    varcovfilename = os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt",
     full_nodes=full_nodes,
      reduce_covariance_node=options.outgroup,
-     estimator_arguments=estimator_arguments,filename =  os.getcwd() +"/"+ temporaryfoldername + "/covariance_and_multiplier.txt")
+     estimator_arguments=estimator_arguments,filename =  os.getcwd() +os.sep + temporaryfoldername + os.sep  + "covariance_and_multiplier.txt")
     estimator_arguments['save_variance_correction']=False
-    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt",
-                                               varcovfilename = os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt",
+    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_input.txt",
+                                               varcovfilename = os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt",
                                             bootstrap_blocksize=options.bootstrap_blocksize,
                                             cores=2,
                                             est=estimator_arguments, 
@@ -1186,7 +1186,7 @@ def main(args):
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=1)
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
-                                 varcovname=os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt")
+                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt")
     
     removefile("variance_correction.txt")
     removefile("temp_starttree.txt")
@@ -1194,17 +1194,17 @@ def main(args):
     removefile("temp_add.txt")
 
     if options.save_covariance:
-        removefile(os.getcwd() + "/covariance_matrix.txt")
-        Liness = open(os.getcwd() +"/"+ temporaryfoldername +"/covariance_and_multiplier.txt", 'r').readlines()
-        covarfile = open(os.getcwd() + "/covariance_matrix.txt", "a")
+        removefile(os.getcwd() + os.sep  +"covariance_matrix.txt")
+        Liness = open(os.getcwd() +os.sep + temporaryfoldername +os.sep  + "covariance_and_multiplier.txt", 'r').readlines()
+        covarfile = open(os.getcwd() + os.sep  + "covariance_matrix.txt", "a")
         covarfile.writelines(Liness)
         covarfile.close()
 
     removefile("covariance_and_multiplier.txt")
-    removefile(os.getcwd() + "/temp_input.txt")
+    removefile(os.getcwd() + os.sep  +"temp_input.txt")
 
-    if os.path.exists(os.getcwd() + "/temp_adbayes"):
-        os.rmdir(os.getcwd() + "/temp_adbayes")
+    if os.path.exists(os.getcwd() + os.sep  + "temp_adbayes"):
+        os.rmdir(os.getcwd() + os.sep  +"temp_adbayes")
     
     StartingTemp =  float(options.starting_temp) #    100
     EndingTemp = float(options.ending_temp) #  0.0001
@@ -1219,16 +1219,15 @@ def main(args):
             iteration_scheme=[NumberAtEach]*int(log(EndingTemp / StartingTemp) / log(TempDecrease)),
             proposal_scheme= mp,
             multiplier=multiplier,
-            result_file = temporaryfoldername + "/mcmc_samples_annealing.csv",
+            result_file = temporaryfoldername + os.sep   + "mcmc_samples_annealing.csv",
             n_arg=int(log(EndingTemp / StartingTemp) / log(TempDecrease)), verboseee=options.verbose_level)
     
-    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "covariance_and_multiplier.txt")
-    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "temp_input.txt")
-    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "variance_correction.txt")
-    if os.path.exists(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" ):
-        os.rmdir(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" )
-    #if os.path.exists(os.getcwd() +"/"+ temporaryfoldername):
-    #    os.rmdir(os.getcwd() +"/"+ temporaryfoldername)
+    removefile(os.getcwd() +os.sep + temporaryfoldername + os.sep + "covariance_and_multiplier.txt")
+    removefile(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_input.txt")
+    removefile(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt")
+    if os.path.exists(os.getcwd() +os.sep + temporaryfoldername + os.sep  +"temp_adbayes" ):
+        os.rmdir(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_adbayes" )
+
         
     return(options.outgroup, options.output_prefix, multiplier, options.dontcleanup)
 
@@ -1241,7 +1240,7 @@ if __name__=='__main__':
 
     mainnnoutput(outputprefixx)
 
-    scaleddistancetooutgroup = (pd.read_csv(outputprefixx + "/MAPadd.txt", header = None))[0][0]
+    scaleddistancetooutgroup = (pd.read_csv(outputprefixx + os.sep  + "MAPadd.txt", header = None))[0][0]
 
     actualoutgroupdistance = scaleddistancetooutgroup / multiplierrr
 
@@ -1253,16 +1252,16 @@ if __name__=='__main__':
     main_plot("top_trees", "out", outputprefixx, 0) #most of the admixture should go to the side of the tree with 2 leaf nodes
     main_plot("estimates", outtname, outputprefixx, actualoutgroupdistance)
 
-    (pd.read_csv(outputprefixx + "/MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
+    (pd.read_csv(outputprefixx + os.sep  +"MAPtree.txt", header = None)).to_csv(outputprefixx + '_tree.txt',  header=False, index = False)
     
-    if os.path.exists(outputprefixx + "/MAPadd.txt"):
-        os.remove(outputprefixx + "/MAPadd.txt")
-    if os.path.exists(outputprefixx + "/MAPtree.txt"):
-        os.remove(outputprefixx + "/MAPtree.txt")
-    if os.path.exists(outputprefixx + "/mcmc_samples_annealing.csv"):
-        os.remove(outputprefixx + "/mcmc_samples_annealing.csv")
-    if os.path.exists(outputprefixx + "/thinned_samples_annealing.csv"):
-        os.remove(outputprefixx + "/thinned_samples_annealing.csv")
+    if os.path.exists(outputprefixx + os.sep  +"MAPadd.txt"):
+        os.remove(outputprefixx +os.sep  + "MAPadd.txt")
+    if os.path.exists(outputprefixx + os.sep  +"MAPtree.txt"):
+        os.remove(outputprefixx + os.sep  +"MAPtree.txt")
+    if os.path.exists(outputprefixx + os.sep  +"mcmc_samples_annealing.csv"):
+        os.remove(outputprefixx + os.sep  +"mcmc_samples_annealing.csv")
+    if os.path.exists(outputprefixx + os.sep  +"thinned_samples_annealing.csv"):
+        os.remove(outputprefixx + os.sep  + "thinned_samples_annealing.csv")
     if os.path.exists(outputprefixx):
         os.rmdir(outputprefixx)
     if not dontcleanup:

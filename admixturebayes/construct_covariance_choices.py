@@ -71,8 +71,8 @@ def make_covariances(filenames, varcovfilename, cores, **kwargs):
 
 def make_single_files(filename,blocksize, verbose_level='normal', fileprefix = ""):
     filenames=[]
-    os.mkdir(fileprefix + "/temp_adbayes")
-    filename_reduced=fileprefix + "/temp_adbayes/" +filename.split(os.sep)[-1]+'boot.'
+    os.mkdir(fileprefix + os.sep + "temp_adbayes")
+    filename_reduced=fileprefix + os.sep  + "temp_adbayes" + os.sep  + filename.split(os.sep)[-1]+'boot.'
     with open(filename, 'r') as f:
         first_line=f.readline()
         lines=f.readlines()

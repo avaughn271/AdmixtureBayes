@@ -65,7 +65,7 @@ def main(args):
     options=parser.parse_args(args)
 
     temporaryfoldername = (options.result_file).replace('.', '')
-    os.mkdir(os.getcwd() + "/" + temporaryfoldername)
+    os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
 
     assert options.MCMC_chains > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
@@ -79,27 +79,27 @@ def main(args):
     assert options.outgroup in colnames, 'The outgroup name is not in the given list of populations. Population names are case-sensitive.'
     
     temp = temp[sorted(colnames)]
-    temp.to_csv(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", sep =" ", index = False)
+    temp.to_csv(os.getcwd() + os.sep + temporaryfoldername + os.sep + "temp_input.txt", sep =" ", index = False)
 
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
      [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
 
-    with open(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", 'r') as f:
+    with open(os.getcwd() +os.sep+ temporaryfoldername + os.sep + "temp_input.txt", 'r') as f:
         full_nodes = f.readline().rstrip().split()
     reduced_nodes=deepcopy(full_nodes)
     reduced_nodes.remove(options.outgroup)
 
     estimator_arguments=dict(reducer=options.outgroup, nodes=full_nodes, add_variance_correction_to_graph=True, save_variance_correction=True)
                              
-    covariance=get_covariance(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt", 
-    varcovfilename = os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt",
+    covariance=get_covariance(os.getcwd() +os.sep+ temporaryfoldername + os.sep + "temp_input.txt", 
+    varcovfilename = os.getcwd() +os.sep+ temporaryfoldername + os.sep + "variance_correction.txt",
     full_nodes=full_nodes,
      reduce_covariance_node=options.outgroup,
-     estimator_arguments=estimator_arguments,filename =  os.getcwd() +"/"+ temporaryfoldername + "/covariance_and_multiplier.txt")
+     estimator_arguments=estimator_arguments,filename =  os.getcwd() +os.sep + temporaryfoldername + os.sep  +"covariance_and_multiplier.txt")
 
     estimator_arguments['save_variance_correction']=False
-    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() +"/"+ temporaryfoldername + "/temp_input.txt",
-                                               varcovfilename = os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt",
+    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + os.sep + temporaryfoldername + os.sep  + "temp_input.txt",
+                                               varcovfilename = os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt",
                                             bootstrap_blocksize=options.bootstrap_blocksize,
                                             cores=options.MCMC_chains,
                                             est=estimator_arguments, 
@@ -110,23 +110,23 @@ def main(args):
     if options.continue_samples != []:
         #This is where the continuation is all happening.
         #We first save the tree to a temporary file
-        removefile(os.getcwd() + "/" +  "temp_start_tree.txt")
-        temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
+        removefile(os.getcwd() + os.sep +  "temp_start_tree.txt")
+        temp = pandas.read_csv(os.getcwd() + os.sep + (options.continue_samples[0]))
         temp2 = (temp[["tree"]])
-        f = open(os.getcwd() + "/" +  "temp_start_tree.txt", "a")
+        f = open(os.getcwd() + os.sep  +  "temp_start_tree.txt", "a")
         f.write("\n")
         f.write(temp2.iloc[len(temp2.index) - 1, 0])
         f.write("\n")
         f.close()
 
-        removefile(os.getcwd() + "/temp_starttree.txt")
-        gii = open(os.getcwd() + "/" + temporaryfoldername + "/covariance_and_multiplier.txt", "r")
+        removefile(os.getcwd() + os.sep  + "temp_starttree.txt")
+        gii = open(os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "covariance_and_multiplier.txt", "r")
         g = gii.readlines()
         g = g[len(g)-1]
         g = g.split("=")
         multiplier = float(g[len(g)-1])
         gii.close()
-        fff = open(os.getcwd() + "/" + "temp_start_tree.txt", "r")
+        fff = open(os.getcwd() + os.sep  + "temp_start_tree.txt", "r")
 
         f = fff.readlines()
         secondline = f[1]
@@ -156,23 +156,23 @@ def main(args):
         FinalString = FinalString[0:(len(FinalString)-1)]
         FinalString = FinalString + ";" + splitted[2]
         fff.close()
-        gg = open(os.getcwd() + "/" +  "temp_starttree.txt", "a")
+        gg = open(os.getcwd() +os.sep  +  "temp_starttree.txt", "a")
         gg.write(FinalString)
         gg.close()
 
-        temp = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
+        temp = pandas.read_csv(os.getcwd() + os.sep + (options.continue_samples[0]))
         addvalue = (temp[["add"]])
         addvalue = float(addvalue.iloc[len(addvalue.index) - 1, 0])
 
-        removefile(os.getcwd() + "/" + "temp_add.txt")
-        f = open(os.getcwd() + "/" + "temp_add.txt", "a")
+        removefile(os.getcwd() + os.sep + "temp_add.txt")
+        f = open(os.getcwd() + os.sep  + "temp_add.txt", "a")
         f.write(str(addvalue) + "\n")
         f.close()
 
         #compute addfile as a file with a number
-        starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + "/" +  "temp_starttree.txt"],
+        starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + os.sep +  "temp_starttree.txt"],
                                         options.MCMC_chains,
-                                        adds=[os.getcwd() + "/" + "temp_add.txt"],
+                                        adds=[os.getcwd() + os.sep  + "temp_add.txt"],
                                         nodes=reduced_nodes)
     else:
         starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples, options.MCMC_chains, adds=[], nodes=reduced_nodes)
@@ -180,16 +180,16 @@ def main(args):
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
-                                 varcovname=os.getcwd() +"/"+ temporaryfoldername + "/variance_correction.txt")
+                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt")
 
     removefile("temp_starttree.txt")
     removefile("temp_start_tree.txt")
     removefile("temp_add.txt")
 
     if options.save_covariance:
-        removefile(os.getcwd() + "/covariance_matrix.txt")
-        Liness = open(os.getcwd() +"/"+ temporaryfoldername +"/covariance_and_multiplier.txt", 'r').readlines()
-        covarfile = open(os.getcwd() + "/covariance_matrix.txt", "a")
+        removefile(os.getcwd() + os.sep  +"covariance_matrix.txt")
+        Liness = open(os.getcwd() +os.sep + temporaryfoldername +os.sep  + "covariance_and_multiplier.txt", 'r').readlines()
+        covarfile = open(os.getcwd() + os.sep  +"covariance_matrix.txt", "a")
         covarfile.writelines(Liness)
         covarfile.close()
 
@@ -210,18 +210,18 @@ def main(args):
             n_arg=options.n, verboseee=options.verbose_level)
 
     if options.continue_samples != []:
-        oldcsv = pandas.read_csv(os.getcwd() + "/" + (options.continue_samples[0]))
-        newcsv = pandas.read_csv(os.getcwd() + "/" + options.result_file)
+        oldcsv = pandas.read_csv(os.getcwd() + os.sep  + (options.continue_samples[0]))
+        newcsv = pandas.read_csv(os.getcwd() + os.sep + options.result_file)
         result = pandas.concat([oldcsv,newcsv])
-        removefile(os.getcwd() + "/" + options.result_file)
-        result.to_csv(os.getcwd() + "/" + options.result_file, index = False)
-    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "covariance_and_multiplier.txt")
-    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "temp_input.txt")
-    removefile(os.getcwd() +"/"+ temporaryfoldername + "/" + "variance_correction.txt")
-    if os.path.exists(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" ):
-        os.rmdir(os.getcwd() +"/"+ temporaryfoldername + "/temp_adbayes" )
-    if os.path.exists(os.getcwd() +"/"+ temporaryfoldername):
-        os.rmdir(os.getcwd() +"/"+ temporaryfoldername)
+        removefile(os.getcwd() + os.sep + options.result_file)
+        result.to_csv(os.getcwd() +os.sep + options.result_file, index = False)
+    removefile(os.getcwd() +os.sep + temporaryfoldername +os.sep + "covariance_and_multiplier.txt")
+    removefile(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_input.txt")
+    removefile(os.getcwd() +os.sep + temporaryfoldername + os.sep + "variance_correction.txt")
+    if os.path.exists(os.getcwd() +os.sep + temporaryfoldername + os.sep  +"temp_adbayes" ):
+        os.rmdir(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_adbayes" )
+    if os.path.exists(os.getcwd() +os.sep + temporaryfoldername):
+        os.rmdir(os.getcwd() + os.sep + temporaryfoldername)
 
 if __name__=='__main__':
     import sys
