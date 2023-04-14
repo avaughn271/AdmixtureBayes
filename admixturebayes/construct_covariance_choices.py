@@ -1,7 +1,6 @@
 from copy import deepcopy
 
 from numpy import insert, delete, ix_, dtype, loadtxt
-import subprocess
 import os
 
 from numpy import array, mean, zeros, diag, savetxt, nan, isnan, nanmean, identity, diag, log, outer, square
@@ -14,14 +13,6 @@ from numpy import var as npvar
 from scipy.optimize import minimize_scalar
 
 from pathos.multiprocessing import Pool
-
-def gzip(filename, new_filename=None):
-    if new_filename is None:
-        new_filename=filename+'.gz'
-    command=['gzip','-c',filename]
-    with open(new_filename, 'w') as f:
-        subprocess.call(command, stdout=f)
-    return new_filename
 
 def variance_mean_based(sample_of_matrices):
     mean_wishart=  mean(sample_of_matrices, axis=0)
@@ -52,11 +43,6 @@ def combine_covs(tuple_covs, indices):
         scale_sum+=tuple_covs[i][1]
     return cov_sum/scale_sum
 
-def remove_files(filenames):
-    for fil in filenames:
-        os.remove(fil)
-        os.remove(fil[:-3])
-
 def make_covariances(filenames, varcovfilename, cores, **kwargs):
     covs=[]
     p=Pool(cores)
@@ -64,7 +50,8 @@ def make_covariances(filenames, varcovfilename, cores, **kwargs):
         return empirical_covariance_wrapper_directly(filename, varcovfilename, **kwargs)
     covs=list(map(t, filenames))
     try:
-        remove_files(filenames)
+        for fil in filenames:
+            os.remove(fil)
     except OSError as e:
         warnings.warn('Erasing the files did not succeed',UserWarning)
     return covs
@@ -85,7 +72,7 @@ def make_single_files(filename,blocksize, verbose_level='normal', fileprefix = "
         with open(new_filename, 'w') as g:
             g.write(first_line)
             g.writelines(lins)
-        gzipped_filename=gzip(new_filename)
+        gzipped_filename=new_filename
         filenames.append(gzipped_filename)
     return filenames
 
@@ -209,18 +196,12 @@ def read_freqs(new_filename):
     return names, pop_sizes, minors
 
 def get_xs_and_ns_from_treemix_file(snp_file):
-    if snp_file.endswith('.gz'):
-        new_filename=unzip(snp_file)
-    else:
-        new_filename=snp_file
-    names, ns, minors= read_freqs(new_filename)
+    names, ns, minors= read_freqs(snp_file)
     xs=array(minors, dtype=dtype(float)).T
     ns=array(ns, dtype=dtype(float)).T
     return xs,ns,names
 
 def order_covariance(xnn_tuple, outgroup=''):
-    if not outgroup:
-        return xnn_tuple
     xs,ns,names=xnn_tuple
     assert outgroup in names, 'The outgroup was not found in the data. Did you spell it correctly?'
     n_outgroup=next((n for n, e in enumerate(names) if e==outgroup))
@@ -253,16 +234,6 @@ def emp_cov_to_file(m, filename='emp_covimport', nodes=None):
         f.write(' '.join(nodes)+'\n')
         for i, node in enumerate(nodes):
             f.write(node+ ' '+ ' '.join(map(str, m[i]))+'\n')
-
-def unzip(filename, overwrite=False, new_filename=None):
-    if new_filename is None:
-        new_filename=filename[:-3]
-    if (not overwrite) and os.path.exists(new_filename):
-        return new_filename
-    command=['gunzip','-c',filename]
-    with open(new_filename, 'w') as f:
-        subprocess.call(command, stdout=f)
-    return new_filename
 
 def make_estimator( nodes,  reducer, add_variance_correction_to_graph=False, save_variance_correction=True, varcovname = ""):
     return ScaledEstimator(add_variance_correction_to_graph=add_variance_correction_to_graph, save_variance_correction=save_variance_correction, varcovname=varcovname)
