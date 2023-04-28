@@ -64,7 +64,7 @@ def main(args):
 
     options=parser.parse_args(args)
 
-    temporaryfoldername = (options.result_file).replace('.', '')
+    temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"
     os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
 
     assert options.MCMC_chains > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
