@@ -42,9 +42,11 @@ admixes3Burn = admixes3[-(1:round(BurnInFraction*length(admixes3)))]
 
 #We plot our trace plots (these include all samples,
 #including those in the burn-in period)
-plot(Post1, type = "l", col ="steelblue4", xlab = "", ylab = "log-Posterior", main = "Chain 1")
-plot(Post2, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 2")
-plot(Post3, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 3")
+posteriormax = max(c(Post1, Post2, Post3))
+posteriormin =  min(c(Post1[-c(1:1000)], Post2[-c(1:1000)], Post3[-c(1:1000)]))
+plot(Post1, type = "l", col ="steelblue4", xlab = "", ylab = "log-Posterior", main = "Chain 1", ylim = c(posteriormin, posteriormax))
+plot(Post2, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 2", ylim = c(posteriormin, posteriormax))
+plot(Post3, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 3", ylim = c(posteriormin, posteriormax))
 
 plot(Branches1, type = "l", col ="limegreen",  xlab = "", ylab = "Total Branch Length")
 plot(Branches2, type = "l", col ="limegreen",  xlab = "", ylab = "")
