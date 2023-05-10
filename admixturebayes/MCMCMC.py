@@ -77,10 +77,8 @@ def flipping(xs, posteriors, temperature_scheme, proposal_updates, flipproposals
         flipproposals[i] = flipproposals[i] + 1
         post_i,post_j=posteriors[i],posteriors[j]
         temp_i,temp_j=temperature_scheme[i], temperature_scheme[j]
-        logalpha=-(post_i[0]-post_j[0])*(1.0/temp_i-1.0/temp_j)
+        logalpha=-(post_i[0]+post_i[1]-post_j[0]-post_j[1])*(1.0/temp_i-1.0/temp_j)
         if logalpha>0 or random() < exp(logalpha):
-            if i == 0:
-                print(i,j, "accept")
             flipacc[i] = flipacc[i] + 1
             count+=1
             step_permutation[i], step_permutation[j]= step_permutation[j], step_permutation[i]
