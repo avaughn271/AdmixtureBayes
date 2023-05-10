@@ -60,7 +60,7 @@ def main(args):
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
     
-
+    parser.add_argument('--maxtemp', type=float, default=1000.0, help='the max temp of the hottest chain')
 
     options=parser.parse_args(args)
 
@@ -110,23 +110,23 @@ def main(args):
     if options.continue_samples != []:
         #This is where the continuation is all happening.
         #We first save the tree to a temporary file
-        removefile(os.getcwd() + os.sep +  "temp_start_tree.txt")
+        removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_start_tree.txt")
         temp = pandas.read_csv(os.getcwd() + os.sep + (options.continue_samples[0]))
         temp2 = (temp[["tree"]])
-        f = open(os.getcwd() + os.sep  +  "temp_start_tree.txt", "a")
+        f = open(os.getcwd() + os.sep  +  temporaryfoldername + os.sep  +"temp_start_tree.txt", "a")
         f.write("\n")
         f.write(temp2.iloc[len(temp2.index) - 1, 0])
         f.write("\n")
         f.close()
 
-        removefile(os.getcwd() + os.sep  + "temp_starttree.txt")
+        removefile(os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "temp_starttree.txt")
         gii = open(os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "covariance_and_multiplier.txt", "r")
         g = gii.readlines()
         g = g[len(g)-1]
         g = g.split("=")
         multiplier = float(g[len(g)-1])
         gii.close()
-        fff = open(os.getcwd() + os.sep  + "temp_start_tree.txt", "r")
+        fff = open(os.getcwd() + os.sep  +temporaryfoldername + os.sep  + "temp_start_tree.txt", "r")
 
         f = fff.readlines()
         secondline = f[1]
@@ -156,7 +156,7 @@ def main(args):
         FinalString = FinalString[0:(len(FinalString)-1)]
         FinalString = FinalString + ";" + splitted[2]
         fff.close()
-        gg = open(os.getcwd() +os.sep  +  "temp_starttree.txt", "a")
+        gg = open(os.getcwd() +os.sep  + temporaryfoldername + os.sep  +  "temp_starttree.txt", "a")
         gg.write(FinalString)
         gg.close()
 
@@ -164,15 +164,15 @@ def main(args):
         addvalue = (temp[["add"]])
         addvalue = float(addvalue.iloc[len(addvalue.index) - 1, 0])
 
-        removefile(os.getcwd() + os.sep + "temp_add.txt")
-        f = open(os.getcwd() + os.sep  + "temp_add.txt", "a")
+        removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_add.txt")
+        f = open(os.getcwd() + os.sep  +  temporaryfoldername + os.sep  +  "temp_add.txt", "a")
         f.write(str(addvalue) + "\n")
         f.close()
 
         #compute addfile as a file with a number
-        starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + os.sep +  "temp_starttree.txt"],
+        starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt"],
                                         options.MCMC_chains,
-                                        adds=[os.getcwd() + os.sep  + "temp_add.txt"],
+                                        adds=[os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "temp_add.txt"],
                                         nodes=reduced_nodes)
     else:
         starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples, options.MCMC_chains, adds=[], nodes=reduced_nodes)
@@ -182,9 +182,9 @@ def main(args):
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
                                  varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt")
 
-    removefile("temp_starttree.txt")
-    removefile("temp_start_tree.txt")
-    removefile("temp_add.txt")
+    removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt")
+    removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_start_tree.txt")
+    removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  + "temp_add.txt")
 
     if options.save_covariance:
         removefile(os.getcwd() + os.sep  +"covariance_matrix.txt")
@@ -200,7 +200,7 @@ def main(args):
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=[1000**(float(i)/(float(options.MCMC_chains)-1.0)) for i in range(options.MCMC_chains)],
+            temperature_scheme=[(options.maxtemp)**(float(i)/(float(options.MCMC_chains)-1.0)) for i in range(options.MCMC_chains)],  ##[1.0 + 0.1 * float(i) for i in range(options.MCMC_chains)]
             printing_schemes=summary_verbose_scheme,
             iteration_scheme=[50]*options.n,
             proposal_scheme= mp,
