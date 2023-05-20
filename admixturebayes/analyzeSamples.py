@@ -275,7 +275,7 @@ def make_admixture_string(admixes, admixture_permutations):
     admixture_pieces=admixes.split('-')
     for i in range(len(admixture_pieces)):
         target_admixture=admixture_permutations[i]
-        if target_admixture<-0.5:
+        if target_admixture > 0.5:
             res.append(1.0-float(admixture_pieces[abs(target_admixture)-1]))
         else:
             res.append(float(admixture_pieces[abs(target_admixture)-1]))
