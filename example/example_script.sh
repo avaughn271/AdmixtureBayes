@@ -36,8 +36,7 @@ python admixturebayes/makePlots.py  --plot top_trees  --posterior thinned_sample
 #We can also change the number of top trees to plot and save all of the topologies along with their posterior probabilities
 python admixturebayes/makePlots.py  --plot top_trees  --posterior thinned_samples.csv --top_trees_to_plot  5  --write_rankings example_rankings.txt
 
-#We can also plot the top trees with branch estimates, but this requires running the previous step with the --slower flag 
-python admixturebayes/analyzeSamples.py --mcmc_results  mcmc_samples.csv --burn_in_fraction 0.2  --thinning_rate 5 --slower
+#We can also plot the top trees with branch estimates
 python admixturebayes/makePlots.py  --plot estimates  --posterior thinned_samples.csv --top_trees_to_estimate 2
 
 #Or plot the minimal topologies
