@@ -9,7 +9,6 @@ from Rtree_to_covariance_matrix import leave_node, _thin_out_dic, Population, _a
 from Rtree_operations import (get_leaf_keys, get_real_parents, get_real_children, rename_root, change_admixture, get_categories,
                               screen_and_prune_one_in_one_out, remove_non_mixing_admixtures, node_is_non_admixture)
 
-
 def leave_node(key, node, population, target_nodes, follow_branch):
     if node_is_non_admixture(node):
         return [follow_branch(parent_key=node[0],branch=0, population=population, target_nodes=target_nodes, child_key=key)]
@@ -161,21 +160,6 @@ class make_full_tree(object):
             full_tree=get_subtree(full_tree, self.subnodes)
         return {'full_tree':full_tree}, False
 
-class make_string_tree(object):
-
-    def __init__(self, nodes, tree_unifier=None):
-        self.nodes=nodes
-        self.tree_unifier=tree_unifier
-        self.node_string='='.join(self.nodes)+'='
-
-    def __call__(self, full_tree, **kwargs):
-        stree=unique_identifier_and_branch_lengths(full_tree, leaf_order=self.nodes)
-        if self.tree_unifier is not None:
-            stree=self.tree_unifier(stree)
-            
-        string_tree=self.node_string+stree
-        return {'string_tree':string_tree},  False
-    
 def get_subpops(pops, sub_graph_keys):
     ss_subgraph_keys=set(sub_graph_keys)
     new_pops=[]
@@ -237,116 +221,6 @@ class thinning(object):
             print('Thinning every ' + str(stepsize) + ' samples complete. There are now ' + str(len(df)) + ' samples')
         return df
 
-class tree_unifier(object):
-    
-    def __init__(self):
-        '''
-        key:(val1,val2, val3) where 
-            key=lookup topology string, 
-            val1 is unique topology string, 
-            val2 is the permutation of branches and 
-            val3 is the (signed) permutation of the admixture proportions.
-        '''
-        self.seen_trees={}
-        
-    def __call__(self, stree):
-        topology,branches,admixtures=stree.split(';')
-        if topology in self.seen_trees:
-            target_topology, branch_permutation, admixture_permutation= self.seen_trees[topology]
-        else:
-            update_dic= analyze_tree(topology, branches, admixtures)
-            if len(update_dic)>100: #computational reasons
-                self.seen_trees[topology]=update_dic[topology]
-            else:
-                self.seen_trees.update(update_dic)
-            target_topology, branch_permutation, admixture_permutation=self.seen_trees[topology]
-        new_branch_string=make_branch_string(branches, branch_permutation)
-        new_admixtures_string=make_admixture_string(admixtures, admixture_permutation)
-        return ';'.join([target_topology, new_branch_string, new_admixtures_string])
-    
-def make_branch_string(branches, branch_permutations):
-    branch_pieces=branches.split('-')
-    return '-'.join([branch_pieces[branch_permutations[i]] for i in range(len(branch_pieces))])
-
-def make_admixture_string(admixes, admixture_permutations):
-    if not admixes:
-        return ''
-    res=[]
-    admixture_pieces=admixes.split('-')
-    for i in range(len(admixture_pieces)):
-        target_admixture=admixture_permutations[i]
-        if target_admixture > 0.5:
-            res.append(1.0-float(admixture_pieces[abs(target_admixture)-1]))
-        else:
-            res.append(float(admixture_pieces[abs(target_admixture)-1]))
-    return '-'.join(map(str,res))
-    
-def get_possible_strees(tree, nodes):
-    
-    leaves,admixture_keys=get_categories(tree)
-    k=len(admixture_keys)
-    format_code='{0:0'+str(k)+'b}'
-    
-    
-    n_trees=[]
-    for i in range(2**k):
-        pruned_tree = deepcopy(tree)
-        bina= format_code.format(i)
-        for adm_key,str_bin in zip(admixture_keys, list(bina)):
-            int_bin=int(str_bin)
-            if int_bin==1:
-                pruned_tree[adm_key]=change_admixture(pruned_tree[adm_key])
-        n_tree= unique_identifier_and_branch_lengths(pruned_tree, leaf_order=nodes)
-        n_trees.append(n_tree)
-    return n_trees
-
-def analyze_tree(topology, branches, admixtures):
-    
-    id_branches='-'.join(map(str, list(range(len(branches.split('-'))))))
-    id_admixtures='-'.join(map(str, list(range(1,len(admixtures.split('-'))+1))))
-    id_stree=';'.join([topology,id_branches, id_admixtures])
-    no_leaves=len((id_stree.split('-')[0]).split('.'))
-    id_tree=identifier_to_tree_clean(id_stree.strip())
-    
-    strees= sorted(get_possible_permutation_strees(id_tree))
-    top_topology=strees[0].split(';')[0]
-    res={}
-    for stree in strees:
-        lookup_topology, branches_sperm, admixtures_sperm= stree.split(';')
-        rf=list(map(round, list(map(float, branches_sperm.split('-')))))
-        branches_permutation= list(map(int, rf))
-        admixtures_permutation=get_admixtures_permutation(admixtures_sperm)
-        res[lookup_topology]=(top_topology, branches_permutation, admixtures_permutation)
-    return res
-    
-def get_admixtures_permutation(admixtures):
-    res=[]
-    for a in admixtures.split('-'):
-        if a:
-            number=int(round(float(a)))
-            if number>100000:
-                res.append(-(number%100000))
-            else:
-                res.append(number)
-    return res
-
-def get_possible_permutation_strees(tree):
-    leaves,admixture_keys=get_categories(tree)
-    k=len(admixture_keys)
-    format_code='{0:0'+str(k)+'b}'
-    
-    n_trees=[]
-    for i in range(2**k):
-        pruned_tree = deepcopy(tree)
-        bina= format_code.format(i)
-        for adm_key,str_bin in zip(admixture_keys, list(bina)):
-            int_bin=int(str_bin)
-            if int_bin==1:
-                pruned_tree[adm_key]=change_admixture(pruned_tree[adm_key])
-        n_tree= unique_identifier_and_branch_lengths(pruned_tree)
-        n_trees.append(n_tree)
-    return n_trees
-    
 def run_posterior_main(args):
 
     parser = ArgumentParser(usage='pipeline for post analysis')
@@ -356,9 +230,6 @@ def run_posterior_main(args):
                         help='The subset of populations to perform the analysis on. If not declared, the analysis will be done on the full dataset.')
     parser.add_argument('--result_file', default='thinned_samples.csv', type=str,
                         help='The resulting file. It will be comma-separated and contain one column per summary plus a header.')
-    parser.add_argument('--slower', default=False,    action='store_true', #ANDREWDEBUG
-                        help='This will make the program not calculate the string_tree summary which can be very slow when there are many admixture events. '
-                             'As a consequence, the option "--plot estimates" can not be used by AdmixtureBayes plot.')
 
     parser.add_argument('--thinning_rate', default=10, type=int,
                         help='thinning rate')
@@ -369,87 +240,121 @@ def run_posterior_main(args):
 
     options= parser.parse_args(args)
 
-    if options.subnodes:
-        subnodes_wo_outgroup=options.subnodes
-        subnodes_with_outgroup=options.subnodes
+    if not options.subnodes:
+        df = pd.read_csv(options.mcmc_results)
+
+        n=len(df)
+        print('Dataframe read with ' + str(n) + ' samples.')
+        if options.burn_in_fraction is not None:
+            df=df[int(n*options.burn_in_fraction):]
+        print('Burn-in of ' + str(n-len(df)) + ' samples removed. There are now ' + str(len(df)) + ' samples.')
+        stepsize = options.thinning_rate
+        df=df[::stepsize]
+        print('Thinning every ' + str(stepsize) + ' samples complete. There are now ' + str(len(df)) + ' samples')
+
+        treee = df['tree'].values.tolist()
+        no_admixes = df['no_admixes'].values.tolist()
+        descendantsets = df['descendant_sets'].values.tolist()
+        pops = descendantsets[0]
+        pops = pops.replace("-", " ")
+        pops = pops.replace(".", " ")
+        pops = pops.split(" ")
+        uniquepops = []
+        for x in pops:
+            if x not in uniquepops:
+                uniquepops.append(x)
+        uniquepops.sort()
+
+        uniquepopstring = uniquepops[0]
+        for j in range(len(uniquepops) - 1):
+            uniquepopstring = uniquepopstring +"=" + uniquepops[j + 1]
+        topologyy = ["temp"] * len(treee)
+
+        string_tree = ["temp"] * len(treee)
+        for i in range(len(topologyy)):
+            topologyy[i] = treee[i].split(";")[0]
+            string_tree[i] = uniquepopstring + "=" + treee[i]
+        d = {'topology': topologyy, 'pops': descendantsets, 'no_admixes':no_admixes, 'string_tree': string_tree}
+        df = pd.DataFrame(data=d)
+        df.to_csv(options.result_file, index=False)
     else:
-        subnodes_with_outgroup=[]
-        subnodes_wo_outgroup=[]
+        if options.subnodes:
+            subnodes_wo_outgroup=options.subnodes
+            subnodes_with_outgroup=options.subnodes
+        else:
+            subnodes_with_outgroup=[]
+            subnodes_wo_outgroup=[]
 
-    thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
+        thinner=thinning(burn_in_fraction=options.burn_in_fraction, total=options.thinning_rate)
 
-    totallist = []
-    a = pd.read_csv(options.mcmc_results, nrows=3)
-    stringg = (a.loc[0,["descendant_sets"]])[0]
-    stringg = (stringg.split('-'))
-    for i in stringg:
-        totallist.extend(i.split('.'))
-    nodes = []
-    for i in totallist:
-        if i not in nodes:
-            nodes.append(i)
-    nodes.sort()
+        totallist = []
+        a = pd.read_csv(options.mcmc_results, nrows=3)
+        stringg = (a.loc[0,["descendant_sets"]])[0]
+        stringg = (stringg.split('-'))
+        for i in stringg:
+            totallist.extend(i.split('.'))
+        nodes = []
+        for i in totallist:
+            if i not in nodes:
+                nodes.append(i)
+        nodes.sort()
 
-    nodes_wo_outgroup = deepcopy(nodes)
-    nodes_with_outgroup = deepcopy(nodes_wo_outgroup)
-    nodes_with_outgroup.sort()
-    nodes_wo_outgroup.sort()
-    subnodes_with_outgroup.sort()
-    subnodes_wo_outgroup.sort()
+        nodes_wo_outgroup = deepcopy(nodes)
+        nodes_with_outgroup = deepcopy(nodes_wo_outgroup)
+        nodes_with_outgroup.sort()
+        nodes_wo_outgroup.sort()
+        subnodes_with_outgroup.sort()
+        subnodes_wo_outgroup.sort()
 
-    row_sums=[]
+        row_sums=[]
 
-    class pointers(object):
+        class pointers(object):
 
-        def __init__(self):
-            self.count=0
-            self.dic={}
+            def __init__(self):
+                self.count=0
+                self.dic={}
 
-        def __call__(self, name):
-            self.dic[name]=self.count
-            self.count+=1
+            def __call__(self, name):
+                self.dic[name]=self.count
+                self.count+=1
 
-        def __getitem__(self, key):
-            return self.dic[key]
+            def __getitem__(self, key):
+                return self.dic[key]
 
-    name_to_rowsum_index=pointers()
+        name_to_rowsum_index=pointers()
 
-    row_sums.append(make_Rtree(deepcopy(nodes_wo_outgroup), subnodes=subnodes_wo_outgroup, outgroup_name=''))
-    name_to_rowsum_index('Rtree')
-    row_sums.append(make_full_tree(outgroup_name='', subnodes=options.subnodes))
-    name_to_rowsum_index('full_tree')
+        row_sums.append(make_Rtree(deepcopy(nodes_wo_outgroup), subnodes=subnodes_wo_outgroup, outgroup_name=''))
+        name_to_rowsum_index('Rtree')
+        row_sums.append(make_full_tree(outgroup_name='', subnodes=options.subnodes))
+        name_to_rowsum_index('full_tree')
 
-    if options.subnodes:
-        nodes=options.subnodes
-        nodes_with_outgroup=subnodes_with_outgroup
-        nodes_wo_outgroup=subnodes_wo_outgroup
-    else:
-        nodes=nodes_with_outgroup
-    if options.slower:
-        row_sums.append(make_string_tree(deepcopy(nodes), tree_unifier())) #calling make_string_tree
-        name_to_rowsum_index('string_tree')
-    if not options.slower:
+        if options.subnodes:
+            nodes=options.subnodes
+            nodes_with_outgroup=subnodes_with_outgroup
+            nodes_wo_outgroup=subnodes_wo_outgroup
+        else:
+            nodes=nodes_with_outgroup
         options.save_summaries.remove('string_tree')
-    row_sums.append(topology(nodes=nodes))
-    name_to_rowsum_index('topology')
-    row_sums.append(get_pops(keys_to_include=nodes))
-    name_to_rowsum_index('pops')
+        row_sums.append(topology(nodes=nodes))
+        name_to_rowsum_index('topology')
+        row_sums.append(get_pops(keys_to_include=nodes))
+        name_to_rowsum_index('pops')
 
-    def save_thin_columns(d_dic):
-        return {summ:d_dic[summ] for summ in list(set(options.save_summaries+[]))}
-    all_results=iterate_over_output_file(options.mcmc_results,
-                                             cols=['tree', 'add', 'layer', 'no_admixes'],
-                                             pre_thin_data_set_function=thinner,
-                                             row_summarize_functions=row_sums,
-                                             thinned_d_dic=save_thin_columns)
+        def save_thin_columns(d_dic):
+            return {summ:d_dic[summ] for summ in list(set(options.save_summaries+[]))}
+        all_results=iterate_over_output_file(options.mcmc_results,
+                                                cols=['tree', 'add', 'layer', 'no_admixes'],
+                                                pre_thin_data_set_function=thinner,
+                                                row_summarize_functions=row_sums,
+                                                thinned_d_dic=save_thin_columns)
 
-    if True:
-        summaries=list(all_results[0].keys())
-        with open(options.result_file, 'w') as f:
-            f.write(','.join(summaries)+'\n')
-            for row in all_results:
-                s_summs=[str(row[summ]) for summ in summaries]
-                f.write(','.join(s_summs)+ '\n')
+        if True:
+            summaries=list(all_results[0].keys())
+            with open(options.result_file, 'w') as f:
+                f.write(','.join(summaries)+'\n')
+                for row in all_results:
+                    s_summs=[str(row[summ]) for summ in summaries]
+                    f.write(','.join(s_summs)+ '\n')
     
 if __name__=='__main__':
     import sys
