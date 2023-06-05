@@ -5,7 +5,7 @@ from tree_statistics import generate_predefined_list_string, topological_identif
 from copy import deepcopy
 from Rtree_operations import node_is_admixture, rename_key, get_admixture_proportion_from_key, get_all_admixture_origins, to_networkx_format
 import sys
-
+import numpy as np
 from graphviz import Digraph
 import os
 
@@ -243,6 +243,88 @@ def branch_and_proportion_quantiles(list_of_string_trees):
             aresults.append(('ax'+str(n+1), lower,mean,upper))
     return bresults, aresults
 
+def checkequality(tree1, tree2, tree2orig):
+  
+  if tree1.shape[0] == 1 and tree2.shape[0] == 1 and tree1[0,0] == tree2[0,0] and tree1[0,1] and tree2[0,1]:
+     return(1)
+  
+  if tree1.shape[0] != tree2.shape[0]:
+      return(0)
+  
+  for i in range(tree2.shape[0]):
+    if ( (tree2[i,0] not in tree2[:,1]) and np.sum(tree2[i,0] == tree2) == 1): #check syntax
+      leaff2 = tree2[i,0]
+      parent2 = tree2[i,1]
+      if np.sum(leaff2 == tree1) != 1:
+        return(0)
+      if np.sum(leaff2 == tree1[:,0]) != 1:
+        return(0)
+      j = int(np.where(leaff2 == tree1[:, 0])[0][0])
+      parent1 = tree1[j,1]
+      if parent1[-3:] == "_xx" and parent1 != parent2:
+         return 0
+      tree1[tree1 == parent1] = parent2
+      return checkequality(np.delete(tree1, j, 0), np.delete(tree2, i, 0), tree2orig)
+  for i in range(tree1.shape[0]):
+        for j in range(tree2.shape[0]):
+            if tree1[i, 0] == tree2[j, 0] and tree1[i, 1] == tree2[j, 1]:
+                return checkequality(np.delete(tree1, i, 0), np.delete(tree2, j, 0), tree2orig)
+  for i in range(tree1.shape[0]):
+        if tree1[i, 0][-3:] == "_xx" and tree1[i, 1][-3:] == "_xx":
+            if tree1[i, 1] not in tree2orig[np.where(tree1[i, 0] == tree2orig[:, 0]), 1]:
+                return 0
+
+  print("PROBLEM")
+  return(-1000000)
+    
+def IsEquivalentTopology(tree1, tree2):
+    Tree1List = []
+    for node in tree1:
+        if tree1[node][1] is not None:
+            Tree1List.append([node,  tree1[node][0]] )
+            Tree1List.append([node,  tree1[node][1]] )
+        else:
+            Tree1List.append([node,  tree1[node][0]] )
+    Tree2List = []
+    for node in tree2:
+        if tree2[node][1] is not None:
+            Tree2List.append([node,  tree2[node][0]] )
+            Tree2List.append([node,  tree2[node][1]] )
+        else:
+            Tree2List.append([node,  tree2[node][0]] )
+    
+    EDGES1 = np.array(Tree1List, dtype='<U20')
+    EDGES2 = np.array(Tree2List, dtype='<U20')
+
+    edgess2 =  np.copy(EDGES2[:,1])
+    for row in range(EDGES2.shape[0]):
+        for col in range(EDGES2.shape[1]):
+            if EDGES2[row,col] in edgess2:
+                EDGES2[row,col] = EDGES2[row,col] + "_xx"
+    return checkequality(EDGES1 , EDGES2, EDGES2)
+
+def counterequivalence(originalcounter, Equivs):
+    OriginalOrder = originalcounter
+    UnpackList = np.array(sorted(originalcounter.elements()))
+
+    while True:
+        didsub = 0
+        for i in range(len(Equivs)):
+            firstel = Equivs[i][0]
+            secondel = Equivs[i][1]
+            maxindex = 0
+            if OriginalOrder[secondel] > OriginalOrder[firstel]:
+                maxindex = 1
+            if Equivs[i][1 - maxindex] in UnpackList:
+                didsub = didsub + 1
+                UnpackList[UnpackList == Equivs[i][1 - maxindex]] = Equivs[i][ maxindex]
+                break
+        if didsub == 0:
+            break
+
+    return (Counter(UnpackList))
+
+
 def main(args):
     parser = ArgumentParser(usage='pipeline for plotting posterior distribution summaries.')
 
@@ -352,7 +434,6 @@ def main(args):
         no_leaves=len(trees_list[0].split('-')[0].split('.'))
         N=len(trees_list)
         c = Counter(trees_list)
-        to_plots = c.most_common(options.top_trees_to_plot)
 
         nodes=df['pops'].tolist()[0].split('-')
         leaves=list(set([leaf for node in nodes for leaf in node.split('.')]))
@@ -361,6 +442,18 @@ def main(args):
         elif len(leaves)==no_leaves-1:
             leaves.append(options.outgroup)
         leaves=sorted(leaves)
+
+        AllEquivs = []
+
+        for i, to_plot1 in enumerate(c):
+            for j, to_plot2 in enumerate(c):
+                if j > i:
+                    TREE1 = topological_identifier_to_tree_clean(to_plot1, leaves=generate_predefined_list_string(deepcopy(leaves)))
+                    TREE2 = topological_identifier_to_tree_clean(to_plot2, leaves=generate_predefined_list_string(deepcopy(leaves)))
+                    if IsEquivalentTopology(TREE1, TREE2):
+                        AllEquivs.append([to_plot1, to_plot2])
+        c = counterequivalence(c, AllEquivs)
+        to_plots = c.most_common(options.top_trees_to_plot)
 
         if options.write_rankings:
             with open(options.write_rankings, 'w') as f:
@@ -379,9 +472,8 @@ def main(args):
         topologies_list = df['topology'].tolist()
         string_tree_list=df['string_tree'].tolist()
         c = Counter(topologies_list)
-        to_plots = c.most_common(options.top_trees_to_estimate)
-        cleaned_topology_list=[d[0] for d in to_plots]
-        no_leaves = len(topologies_list[0].split('-')[0].split('.'))
+
+        no_leaves=len(topologies_list[0].split('-')[0].split('.'))
 
         nodes=df['pops'].tolist()[0].split('-')
         leaves=list(set([leaf for node in nodes for leaf in node.split('.')]))
@@ -389,9 +481,27 @@ def main(args):
             pass #everything is good
         elif len(leaves)==no_leaves-1:
             leaves.append(options.outgroup)
-        else:
-            assert False, 'The number of leaves could not be obtained'
         leaves=sorted(leaves)
+
+        AllEquivs = []
+
+        for i, to_plot1 in enumerate(c):
+            for j, to_plot2 in enumerate(c):
+                if j > i:
+                    TREE1 = topological_identifier_to_tree_clean(to_plot1, leaves=generate_predefined_list_string(deepcopy(leaves)))
+                    TREE2 = topological_identifier_to_tree_clean(to_plot2, leaves=generate_predefined_list_string(deepcopy(leaves)))
+                    if IsEquivalentTopology(TREE1, TREE2):
+                        AllEquivs.append([to_plot1, to_plot2])
+        c = counterequivalence(c, AllEquivs)
+
+
+
+
+
+
+        to_plots = c.most_common(options.top_trees_to_estimate)
+        cleaned_topology_list=[d[0] for d in to_plots]
+        no_leaves = len(topologies_list[0].split('-')[0].split('.'))
 
         for i, to_plot in enumerate(cleaned_topology_list):
             relevant_string_trees=[]
