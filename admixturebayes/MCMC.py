@@ -61,13 +61,17 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     newx,g1,g2,Jh,j1,j2=proposal(x,pks)
     post_new=posterior_function(newx)
 
-    likelihood_old, prior_old = post[:2]
-    likelihood_new, prior_new = post_new[:2]
+    likelihood_old, prior_old, desiredprior_old = post[:3]
+    likelihood_new, prior_new, desiredprior_new = post_new[:3]
+    #print(post)
+    #print(post_new)
     
-    if g2<=0 or j2<=0:
+    if g2<=0 or j2<=0 or likelihood_new == -float('inf') or prior_new == -float('inf') or desiredprior_new == -float('inf'):
         logmhr=-float('inf')
     else:
-        logmhr=(likelihood_new-likelihood_old)/temperature+(prior_new-prior_old)+log(g2)+log(j2)-log(j1)-log(g1)+log(Jh)
+        #logmhr=(likelihood_new-likelihood_old)/temperature+(prior_new-prior_old)+log(g2)+log(j2)-log(j1)-log(g1)+log(Jh) #original
+        #logmhr=(likelihood_new-likelihood_old+prior_new-prior_old)/temperature + log(g2)+log(j2)-log(j1)-log(g1)+log(Jh) #heat all
+        logmhr=(likelihood_new-likelihood_old + desiredprior_old - desiredprior_new + prior_new - prior_old)/temperature+(desiredprior_new-desiredprior_old)+log(g2)+log(j2)-log(j1)-log(g1)+log(Jh)
     if logmhr>100:
         mhr=float('inf')
     else:

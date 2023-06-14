@@ -28,13 +28,22 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
     posteriors = [posterior_function(x) for x in xs]
 
     proposal_updates=[proposal.get_exportable_state() for proposal in proposal_scheme]
-    
+    flipacceptances = [0] * (no_chains - 1)
+    flipprops= [0] * (no_chains - 1)
+
     cum_iterations=0
     for no_iterations in iteration_scheme:
         if cum_iterations % 1000 == 0 and verboseee != "silent":
+            numadmixes = []
+            kkk = []
+            for iiiiiiii in range(len(xs)):
+                kkk.append(posteriors[iiiiiiii][0] + posteriors[iiiiiiii][1])
+                numadmixes.append((len(xs[iiiiiiii][0])-6)/2 - 1 )
+            print(numadmixes)
+            print("current_posts", kkk)
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
         #letting each chain run for no_iterations:
-        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
+        iteration_object=_pack_everything(xs, posteriors, temperature_scheme,printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
         xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, summaries, total_permutation)
         df_result=_update_results(df_result, df_add)
@@ -45,11 +54,16 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
                 add_to_data_frame(df_result, result_file)
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
-        xs, posteriors, permut, proposal_updates = flipping(xs, posteriors, temperature_scheme, proposal_updates)
+        xs, posteriors, permut, proposal_updates, flipprops, flipacceptances = flipping(xs, posteriors, temperature_scheme, proposal_updates, flipprops, flipacceptances)
         total_permutation=[total_permutation[n] for n in permut]
         cum_iterations+=no_iterations
     for chain in pool.group:
             chain.process.terminate()
+    flippropsstring = []
+    for i in range(len(flipprops)):
+        fracc = float(flipacceptances[i])  / flipprops[i] 
+        flippropsstring.append( str(round(fracc * 100 , 2)  ) + "%" )
+    print("MCMCMC chain swap rates: ", flippropsstring)
 
 def start_data_frame(df, result_file):
     df=df.loc[df.layer==0,:]
@@ -60,23 +74,38 @@ def add_to_data_frame(df_add, result_file):
     with open(result_file, 'a') as f:
         df_add.to_csv(f, header=False)
     
-def flipping(xs, posteriors, temperature_scheme, proposal_updates):
+def flipping(xs, posteriors, temperature_scheme, proposal_updates, flipproposals, flipacc):
     n=len(xs)
     step_permutation=list(range(n))
     count=0
+    kkk = []
+    numadmixes = []
+    for iiiiiiii in range(len(posteriors)):
+        kkk.append(posteriors[iiiiiiii][0] + posteriors[iiiiiiii][1])
+        numadmixes.append((len(xs[iiiiiiii][0])-6)/2 )
+    #print(kkk)
+    #print(numadmixes)
     for _ in range(40):
-        i,j = choice(n,2,False)
+        i = choice(n - 1,1,False)[0]
+        j = i + 1
+        flipproposals[i] = flipproposals[i] + 1
         post_i,post_j=posteriors[i],posteriors[j]
         temp_i,temp_j=temperature_scheme[i], temperature_scheme[j]
-        logalpha=-(post_i[0]-post_j[0])*(1.0/temp_i-1.0/temp_j)
+
+        #logalpha=-(post_i[0] - post_j[0])*(1.0/temp_i-1.0/temp_j)  #original
+        #logalpha=-(post_i[0] - post_j[0] + post_i[1] - post_j[1])*(1.0/temp_i-1.0/temp_j)  #heat all
+        logalpha=-(post_i[0] - post_j[0] + post_j[2] - post_i[2] + post_i[1] - post_j[1] )*(1.0/temp_i-1.0/temp_j)
+
         if logalpha>0 or random() < exp(logalpha):
+            flipacc[i] = flipacc[i] + 1
+
             count+=1
             step_permutation[i], step_permutation[j]= step_permutation[j], step_permutation[i]
-            posteriors[j],posteriors[i]=(post_i[0],post_i[1]),(post_j[0], post_j[1])
+            posteriors[j],posteriors[i]=(post_i[0],post_i[1],post_i[2]),(post_j[0], post_j[1], post_j[2])
             xs[i], xs[j] = xs[j], xs[i]
 
             proposal_updates[i], proposal_updates[j]=proposal_updates[j], proposal_updates[i]
-    return xs, posteriors, step_permutation, proposal_updates
+    return xs, posteriors, step_permutation, proposal_updates, flipproposals, flipacc
 
 def _update_results(df_result, df_add):
     if df_result is None:

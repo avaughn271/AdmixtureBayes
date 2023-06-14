@@ -37,7 +37,7 @@ def prior(x, p=0.5):
     no_admix_prior=no_admixes(p, len(admixtures))
     top_prior=uniform_topological_prior_function(tree)
     logsum=branch_prior+no_admix_prior+top_prior-add
-    return logsum
+    return logsum,top_prior #branch_prior + top_prior #,no_admix_prior+top_prior
 
 def no_admixes(p, admixes, hard_cutoff=20):
     if admixes > hard_cutoff:
@@ -78,9 +78,9 @@ class posterior_class(object):
         self.b=loadtxt(varcovname) * multiplier
 
     def __call__(self, x):
-        prior_value = prior(x,p=self.p)
+        prior_value,desiredprior = prior(x,p=self.p)
         if prior_value==-float('inf'):
-            return -float('inf'), prior_value
+            return -float('inf'), prior_value,desiredprior
         
         likelihood_value=likelihood(x, self.emp_cov,self.b, self.M, nodes=self.nodes)
-        return likelihood_value, prior_value
+        return likelihood_value, prior_value,desiredprior
