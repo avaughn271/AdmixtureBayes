@@ -18,7 +18,7 @@ def uniform_topological_prior_function(tree):
     up=uniform_prior(get_number_of_leaves(tree))
     A=get_number_of_admixes(tree)
     val=1.0/(up.dic_of_counts[up.leaves])[A]
-    return log(val)-log(2)*A
+    return log(val)
 
 def calculate_branch_prior(branches, n):
     rate=float(2*n-2)/len(branches)
