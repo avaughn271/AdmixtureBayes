@@ -252,7 +252,7 @@ def checkequality(tree1, tree2, tree2orig):
       return(0)
   
   for i in range(tree2.shape[0]):
-    if ( (tree2[i,0] not in tree2[:,1]) and np.sum(tree2[i,0] == tree2) == 1): #check syntax
+    if ( (tree2[i,0] not in tree2[:,1]) and np.sum(tree2[i,0] == tree2) == 1): #what is left is a leaf or divergence node
       leaff2 = tree2[i,0]
       parent2 = tree2[i,1]
       if np.sum(leaff2 == tree1) != 1:
@@ -265,17 +265,36 @@ def checkequality(tree1, tree2, tree2orig):
          return 0
       tree1[tree1 == parent1] = parent2
       return checkequality(np.delete(tree1, j, 0), np.delete(tree2, i, 0), tree2orig)
-  for i in range(tree1.shape[0]):
+  for i in range(tree1.shape[0]): # remove rows that are entirely equivalent between the trees
         for j in range(tree2.shape[0]):
             if tree1[i, 0] == tree2[j, 0] and tree1[i, 1] == tree2[j, 1]:
                 return checkequality(np.delete(tree1, i, 0), np.delete(tree2, j, 0), tree2orig)
-  for i in range(tree1.shape[0]):
+  for i in range(tree1.shape[0]): #if everything is fixed in a row but does not match the original version.
         if tree1[i, 0][-3:] == "_xx" and tree1[i, 1][-3:] == "_xx":
             if tree1[i, 1] not in tree2orig[np.where(tree1[i, 0] == tree2orig[:, 0]), 1]:
                 return 0
+  for i in range(tree2.shape[0]):
+          if (tree2[i,0] not in tree2[:,1]) and (tree2[i,0] in tree1[:,0]): #what is left is an admixture node, present in both
+              admixturestring = tree2[i,0]
+              tree1_index1 = (np.where(admixturestring== tree1[:, 0])[0][0])
+              tree1_index2 = (np.where(admixturestring== tree1[:, 0])[0][1])
+              tree2_index1 = (np.where(admixturestring== tree2[:, 0])[0][0])
+              tree2_index2 = (np.where(admixturestring== tree2[:, 0])[0][1])
+              tree1_new = np.copy(tree1)
+              tree1_new2 = np.copy(tree1)
+              tree1_new[tree1_new == tree1[tree1_index1,1]] = tree2[tree2_index1,1] # try both ways of assigning the admixture node parents.
+              tree1_new[tree1_new == tree1[tree1_index2,1]] = tree2[tree2_index2,1]
 
-  print("PROBLEM")
+              tree1_new2[tree1_new2 == tree1[tree1_index2,1]] = tree2[tree2_index1,1]
+              tree1_new2[tree1_new2 == tree1[tree1_index1,1]] = tree2[tree2_index2,1]
+
+              AA  = checkequality(np.delete(tree1_new, [tree1_index1,tree1_index2], 0), np.delete(tree2, [tree2_index1,tree2_index2], 0), tree2orig)
+              BB  = checkequality(np.delete(tree1_new2, [tree1_index1,tree1_index2], 0), np.delete(tree2, [tree2_index1,tree2_index2], 0), tree2orig)
+
+              return AA or BB
+  print("Problem resolving topology equivalences. Contact Andrew Vaughn at ahv36@berkeley.edu.")
   return(-1000000)
+
     
 def IsEquivalentTopology(tree1, tree2):
     Tree1List = []
