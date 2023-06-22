@@ -151,9 +151,12 @@ There are 4 different plots that can be generated:
 
 **--write_rankings** (optional) The name of a file to which the topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
+**--output_prefix** (optional) The prefix of the output plots. Default value is "topology".
+
+
 ## This produces (in the current working directory)
 
-***topology_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot, where ***output_prefix*** is the argument to the **--output_prefix**  option.
 
 If **--write_rankings** is specified, a file with the set of all topologies and their posterior probabilities will be produced.
 
@@ -185,9 +188,11 @@ Important Note: You cannot plot branch length estimates if the option ``--subnod
 
 **--write_rankings** (optional) The name of a file to which the minimal topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
+**--output_prefix** (optional) The prefix of the output plots. Default value is "minimal_topology".
+
 ## This produces (in the current working directory)
 
-***minimal_topology_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
 
 If **--write_rankings** is specified, a file with the set of all minimal topologies and their posterior probabilities will be produced.
 
@@ -201,9 +206,12 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 
 **--write_rankings** (optional)   is specified, a file with the set of nodes and their posterior probabilities is generated.
 
+**--output_prefix** (optional) The prefix of the output plots. Default value is "consensus".
+
+
 ## This produces (in the current working directory)
 
-***consensus_i.pdf*** One such plot will be produced for all *i* in the list of thresholds.
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* in the list of thresholds.
 
 If **--write_rankings** is specified, a file  containing a list of all nodes and their posterior probabilities is generated.
 
