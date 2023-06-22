@@ -156,7 +156,7 @@ There are 4 different plots that can be generated:
 
 ## This produces (in the current working directory)
 
-***output_prefix*****_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot, where ***output_prefix*** is the argument to the **--output_prefix**  option. If no such argument is specified, the plots will have the name  ***topology_i.pdf***.
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot, where ***output_prefix*** is the argument to the **--output_prefix**  option. If no such argument is specified, the plots will have the name  ***topology_i.pdf***.
 
 If **--write_rankings** is specified, a file with the set of all topologies and their posterior probabilities will be produced.
 
@@ -172,11 +172,11 @@ If **--write_rankings** is specified, a file with the set of all topologies and 
 
 ## This produces (in the current working directory)
 
-***output_prefix*****_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.  If no such argument is specified, the plots will have the name  ***topology_labels_i.pdf***. 
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.  If no such argument is specified, the plots will have the name  ***topology_labels_i.pdf***. 
 
-***output_prefix*****_branch_estimates_i.txt** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot. If no such argument is specified, the files will have the name  ***branch_estimates_i.pdf***.
+***output_prefix*** **_branch_estimates_i.txt** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot. If no such argument is specified, the files will have the name  ***branch_estimates_i.pdf***.
 
-***output_prefix*****_admixture_estimates_i.txt** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.  If no such argument is specified, the files will have the name  ***admixture_estimates_i.pdf***.
+***output_prefix*** **_admixture_estimates_i.txt** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.  If no such argument is specified, the files will have the name  ***admixture_estimates_i.pdf***.
 
 Important Note: You cannot plot branch length estimates if the option ``--subnodes" was used in the previous step.
 
@@ -194,7 +194,7 @@ Important Note: You cannot plot branch length estimates if the option ``--subnod
 
 ## This produces (in the current working directory)
 
-***output_prefix*****_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.   If no such argument is specified, the plots will have the name  ***minimal_topology_i.pdf***.
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.   If no such argument is specified, the plots will have the name  ***minimal_topology_i.pdf***.
 
 If **--write_rankings** is specified, a file with the set of all minimal topologies and their posterior probabilities will be produced.
 
@@ -213,7 +213,7 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 
 ## This produces (in the current working directory)
 
-***output_prefix*****_i.pdf** One such plot will be produced for all *i* in the list of thresholds. If no such argument is specified, the plots will have the name  ***consensus_i.pdf***.
+***output_prefix*** **_i.pdf** One such plot will be produced for all *i* in the list of thresholds. If no such argument is specified, the plots will have the name  ***consensus_i.pdf***.
 
 If **--write_rankings** is specified, a file  containing a list of all nodes and their posterior probabilities is generated.
 
