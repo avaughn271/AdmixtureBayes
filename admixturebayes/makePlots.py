@@ -372,6 +372,7 @@ def main(args):
     parser.add_argument('--rankings_to_write_to_file', type=int, default=1000,
                         help='the number of rankings(nodes, min topology or topology depending on --plot) to write to the ranking file.')
     parser.add_argument('--popup', default=False, action='store_true')
+    parser.add_argument('--output_prefix', type=str,  default="default")
 
     options= parser.parse_args(args)
 
@@ -427,7 +428,10 @@ def main(args):
             node_count_dic={frozenset(k.split('.')):float(v)/N for k,v in list(seen_combinations.items())}
             for i, final_node_combinations in enumerate(node_combinations):
                 final_node_structure = node_combinations_to_node_structure(final_node_combinations)
-                plot_node_structure_as_directed_graph(final_node_structure, drawing_name='consensus_'+str(int(100*options.consensus_thresholds[i]))+'.png', node_dic=node_count_dic,  popup=options.popup)
+                drawingnamm = options.output_prefix + '_'
+                if drawingnamm == "default_":
+                    drawingnamm = 'consensus_'
+                plot_node_structure_as_directed_graph(final_node_structure, drawing_name = drawingnamm + str(int(100*options.consensus_thresholds[i]))+'.png', node_dic=node_count_dic,  popup=options.popup)
             if options.write_rankings:
                 with open(options.write_rankings, 'w') as f:
                     c = Counter(seen_combinations)
@@ -445,7 +449,10 @@ def main(args):
             node_count_dic={frozenset(key.split('.')):float(count)/N for key,count in c.most_common(1000)}
             for i, (to_plot,count) in enumerate(to_plots):
                 node_structure = node_combinations_to_node_structure(to_plot.split('-'))
-                plot_node_structure_as_directed_graph(node_structure, drawing_name='minimal_topology_' +str(i+1)+'.png',
+                drawingnamm = options.output_prefix + '_'
+                if drawingnamm == "default_":
+                    drawingnamm = 'minimal_topology_'
+                plot_node_structure_as_directed_graph(node_structure, drawing_name = drawingnamm +str(i+1)+'.png',
                                                         node_dic=node_count_dic,  popup=options.popup)
     elif options.plot=='top_trees':
         df = pd.read_csv(options.posterior, sep=',', usecols=['pops','topology'])
@@ -481,7 +488,10 @@ def main(args):
 
         for i, (to_plot, count) in enumerate(to_plots):
             tree=topological_identifier_to_tree_clean(to_plot, leaves=generate_predefined_list_string(deepcopy(leaves)))
-            plot_as_directed_graph(tree,drawing_name='topology_' + str(i + 1) + '.png', popup=options.popup)
+            drawingnamm = options.output_prefix + '_'
+            if drawingnamm == "default_":
+                drawingnamm = 'topology_'
+            plot_as_directed_graph(tree,drawing_name = drawingnamm + str(i + 1) + '.png', popup=options.popup)
     elif options.plot=='estimates':
         try:
             df = pd.read_csv(options.posterior, sep=',', usecols=['string_tree', 'topology', 'pops'])
@@ -546,13 +556,20 @@ def main(args):
             adm_interpretation={}
             for key, (branch_name, node_destination) in list(adms.items()):
                 adm_interpretation[key]='For the lineages that pass through {}, this is the proportion that follows branch {} to node {}'.format(key, branch_name,node_destination)
-            plot_as_directed_graph(tree, drawing_name='topology_labels_' + str(i + 1) + '.png', plot_edge_lengths=True,  popup=options.popup)
+            drawingnamm = options.output_prefix + '_'
+            if drawingnamm == "default_":
+                drawingnamm = 'topology_labels_'
+            plot_as_directed_graph(tree, drawing_name=drawingnamm + str(i + 1) + '.png', plot_edge_lengths=True,  popup=options.popup)
             if options.write_estimates_to_file:
                 branch_file=options.write_estimates_to_file[i*2+0]
                 admixtures_file=options.write_estimates_to_file[i*2+1]
             else:
-                branch_file='branch_estimates_'+str(i+1)+'.txt'
-                admixtures_file='admixture_estimates_'+str(i+1)+'.txt'
+                if options.output_prefix == "default":
+                    branch_file='branch_estimates_'+str(i+1)+'.txt'
+                    admixtures_file='admixture_estimates_'+str(i+1)+'.txt'
+                else:
+                    branch_file = options.output_prefix +'_branch_estimates_'+str(i+1)+'.txt'
+                    admixtures_file = options.output_prefix   + '_admixture_estimates_'+str(i+1)+'.txt'
             with open(branch_file, 'w') as f:
                 f.write(','.join(['branch label','lower 95%','mean','upper 95%'])+'\n')
                 for v in branches_intervals:
