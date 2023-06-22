@@ -151,12 +151,12 @@ There are 4 different plots that can be generated:
 
 **--write_rankings** (optional) The name of a file to which the topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
-**--output_prefix** (optional) The prefix of the output plots. Default value is "topology".
+**--output_prefix** (optional) The prefix of the output plots.
 
 
 ## This produces (in the current working directory)
 
-***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot, where ***output_prefix*** is the argument to the **--output_prefix**  option.
+***output_prefix*****_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot, where ***output_prefix*** is the argument to the **--output_prefix**  option. If no such argument is specified, the plots will have the name  ***topology_i.pdf***.
 
 If **--write_rankings** is specified, a file with the set of all topologies and their posterior probabilities will be produced.
 
@@ -168,13 +168,15 @@ If **--write_rankings** is specified, a file with the set of all topologies and 
 
 **--top_trees_to_estimate** (optional) The number of top trees with branch estimates to plot. If the value is greater than the total number of minimal topologies, the total number of minimal topologies will be used instead. Default value is 3.
 
+**--output_prefix** (optional) The prefix of the output files.
+
 ## This produces (in the current working directory)
 
-***topology_labels_i.pdf*** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***output_prefix*****_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.  If no such argument is specified, the plots will have the name  ***topology_labels_i.pdf***. 
 
-***branch_estimates_i.txt*** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
+***output_prefix*****_branch_estimates_i.txt** A txt file describing the estimated branch lengths for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot. If no such argument is specified, the files will have the name  ***branch_estimates_i.pdf***.
 
-***admixture_estimates_i.txt*** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.
+***output_prefix*****_admixture_estimates_i.txt** A txt file describing the estimated admixture proportions for the corresponding plot. One such file will be produced for all *i* from 1 to the given number of trees to plot.  If no such argument is specified, the files will have the name  ***admixture_estimates_i.pdf***.
 
 Important Note: You cannot plot branch length estimates if the option ``--subnodes" was used in the previous step.
 
@@ -188,11 +190,11 @@ Important Note: You cannot plot branch length estimates if the option ``--subnod
 
 **--write_rankings** (optional) The name of a file to which the minimal topologies and their posterior probabilities will be written. If not specified, no such file will be written.
 
-**--output_prefix** (optional) The prefix of the output plots. Default value is "minimal_topology".
+**--output_prefix** (optional) The prefix of the output plots.
 
 ## This produces (in the current working directory)
 
-***output_prefix*** **_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.
+***output_prefix*****_i.pdf** One such plot will be produced for all *i* from 1 to the given number of trees to plot.   If no such argument is specified, the plots will have the name  ***minimal_topology_i.pdf***.
 
 If **--write_rankings** is specified, a file with the set of all minimal topologies and their posterior probabilities will be produced.
 
@@ -206,15 +208,14 @@ If **--write_rankings** is specified, a file with the set of all minimal topolog
 
 **--write_rankings** (optional)   is specified, a file with the set of nodes and their posterior probabilities is generated.
 
-**--output_prefix** (optional) The prefix of the output plots. Default value is "consensus".
+**--output_prefix** (optional) The prefix of the output plots. 
 
 
 ## This produces (in the current working directory)
 
-***output_prefix*** **_i.pdf** One such plot will be produced for all *i* in the list of thresholds.
+***output_prefix*****_i.pdf** One such plot will be produced for all *i* in the list of thresholds. If no such argument is specified, the plots will have the name  ***consensus_i.pdf***.
 
 If **--write_rankings** is specified, a file  containing a list of all nodes and their posterior probabilities is generated.
-
 
 ## Getting Started and Troubleshooting
 
