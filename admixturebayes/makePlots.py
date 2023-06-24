@@ -276,6 +276,9 @@ def checkequality(tree1, tree2, tree2orig):
   for i in range(tree2.shape[0]):
           if (tree2[i,0] not in tree2[:,1]) and (tree2[i,0] in tree1[:,0]): #what is left is an admixture node, present in both
               admixturestring = tree2[i,0]
+              if (len(np.where(admixturestring== tree1[:, 0])[0])) != (len(np.where(admixturestring== tree2[:, 0])[0])): # not quite sure about this..
+                  return(0)
+
               tree1_index1 = (np.where(admixturestring== tree1[:, 0])[0][0])
               tree1_index2 = (np.where(admixturestring== tree1[:, 0])[0][1])
               tree2_index1 = (np.where(admixturestring== tree2[:, 0])[0][0])
