@@ -61,6 +61,7 @@ def main(args):
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
     
     parser.add_argument('--maxtemp', type=float, default=1000.0, help='the max temp of the hottest chain')
+    parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
 
     options=parser.parse_args(args)
 
@@ -200,7 +201,7 @@ def main(args):
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=[(options.maxtemp)**(float(i)/(float(options.MCMC_chains)-1.0)) for i in range(options.MCMC_chains)],  ##[1.0 + 0.1 * float(i) for i in range(options.MCMC_chains)]
+            temperature_scheme=[(options.maxtemp)**(  (float(i)/(float(options.MCMC_chains)-1.0) )**float(options.spacing)   ) for i in range(options.MCMC_chains)],  ##[1.0 + 0.1 * float(i) for i in range(options.MCMC_chains)]
             printing_schemes=summary_verbose_scheme,
             iteration_scheme=[50]*options.n,
             proposal_scheme= mp,
