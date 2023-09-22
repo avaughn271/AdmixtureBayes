@@ -66,13 +66,13 @@ def main(args):
     if options.temperature_list == []:
         fullsetoftemps = [(options.maxtemp)** (float(i)/(float(options.MCMC_chains)-1.0) ) for i in range(options.MCMC_chains)]
     else:
-        with open(options.temperature_list) as f:
+        with open(options.temperature_list[0]) as f:
             lines = f.read().splitlines()
         fullsetoftemps = []
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
 
-    priortemperatures = numpy.linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
+    priortemperatures = linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
 
     print(len(fullsetoftemps))
     print(len(priortemperatures))
@@ -209,7 +209,6 @@ def main(args):
         #random_seeds = []
         #    random_seeds.append(givenseed + i)
         #print(random_seeds)
-    print(fullsetoftemps)
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
