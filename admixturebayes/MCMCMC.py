@@ -5,7 +5,7 @@ from numpy.random import choice, random
 from math import exp
 from itertools import chain
 
-def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,  printing_schemes, 
+def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme, prior_temperature_scheme, printing_schemes, 
            iteration_scheme,  proposal_scheme, n_arg, verboseee,
            no_chains=None, numpy_seeds=None, multiplier= None, result_file=None):
     '''
@@ -36,7 +36,7 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
         if cum_iterations % 1000 == 0 and verboseee != "silent":
             print("Currently on iteration " +  str(cum_iterations) + " out of " + str(n_arg * 50))
         #letting each chain run for no_iterations:
-        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
+        iteration_object=_pack_everything(xs, posteriors, temperature_scheme, prior_temperature_scheme, printing_schemes, no_iterations, cum_iterations, proposal_updates, multiplier)
         new_state = pool.order_calculation(iteration_object)
         xs, posteriors, df_add,proposal_updates = _unpack_everything(new_state, summaries, total_permutation)
         df_result=_update_results(df_result, df_add)
@@ -47,7 +47,7 @@ def MCMCMC(starting_trees,    posterior_function, summaries, temperature_scheme,
                 add_to_data_frame(df_result, result_file)
                 df_result=df_result[0:0]
         #making the mc3 flips and updating:
-        xs, posteriors, permut, proposal_updates, flipprops, flipacceptances = flipping(xs, posteriors, temperature_scheme, proposal_updates, flipprops, flipacceptances)
+        xs, posteriors, permut, proposal_updates, flipprops, flipacceptances = flipping(xs, posteriors, temperature_scheme, prior_temperature_scheme, proposal_updates, flipprops, flipacceptances)
         total_permutation=[total_permutation[n] for n in permut]
         cum_iterations+=no_iterations
     for chain in pool.group:
@@ -67,18 +67,19 @@ def add_to_data_frame(df_add, result_file):
     with open(result_file, 'a') as f:
         df_add.to_csv(f, header=False)
 
-def flipping(xs, posteriors, temperature_scheme, proposal_updates, flipproposals, flipacc):
+def flipping(xs, posteriors, temperature_scheme,prior_temperature_scheme,  proposal_updates, flipproposals, flipacc):
     n=len(xs)
     step_permutation=list(range(n))
     count=0
-    for _ in range(40):
+    for _ in range(5):
         i = choice(n - 1,1,False)[0]
         j = i + 1
         flipproposals[i] = flipproposals[i] + 1
         post_i,post_j=posteriors[i],posteriors[j]
         temp_i,temp_j=temperature_scheme[i], temperature_scheme[j]
+        priortemp_i,priortemp_j=prior_temperature_scheme[i], prior_temperature_scheme[j]
 
-        logalpha=-(post_i[0]-post_j[0])*(1.0/temp_i-1.0/temp_j)
+        logalpha=-(post_i[0]-post_j[0]) * (1.0/temp_i-1.0/temp_j)-(post_i[1]-post_j[1]) * (1.0/priortemp_i-1.0/priortemp_j)
 
         if logalpha>0 or random() < exp(logalpha):
             flipacc[i] = flipacc[i] + 1
@@ -98,8 +99,8 @@ def _update_results(df_result, df_add):
         df_result = pd.concat([df_result, df_add])
     return df_result
 
-def _pack_everything(xs, posteriors, temperature_scheme,printing_schemes,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
-    return ([x, posterior,no_iterations, printing_scheme, 40, cum_iterations, temperature_scheme[i], proposal_update, multiplier] for i,(x,posterior,printing_scheme,proposal_update) in enumerate(zip(xs,posteriors,printing_schemes,proposal_updates)))
+def _pack_everything(xs, posteriors, temperature_scheme, priortempschem, printing_schemes,no_iterations,cum_iterations, proposal_updates=None, multiplier=None):
+    return ([x, posterior,no_iterations, printing_scheme, 40, cum_iterations, temperature_scheme[i], priortempschem[i], proposal_update, multiplier] for i,(x,posterior,printing_scheme,proposal_update) in enumerate(zip(xs,posteriors,printing_schemes,proposal_updates)))
 
 def _unpack_everything(new_state, summaries, total_permutation):
     xs,posteriors, summs, proposal_updates = list(zip(*new_state))

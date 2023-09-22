@@ -5,7 +5,7 @@ from construct_covariance_choices import get_covariance, estimate_degrees_of_fre
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 import os
-from numpy import random
+from numpy import random, linspace
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
@@ -59,18 +59,31 @@ def main(args):
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
-    
-    parser.add_argument('--maxtemp', type=float, default=1000.0, help='the max temp of the hottest chain')
-    parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
-
+    parser.add_argument('--maxtemp', type=float, default=998.0, help='the max temp of the hottest chain')
+    parser.add_argument('--temperature_list', type=str, nargs='+', default=[])
     options=parser.parse_args(args)
 
+    if options.temperature_list == []:
+        fullsetoftemps = [(options.maxtemp)** (float(i)/(float(options.MCMC_chains)-1.0) ) for i in range(options.MCMC_chains)]
+    else:
+        with open(options.temperature_list) as f:
+            lines = f.read().splitlines()
+        fullsetoftemps = []
+        for ivii in lines:
+            fullsetoftemps.append(float(ivii))
+
+    priortemperatures = numpy.linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
+
+    print(len(fullsetoftemps))
+    print(len(priortemperatures))
+    print(fullsetoftemps)
+    print(priortemperatures)
     temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"
     os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
-
-    assert options.MCMC_chains > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
+    
+    assert len(fullsetoftemps) > 1, 'At least 2 chains must be run for the MCMCMC to work properly'
     assert not (any((i < 8 for i in [6,8,9])) and not options.outgroup), 'In the requested analysis, the outgroup needs to be specified by the --outgroup flag and it should match one of the populations'
-
+    
     #Here is the only thing we should be changing.
     temp = pandas.read_csv(options.input_file, sep ="\s+")
     colnames = list(temp.columns.values)
@@ -83,7 +96,7 @@ def main(args):
     temp.to_csv(os.getcwd() + os.sep + temporaryfoldername + os.sep + "temp_input.txt", sep =" ", index = False)
 
     mp= [simple_adaptive_proposal(['deladmix', 'addadmix', 'rescale', 'rescale_add', 'rescale_admixtures', 'rescale_constrained', 'sliding_regraft'],
-     [1, 1, 1, 1, 1, 1, 1]) for _ in range(options.MCMC_chains)]
+     [1, 1, 1, 1, 1, 1, 1]) for _ in range(len(fullsetoftemps))]
 
     with open(os.getcwd() +os.sep+ temporaryfoldername + os.sep + "temp_input.txt", 'r') as f:
         full_nodes = f.readline().rstrip().split()
@@ -102,10 +115,9 @@ def main(args):
     df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + os.sep + temporaryfoldername + os.sep  + "temp_input.txt",
                                                varcovfilename = os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt",
                                             bootstrap_blocksize=options.bootstrap_blocksize,
-                                            cores=options.MCMC_chains,
+                                            cores=len(fullsetoftemps),
                                             est=estimator_arguments, 
                                             verbose_level=options.verbose_level)
-
     multiplier=covariance[1]
     
     if options.continue_samples != []:
@@ -172,13 +184,13 @@ def main(args):
 
         #compute addfile as a file with a number
         starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt"],
-                                        options.MCMC_chains,
+                                        len(fullsetoftemps),
                                         adds=[os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "temp_add.txt"],
                                         nodes=reduced_nodes)
     else:
-        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples, options.MCMC_chains, adds=[], nodes=reduced_nodes)
+        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,len(fullsetoftemps), adds=[], nodes=reduced_nodes)
 
-    summary_verbose_scheme, summaries=get_summary_scheme(no_chains=options.MCMC_chains)
+    summary_verbose_scheme, summaries=get_summary_scheme(no_chains=len(fullsetoftemps))
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
                                  varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt")
@@ -195,17 +207,17 @@ def main(args):
         covarfile.close()
 
         #random_seeds = []
-        #for i in range(options.MCMC_chains):
         #    random_seeds.append(givenseed + i)
         #print(random_seeds)
+    print(fullsetoftemps)
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=[(options.maxtemp)**(  (float(i)/(float(options.MCMC_chains)-1.0) )**float(options.spacing)   ) for i in range(options.MCMC_chains)],  ##[1.0 + 0.1 * float(i) for i in range(options.MCMC_chains)]
+            temperature_scheme=fullsetoftemps, prior_temperature_scheme = priortemperatures,
             printing_schemes=summary_verbose_scheme,
             iteration_scheme=[50]*options.n,
             proposal_scheme= mp,
-            no_chains=options.MCMC_chains,
+            no_chains=len(fullsetoftemps),
             multiplier=multiplier,  #numpy_seeds = random_seeds,
             result_file=options.result_file,
             n_arg=options.n, verboseee=options.verbose_level)
