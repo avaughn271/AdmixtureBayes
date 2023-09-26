@@ -271,14 +271,34 @@ The most common problem users may experience when using AdmixtureBayes is a lack
 
 A value of --n that is too small
 
-Poor mixing between the heated chains of the MC<sup>3</sup> algorithm.
+Poor swap rates between the heated chains of the MC<sup>3</sup> algorithm.
 
 A very large number of populations
 
 A very large number of effectively independent SNPs
 
-The mixing between the heated chains of the MC<sup>3</sup> algorithm is controlled by the 
+The swap rates between the heated chains of the MC<sup>3</sup> algorithm is controlled by the number of heated chains being run in the  MC<sup>3</sup> framework and by what their temperatures are. The most principled way to set these temperatures is to dynamically set them in a dataset-specific manner by measuring the swap rates between chains. This is accomplished by the script findOptimalTemps.py, which can be run with the following command:
 
-The most obvious way in which lack of convergence displays, apart from analyzing the convergence plots using the script provided, is in observed values for the number of admixture events that are too high (for example 20 admixture events for a dataset with 5 non-outgroup populations). This is because AdmixtureBayes often works by adding admixture events to the starting graph, shuffling around the topology, and then removing admixture events. If there is not sufficient mixing, then the algorithm only finishes the first and possibly second steps. This problem should be resolved by increasing the value of --n and/or increasing the value of --MCMC_chains. This should not be a problem for datasets with a small number of populations, which is why we recommend running AdmixtureBayes on a subset of populations from your dataset first. If mixing problems persist, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
+```bash
+$ python PATH/AdmixtureBayes/admixturebayes/findOptimalTemps.py
+```
+
+## This step takes as input:
+
+**--input_file**  Defined the same as in runMCMC.py
+
+**--outgroup** Defined the same as in runMCMC.py
+
+**--temperature_file** (optional) The name of the output file in which to save the temperatures. Default value is "optimal_temperatures.txt".
+
+This step produces a file whose name is the argument supplied to the **temperature_file** argument. It is a file containing an increasing list of positive numbers, beginning at 1.0. This option overrides the *MCMC_chains*  and  *maxtemp* parameters. For example:
+```bash
+1.0
+1.5
+1.8
+56.0
+100.0
+```
+The number of chains that are run will be the number of lines in this file. This file can then be used as input to the runMCMC.py script through the **--temperature_list** argument. If mixing problems persist, even after using this option with a high value of the parameter **--n**, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
 
 
