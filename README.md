@@ -78,9 +78,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--outgroup** The name of the population that will serve as the outgroup. For example, in the above file, "out" could be the outgroup.
 
-**--n** (optional) The number of iterations the MCMC sampler should make. (Technically, this is the number of MCMCMC flips the chain should make, which is directly proportional to the number iterations. The exact number of iterations is 50*n). Default value is 200. This number should almost certainly be increased in all practical applications.
-
-**--MCMC_chains** (optional) The number of chains to run the MCMCMC with (See Matthew Darlington's great explanation of MCMCMC [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains will result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8. Must be at least 2.
+**--n** (optional) The number of iterations the MCMC sampler should make. (Technically, this is the number of MC<sup>3</sup> flips the chain should make, which is directly proportional to the number iterations. The exact number of iterations is 50*n). Default value is 200. This number should be increased in all practical applications.
 
 **--result_file** (optional) The name of the mcmc output file of this step. No file extension is added (meaning entering "example" will produce "example" as an output file, not "example.txt" or "example.csv".). Default value is "mcmc_samples.csv"
 
@@ -90,7 +88,19 @@ $ python PATH/AdmixtureBayes/admixturebayes/runMCMC.py
 
 **--save_covariance** (optional) If this flag is specified, then the allelic covariance matrix produced by considering all SNPs will be saved to the file "covariance_matrix.txt" in the current working directory. Note that this will be the covariance matrix described in the AdmixtureBayes paper, which is to say a scaled, bias-corrected transformation of the naive covariance matrix that would be suggested by Equation 4 of the main text. The user may use the input data to compute the naive covariance matrix using Equation 4 of the main text should they choose, but bear in mind that this is different than the covariance matrix AdmixtureBayes is actually using.
 
-**--maxtemp** (optional) The temperature of the hottest chain in the MCMCMC algorithm. Must be a positive number, though not necessarily an integer. This is a recently added tuning parameter that can greatly improve mixing.  The temperature of the $i$'th chain will be $maxtemp^{ (i-1)/(MCMC\textunderscore chains-1)}$.  We propose swaps between chains of adjacent temperature, meaning that we can measure the acceptance rate of $M-1$ different proposals. At the end of the runMCMC step, the acceptance rates of proposed swaps between chains is printed as a list of length $M-1$. The $i$'th element of this list is the acceptance rate of proposed swaps between chain $i$ and chain $i+1$. If these acceptance rates are too low (close to 0%), then that means *maxtemp* is set too high and should be lowered. If these rates are too high (close to 100%), then *maxtemp* is set too low and should be increased. Ideally all of the acceptance rates will be near 20-40%, but this can be difficult to achieve for each pair of chains. One idea which practically works well is to set *maxtemp* to be as large as possible while keeping all acceptance rates above 10%. Note that the optimal value of *maxtemp* is dependent on the value of the *MCMC_chains* parameter, meaning that if the value of  *MCMC_chains* changes, the value of  *maxtemp*  may  also have to be changed. Default value is 1000.
+**--MCMC_chains** (optional) A tuning parameter of the MCMC algorithm. The number of chains to run the MC<sup>3</sup> with (See Matthew Darlington's great explanation of MC<sup>3</sup> [here](https://www.lancaster.ac.uk/stor-i-student-sites/matthew-darlington/wp-content/uploads/sites/10/2020/01/MattDReport.pdf)). More chains should result in better mixing at the cost of increased computational time. AdmixtureBayes supports multiprocessing, so ideally this would be the number of cores. Default value is 8. Must be at least 2. See the section below on MC<sup>3</sup> Mixing for more details.
+
+**--maxtemp** (optional)  A tuning parameter of the MCMC algorithm. The temperature of the hottest chain in the MC<sup>3</sup> algorithm. Must be a positive number, though not necessarily an integer. The temperature of the $i$'th chain will be $maxtemp^{ (i-1)/(MCMC\textunderscore chains-1)}$.  We propose swaps between chains of adjacent temperature, meaning that we can measure the acceptance rate of $M-1$ different proposals. At the end of the runMCMC step, the acceptance rates of proposed swaps between chains is printed as a list of length $M-1$. The $i$'th element of this list is the acceptance rate of proposed swaps between chain $i$ and chain $i+1$. If these acceptance rates are too low (close to 0%), then that means *maxtemp* is set too high and should be lowered. If these rates are too high (close to 100%), then *maxtemp* is set too low and should be increased. Ideally all of the acceptance rates will be near 20-40%, but this can be difficult to achieve for each pair of chains. One idea which practically works well is to set *maxtemp* to be as large as possible while keeping all acceptance rates above 10%. Note that the optimal value of *maxtemp* is dependent on the value of the *MCMC_chains* parameter, meaning that if the value of  *MCMC_chains* changes, the value of  *maxtemp*  may  also have to be changed. Default value is 1000. See the section below on MC<sup>3</sup> Mixing for more details.
+
+**--temperature_list** (optional)  A tuning parameter of the MCMC algorithm. The name of a .txt file containing an increasing list of positive numbers, beginning at 1.0. This option overrides the *MCMC_chains*  and  *maxtemp* parameters. For example:
+```bash
+1.0
+1.5
+1.8
+56.0
+100.0
+```
+A file of this type is generated by the findOptimalTemps.py script. See the section below on MC<sup>3</sup> Mixing for more details.
 
  ## This step produces (in the current working directory)
 
@@ -255,17 +265,19 @@ python PATH/admixturebayes/makePlots.py --plot top_trees --posterior thinned_sam
 
 Now that you are familiar with the output of AdmixtureBayes and with assessing convergence, you can run AdmixtureBayes on your dataset. If your number of populations is larger than 5, we recommend initially running AdmixtureBayes on a subset of your data, 3 or 4 non-outgroup populations for example. This is because AdmixtureBayes should converge very rapidly on this smaller dataset, and it will enable you to work out any data conversion problems or mixing problems rather quickly. Once you are confident that AdmixtureBayes is performing properly on your data, you can move on to your full dataset. AdmixtureBayes, when using 32 parallel chains through the --MCMC_chains option, takes about 50 hours to do a complete run on our Arctic dataset of 11 non-outgroup populations (we used --n 450000). The state space of admixture graph topologies grows super-exponentially in the number of populations, so be aware that when considering 15 or 20 populations, the time necessary to achieve convergence may increase considerably. 
 
-### 3) Mixing problems/still not working
+### 3) MC<sup>3</sup> Mixing
 
-The most common problem users may experience when using AdmixtureBayes is a lack of convergence of the MCMC chain. This can have many different causes including but not limited to:
+The most common problem users may experience when using AdmixtureBayes is a lack of convergence of the MC<sup>3</sup> algorithm, as measured through the EvaluateConvergence.R script. This can have many different causes including but not limited to:
 
 A value of --n that is too small
 
-A value of --MCMC_chains that is too small
+Poor mixing between the heated chains of the MC<sup>3</sup> algorithm.
 
 A very large number of populations
 
 A very large number of effectively independent SNPs
+
+The mixing between the heated chains of the MC<sup>3</sup> algorithm is controlled by the 
 
 The most obvious way in which lack of convergence displays, apart from analyzing the convergence plots using the script provided, is in observed values for the number of admixture events that are too high (for example 20 admixture events for a dataset with 5 non-outgroup populations). This is because AdmixtureBayes often works by adding admixture events to the starting graph, shuffling around the topology, and then removing admixture events. If there is not sufficient mixing, then the algorithm only finishes the first and possibly second steps. This problem should be resolved by increasing the value of --n and/or increasing the value of --MCMC_chains. This should not be a problem for datasets with a small number of populations, which is why we recommend running AdmixtureBayes on a subset of populations from your dataset first. If mixing problems persist, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
 
