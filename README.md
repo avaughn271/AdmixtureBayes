@@ -285,7 +285,7 @@ $ python PATH/AdmixtureBayes/admixturebayes/findOptimalTemps.py
 
 **--temperature_file** (optional) The name of the output file in which to save the temperatures. Default value is "optimal_temperatures.txt".
 
-This step produces a file whose name is the argument supplied to the **temperature_file** argument. It is a file containing an increasing list of positive numbers, beginning at 1.0. This option overrides the *MCMC_chains*  and  *maxtemp* parameters. For example:
+This step produces a file whose name is the argument supplied to the **temperature_file** argument. It is a file containing an increasing list of positive numbers, beginning at 1.0. For example:
 ```bash
 1.0
 1.5
@@ -293,6 +293,6 @@ This step produces a file whose name is the argument supplied to the **temperatu
 56.0
 100.0
 ```
-The number of chains that are run will be the number of lines in this file. This file can then be used as input to the runMCMC.py script through the **--temperature_list** argument. This script may take a few hours to run, but an advantage is that then the output list of temperatures can be reused for all subsequent analyses using the given dataset, for example running multiple parallel chains to assess mixing. As mentioned previously, when running the runMCMC.py script, the acceptance rates of proposed swaps between chains is printed at the end of the algorithm as a list of length $M-1$ (where $M$ is the number of heated chains). The $i$'th element of this list is the acceptance rate of proposed swaps between chain $i$ and chain $i+1$. This should help the user assess mixing between chains. If mixing problems persist, even after using the *temperature_list*  option with a high value of the parameter **--n**, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
+The number of chains that are run will be the number of lines in this file. This file can then be used as input to the runMCMC.py script through the **--temperature_list** argument. This script may take a few hours to run, but an advantage is that then the output list of temperatures can be reused for all subsequent analyses using the given dataset, for example running multiple parallel chains to assess mixing. As mentioned previously, when running the runMCMC.py script, the acceptance rates of proposed swaps between chains are printed at the end of the algorithm as a list of length $M-1$ (where $M$ is the number of heated chains). The $i$'th element of this list is the acceptance rate of proposed swaps between chain $i$ and chain $i+1$. This should help the user assess mixing between chains. If mixing problems persist, even after using the *temperature_list*  option with a high value of the parameter **--n**, especially if you notice severe mixing problems on a small number of populations, contact me at [ahv36@berkeley.edu](mailto:ahv36@berkeley.edu). I will try to resolve this problem. Data that violates the assumption of the model and SNP ascertainment issues have been observed to severely disrupt mixing.
 
 
