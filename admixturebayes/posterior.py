@@ -52,17 +52,17 @@ def likelihood(x, emp_cov, b, M=12,nodes=None):
     par_cov=make_covariance(tree, nodes)
     if par_cov is None:
         print('illegal tree')
-        return -float('inf')
+        return -float('inf'), emp_cov, (par_cov+add)
     if b is not None:
         par_cov+=b
     if par_cov is None:
         print('illegal tree')
-        return -float('inf')
+        return -float('inf'), emp_cov, (par_cov+add)
     try:
         d=wishart.logpdf(emp_cov, df=M, scale= (par_cov+add)/M)
     except (ValueError, LinAlgError) as e:
-        return -float("inf")
-    return d
+        return -float("inf"), emp_cov, (par_cov+add)
+    return d, emp_cov, (par_cov+add)
 
 class posterior_class(object):
     
@@ -80,7 +80,7 @@ class posterior_class(object):
     def __call__(self, x):
         prior_value = prior(x,p=self.p)
         if prior_value==-float('inf'):
-            return -float('inf'), prior_value
+            return -float('inf'), prior_value,  self.emp_cov, self.emp_cov
         
         likelihood_value=likelihood(x, self.emp_cov,self.b, self.M, nodes=self.nodes)
-        return likelihood_value, prior_value
+        return likelihood_value[0], prior_value, likelihood_value[1], likelihood_value[2]

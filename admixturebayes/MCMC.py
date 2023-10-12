@@ -1,6 +1,8 @@
 from numpy import random
 from math import exp, log
 from Rtree_operations import scale_tree_copy
+from scipy.stats import wishart
+from numpy.linalg import LinAlgError
 
 from multiprocessing import Queue, Process
 
@@ -30,8 +32,8 @@ class basic_chain_class(object):
             self.response_queue.put(self.run_chain(input))
             
     def run_chain(self, p):
-        start_tree, post, N, sample_verbose_scheme, overall_thinning, i_start_from, temperature, prior_temperature, proposal_update, multiplier = p
-        return basic_chain(start_tree,  self.summaries,  self.posterior_function, self.proposal,  post,  N,  sample_verbose_scheme, i_start_from, temperature, prior_temperature, proposal_update, multiplier)
+        start_tree, post, N, sample_verbose_scheme, overall_thinning, i_start_from, temperature, proposal_update, multiplier = p
+        return basic_chain(start_tree,  self.summaries,  self.posterior_function, self.proposal,  post,  N,  sample_verbose_scheme, i_start_from, temperature, proposal_update, multiplier)
         
 class basic_chain_pool(object):
     
@@ -56,18 +58,26 @@ class basic_chain_pool(object):
             counter+=1
         return [chainn.chain.response_queue.get() for chainn in self.group]
 
-def one_jump(x, post, temperature, prior_temperature, posterior_function, proposal, pks={}):
+def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     
     newx,g1,g2,Jh,j1,j2=proposal(x,pks)
     post_new=posterior_function(newx)
 
-    likelihood_old, prior_old = post[:2]
-    likelihood_new, prior_new = post_new[:2]
+    likelihood_old, prior_old, term1, term2 = post
+    likelihood_new, prior_new, term1_new, term2_new = post_new
+    try:
+        newd=wishart.logpdf(term1_new, df=temperature, scale= term2_new/temperature)
+    except (ValueError, LinAlgError) as e:
+        newd =  -float("inf")
+    try:
+        d=wishart.logpdf(term1, df=temperature, scale= term2/temperature)
+    except (ValueError, LinAlgError) as e:
+        d =  -float("inf")
     
     if g2<=0 or j2<=0:
         logmhr=-float('inf')
     else:
-        logmhr=(likelihood_new-likelihood_old)/temperature + (prior_new-prior_old)/prior_temperature + log(g2)+log(j2)-log(j1)-log(g1)+log(Jh)
+        logmhr = newd - d + prior_new - prior_old + log(g2)+log(j2)-log(j1)-log(g1)+log(Jh)
     if logmhr>100:
         mhr=float('inf')
     else:
@@ -81,7 +91,7 @@ def one_jump(x, post, temperature, prior_temperature, posterior_function, propos
 
 def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=10000, 
                 sample_verbose_scheme=None, i_start_from=0, 
-                temperature=1.0, prior_temperature = 1.0, proposal_update=None, multiplier=None):
+                temperature=1.0, proposal_update=None, multiplier=None):
     if proposal_update is not None:
         proposal.node_naming.n=proposal_update['n']
     
@@ -93,7 +103,7 @@ def basic_chain(start_x, summaries, posterior_function, proposal, post=None, N=1
         
     for i in range(i_start_from,i_start_from+N):
         proposal_knowledge_scraper={}
-        new_x,new_post=one_jump(x, post, temperature, prior_temperature, posterior_function, proposal, proposal_knowledge_scraper)
+        new_x,new_post=one_jump(x, post, temperature, posterior_function, proposal, proposal_knowledge_scraper)
         if i%40==0:
             iteration_summary.append(_calc_and_print_summaries(sample_verbose_scheme,
                                                                summaries,

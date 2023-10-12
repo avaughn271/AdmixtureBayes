@@ -5,7 +5,6 @@ from construct_covariance_choices import get_covariance, estimate_degrees_of_fre
 from posterior import posterior_class
 from MCMCMC import MCMCMC
 import os
-from numpy import random, linspace
 import pandas
 from meta_proposal import simple_adaptive_proposal
 
@@ -71,13 +70,9 @@ def main(args):
         fullsetoftemps = []
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
+    fullsetoftemps = [2000.0, 1500.0, 1000.0, 750.0, 
+                      500.0, 250.0, 100.0, 50.0]
 
-    priortemperatures = linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
-
-    #print(len(fullsetoftemps))
-    #print(len(priortemperatures))
-    #print(fullsetoftemps)
-    #print(priortemperatures)
     temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"
     os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
     
@@ -192,7 +187,7 @@ def main(args):
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=len(fullsetoftemps))
 
-    posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
+    posterior = posterior_class(emp_cov=covariance[0], M=fullsetoftemps[0], multiplier=covariance[1], nodes=reduced_nodes, 
                                  varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt")
 
     removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt")
@@ -212,7 +207,7 @@ def main(args):
     MCMCMC(starting_trees=starting_trees,
             posterior_function= posterior,
             summaries=summaries,
-            temperature_scheme=fullsetoftemps, prior_temperature_scheme = priortemperatures,
+            temperature_scheme=fullsetoftemps,
             printing_schemes=summary_verbose_scheme,
             iteration_scheme=[50]*options.n,
             proposal_scheme= mp,
