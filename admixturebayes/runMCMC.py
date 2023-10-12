@@ -70,7 +70,7 @@ def main(args):
         fullsetoftemps = []
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
-    fullsetoftemps = [2000.0, 1950.0, 1900.0, 1825.0,  1750.0, 1675.0, 1600.0, 1525.0, 1450.0, 1375.0, 1300.0]
+    fullsetoftemps = [2000.0,    1600.0,  1200.0, 750.0, 550.0, 400.0, 300.0, 200.0, 125.0, 87.5, 50.0]
     #, 1225.0, 1150.0, 1000.0, 925.0, 850.0, 775.0, 700.0, 600.0, 500.0, 425.0 ,   375.0, 320.0, 290.0, 250.0,  50.0]
 
     temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"

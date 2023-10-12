@@ -85,7 +85,7 @@ def flipping(xs, posteriors, temperature_scheme,  proposal_updates, flipproposal
         wishart3 = wishart.logpdf(post_j[2], df=temp_i, scale= post_j[3]/temp_i) + post_j[1]
         wishart4 = wishart.logpdf(post_j[2], df=temp_j, scale= post_j[3]/temp_j) + post_j[1]
 
-        logalpha=(wishart1 - wishart2 + wishart3 - wishart4) # or maybe the opposite, negative sign
+        logalpha=-(wishart1 - wishart2 - wishart3 + wishart4) # or maybe the opposite, negative sign
 
         if logalpha>0 or random() < exp(logalpha):
             flipacc[i] = flipacc[i] + 1
