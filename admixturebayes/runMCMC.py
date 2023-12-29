@@ -59,12 +59,13 @@ def main(args):
     #start arguments
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
-    parser.add_argument('--maxtemp', type=float, default=998.0, help='the max temp of the hottest chain')
+    parser.add_argument('--maxtemp', type=float, default=999.99, help='the max temp of the hottest chain')
     parser.add_argument('--temperature_list', type=str, nargs='+', default=[])
+    parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
     options=parser.parse_args(args)
 
     if options.temperature_list == []:
-        fullsetoftemps = [(options.maxtemp)** (float(i)/(float(options.MCMC_chains)-1.0) ) for i in range(options.MCMC_chains)]
+        fullsetoftemps = [(options.maxtemp)**( (float(i)/(float(options.MCMC_chains)-1.0) )**float(options.spacing) ) for i in range(options.MCMC_chains)]
     else:
         with open(options.temperature_list[0]) as f:
             lines = f.read().splitlines()
@@ -119,7 +120,7 @@ def main(args):
                                             est=estimator_arguments, 
                                             verbose_level=options.verbose_level)
     multiplier=covariance[1]
-    
+    print("Number of effectively independent SNPs: ", df)
     if options.continue_samples != []:
         #This is where the continuation is all happening.
         #We first save the tree to a temporary file
