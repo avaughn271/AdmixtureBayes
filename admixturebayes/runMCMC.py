@@ -60,6 +60,7 @@ def main(args):
     parser.add_argument('--continue_samples', type=str, nargs='+', default=[],
                         help='filenames of trees to start in. If empty, the trees will either be simulated with the flag --random_start')
     parser.add_argument('--maxtemp', type=float, default=999.99, help='the max temp of the hottest chain')
+    parser.add_argument('--prior_weighting', type=float, default=1.0)
     parser.add_argument('--temperature_list', type=str, nargs='+', default=[])
     parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
     options=parser.parse_args(args)
@@ -73,7 +74,7 @@ def main(args):
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
 
-    priortemperatures = linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
+    priortemperatures = linspace(1.0, 1.0, num=len(fullsetoftemps)).tolist()
 
     #print(len(fullsetoftemps))
     #print(len(priortemperatures))
@@ -187,14 +188,14 @@ def main(args):
         starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt"],
                                         len(fullsetoftemps),
                                         adds=[os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "temp_add.txt"],
-                                        nodes=reduced_nodes)
+                                        nodes=reduced_nodes, prior_weighting = options.prior_weighting)
     else:
         starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,len(fullsetoftemps), adds=[], nodes=reduced_nodes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=len(fullsetoftemps))
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
-                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt")
+                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt", pp = options.prior_weighting)
 
     removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt")
     removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_start_tree.txt")
