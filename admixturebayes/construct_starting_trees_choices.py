@@ -130,9 +130,11 @@ def generate_admix_topology(size, admixes, leaf_nodes=None):
             tree=rename_root(tree,key)
     return tree
 
-def generate_phylogeny(size,admixes=None, p=0.5, leaf_nodes=None):
-    if admixes is None:
+def generate_phylogeny(num_admixes, size,admixes=None, p=0.5, leaf_nodes=None):
+    if num_admixes == -1:
         admixes=geom.rvs(p=p)-1
+    else:
+        admixes = num_admixes
     tree=generate_admix_topology(size, admixes, leaf_nodes)
     n=get_number_of_leaves(tree)
     factor=float(2*n-2+3*admixes)/float(2*n-2)
@@ -262,7 +264,7 @@ def _classify_type(index, n_frees, n_halfs, n_admixs):
 def get_starting_trees(inputs, 
                        no_chains, 
                        adds=[], 
-                       nodes=None):
+                       nodes=None, num_admixes = -1):
     add_vals=[]
     if adds:
         for add in adds:
@@ -274,7 +276,7 @@ def get_starting_trees(inputs,
         
     if not trees:
         no_pops=len(nodes) #error if nodes is not specified
-        trees=[generate_phylogeny(no_pops, leaf_nodes=nodes) for _ in range(no_chains)]
+        trees=[generate_phylogeny(num_admixes, no_pops, leaf_nodes=nodes) for _ in range(no_chains)]
     
     if not add_vals:
         no_pops=len(nodes) #error if nodes is not specified

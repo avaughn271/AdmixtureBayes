@@ -24,7 +24,7 @@ def calculate_branch_prior(branches, n):
     rate=float(2*n-2)/len(branches)
     return -sum(branches)*rate+log(rate)*len(branches)
 
-def prior(x, p=0.5):
+def prior(x, num_admixes, p=0.5):
     tree, add=x
     no_leaves=get_number_of_leaves(tree)
     admixtures=get_all_admixture_proportions(tree)
@@ -34,13 +34,15 @@ def prior(x, p=0.5):
     if not all(branch>=0 for branch in branches):
         return -float('inf')
     branch_prior=calculate_branch_prior(branches, no_leaves)
-    no_admix_prior=no_admixes(p, len(admixtures))
+    no_admix_prior=no_admixes(num_admixes, p, len(admixtures),)
     top_prior=uniform_topological_prior_function(tree)
     logsum=branch_prior+no_admix_prior+top_prior-add
     return logsum
 
-def no_admixes(p, admixes, hard_cutoff=20):
+def no_admixes(num_admixes, p, admixes, hard_cutoff=20):
     if admixes > hard_cutoff:
+        return -float('inf')
+    if num_admixes > -1 and num_admixes != admixes:
         return -float('inf')
     return geom.logpmf(admixes+1, 1.0-p)-geom.logcdf(hard_cutoff+1, 1.0-p)
 
@@ -66,11 +68,12 @@ def likelihood(x, emp_cov, b, M=12,nodes=None):
 
 class posterior_class(object):
     
-    def __init__(self,  emp_cov,  M=10,  multiplier=None,  nodes=None, varcovname = ""):
+    def __init__(self,  emp_cov,  M=10,  multiplier=None,  nodes=None, varcovname = "", num_admixes = -1):
         '''
         M can either be a float - the degrees of freedom in the wishart distribution or the constant variance in the normal approximation of the covariance matrix.
         or M can be a matrix - the same size of emp_cov where each entry is the variance of that entry. 
         '''
+        self.num_admixes = num_admixes
         self.emp_cov=emp_cov
         self.M=M
         self.p=0.5
@@ -78,7 +81,7 @@ class posterior_class(object):
         self.b=loadtxt(varcovname) * multiplier
 
     def __call__(self, x):
-        prior_value = prior(x,p=self.p)
+        prior_value = prior(x,self.num_admixes, p=self.p)
         if prior_value==-float('inf'):
             return -float('inf'), prior_value
         
