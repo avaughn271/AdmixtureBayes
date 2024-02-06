@@ -73,7 +73,7 @@ def one_jump(x, post, temperature, posterior_function, proposal, pks={}):
     TargetOld = prior_old + likelihood_old
     if TargetDensitynew == -float('inf'):
         return(x, post, 0, 1)
-    logmhr = TargetDensitynew/temperature - TargetOld/temperature # maybe only change this and no MC^3 switches and no adaption.
+    logmhr = likelihood_new/temperature  + prior_new - likelihood_old/temperature - prior_old # maybe only change this and no MC^3 switches and no adaption.
     if logmhr>100:
         mhr=float('inf')
     else:
@@ -1130,9 +1130,11 @@ def main(args):
     parser.add_argument('--starting_temp', type=str, required=True, help='the inputuu')
     parser.add_argument('--ending_temp', type=str, required=True, help='the inputppp')
     parser.add_argument('--temp_scaling', type=str, required=True, help='the inputnnn')
-    parser.add_argument('--iter_per_temp', type=str, required=True, help='the inputxx')
+    parser.add_argument('--iter_per_temp', type=str, required=True, help='the inputxx') #MUST BE AT LEAST 50)!!!!!!!
     parser.add_argument('--dontcleanup', default = False, action='store_true', help='the inputxx')
-
+    parser.add_argument('--num_admixes', type=int, default=-1, help='the max temp of the hottest chain')
+    parser.add_argument('--num_ind_snps', type=float, default=-1, help='for debugging as bootstrap stocahsticity is a problem')
+    
     #convenience arguments
     parser.add_argument('--verbose_level', default='silent', choices=['normal', 'silent'],
                         help='this will set the amount of status out prints throughout running the program.')
@@ -1172,22 +1174,24 @@ def main(args):
      reduce_covariance_node=options.outgroup,
      estimator_arguments=estimator_arguments,filename =  os.getcwd() +os.sep + temporaryfoldername + os.sep  + "covariance_and_multiplier.txt")
     estimator_arguments['save_variance_correction']=False
-    df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() +os.sep + temporaryfoldername + os.sep  + "temp_input.txt",
-                                               varcovfilename = os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt",
-                                            bootstrap_blocksize=options.bootstrap_blocksize,
-                                            cores=2,
-                                            est=estimator_arguments, 
-                                            verbose_level=options.verbose_level)
+    if options.num_ind_snps < 0:
+        df=estimate_degrees_of_freedom_scaled_fast(os.getcwd() + os.sep + temporaryfoldername + os.sep  + "temp_input.txt",
+                                                varcovfilename = os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt",
+                                                bootstrap_blocksize=options.bootstrap_blocksize,
+                                                cores=2,
+                                                est=estimator_arguments, 
+                                                verbose_level=options.verbose_level)
+    else:
+        df = options.num_ind_snps
     multiplier=covariance[1]
 
     #NEWEDIT, change the thing below to False, then []
-    starting_trees=construct_starting_trees_choices.get_starting_trees([], 1, adds=[], nodes=reduced_nodes)
+    starting_trees=construct_starting_trees_choices.get_starting_trees([], 1 , adds=[], nodes=reduced_nodes,num_admixes = options.num_admixes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=1)
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
-                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  +"variance_correction.txt")
-    
+                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt", num_admixes = options.num_admixes)
     removefile("variance_correction.txt")
     removefile("temp_starttree.txt")
     removefile("temp_start_tree.txt")
