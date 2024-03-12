@@ -76,14 +76,14 @@ def main(args):
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
     if options.num_admixes < 0:
-        priortemperatures = linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
+        priortemperatures = linspace(1.0, 1.0, num=len(fullsetoftemps)).tolist()
     else:
         priortemperatures = linspace(1.0, 1.0, num=len(fullsetoftemps)).tolist()
 
     #print(len(fullsetoftemps))
     #print(len(priortemperatures))
     print("MC3 Temperatures: ", fullsetoftemps)
-    #print(priortemperatures)
+    print(priortemperatures)
     temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"
     os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
     

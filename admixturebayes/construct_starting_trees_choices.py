@@ -132,9 +132,9 @@ def generate_admix_topology(size, admixes, leaf_nodes=None):
 
 def generate_phylogeny(num_admixes, size,admixes=None, p=0.5, leaf_nodes=None):
     if num_admixes == -1:
-        admixes=geom.rvs(p=p)-1
+        admixes=0
     else:
-        admixes = num_admixes
+        admixes = 0
     tree=generate_admix_topology(size, admixes, leaf_nodes)
     n=get_number_of_leaves(tree)
     factor=float(2*n-2+3*admixes)/float(2*n-2)
