@@ -62,7 +62,7 @@ def main(args):
     parser.add_argument('--maxtemp', type=float, default=999.99, help='the max temp of the hottest chain')
     parser.add_argument('--temperature_list', type=str, nargs='+', default=[])
     parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
-    parser.add_argument('--max_admixes', type=int, default=-1, help='Maximum number of temperatures that are allowed. -1 denotes no maximum.')
+    parser.add_argument('--max_admixes', type=int, default=-1, help='Maximum number of admixture events that are allowed. -1 denotes no maximum.')
     parser.add_argument('--num_ind_snps', type=float, default=-1, help='for debugging as bootstrap stocahsticity is a problem')
 
     options=parser.parse_args(args)
