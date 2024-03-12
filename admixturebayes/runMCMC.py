@@ -62,7 +62,7 @@ def main(args):
     parser.add_argument('--maxtemp', type=float, default=999.99, help='the max temp of the hottest chain')
     parser.add_argument('--temperature_list', type=str, nargs='+', default=[])
     parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
-    parser.add_argument('--num_admixes', type=int, default=-1, help='the max temp of the hottest chain')
+    parser.add_argument('--num_admixes', type=int, default=-1, help='Maximum number of temperatures that are allowed. -1 denotes no maximum.')
     parser.add_argument('--num_ind_snps', type=float, default=-1, help='for debugging as bootstrap stocahsticity is a problem')
 
     options=parser.parse_args(args)
@@ -76,14 +76,13 @@ def main(args):
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
     if options.num_admixes < 0:
-        priortemperatures = linspace(1.0, 1.0, num=len(fullsetoftemps)).tolist()
+        priortemperatures = linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
     else:
         priortemperatures = linspace(1.0, 1.0, num=len(fullsetoftemps)).tolist()
 
     #print(len(fullsetoftemps))
     #print(len(priortemperatures))
     print("MC3 Temperatures: ", fullsetoftemps)
-    print(priortemperatures)
     temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"
     os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
     
