@@ -42,7 +42,7 @@ def prior(x, num_admixes, p=0.5):
 def no_admixes(num_admixes, p, admixes, hard_cutoff=20):
     if admixes > hard_cutoff:
         return -float('inf')
-    if num_admixes > -1 and num_admixes != admixes:
+    if num_admixes > -1 and num_admixes < admixes:
         return -float('inf')
     return geom.logpmf(admixes+1, 1.0-p)-geom.logcdf(hard_cutoff+1, 1.0-p)
 

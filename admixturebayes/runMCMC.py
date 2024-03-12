@@ -62,7 +62,7 @@ def main(args):
     parser.add_argument('--maxtemp', type=float, default=999.99, help='the max temp of the hottest chain')
     parser.add_argument('--temperature_list', type=str, nargs='+', default=[])
     parser.add_argument('--spacing', type=float, default=1.0, help='the max temp of the hottest chain')
-    parser.add_argument('--num_admixes', type=int, default=-1, help='the max temp of the hottest chain')
+    parser.add_argument('--max_admixes', type=int, default=-1, help='Maximum number of temperatures that are allowed. -1 denotes no maximum.')
     parser.add_argument('--num_ind_snps', type=float, default=-1, help='for debugging as bootstrap stocahsticity is a problem')
 
     options=parser.parse_args(args)
@@ -75,7 +75,7 @@ def main(args):
         fullsetoftemps = []
         for ivii in lines:
             fullsetoftemps.append(float(ivii))
-    if options.num_admixes < 0:
+    if options.max_admixes < 0:
         priortemperatures = linspace(1.0, 1.3, num=len(fullsetoftemps)).tolist()
     else:
         priortemperatures = linspace(1.0, 1.0, num=len(fullsetoftemps)).tolist()
@@ -83,7 +83,6 @@ def main(args):
     #print(len(fullsetoftemps))
     #print(len(priortemperatures))
     print("MC3 Temperatures: ", fullsetoftemps)
-    #print(priortemperatures)
     temporaryfoldername = (options.result_file).replace('.', '') + "_tempfilefolder"
     os.mkdir(os.getcwd() + os.sep + temporaryfoldername)
     
@@ -195,14 +194,14 @@ def main(args):
         starting_trees=construct_starting_trees_choices.get_starting_trees([os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt"],
                                         len(fullsetoftemps),
                                         adds=[os.getcwd() + os.sep  + temporaryfoldername + os.sep  + "temp_add.txt"],
-                                        nodes=reduced_nodes,num_admixes = options.num_admixes)
+                                        nodes=reduced_nodes,num_admixes = options.max_admixes)
     else:
-        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,len(fullsetoftemps), adds=[], nodes=reduced_nodes,num_admixes = options.num_admixes)
+        starting_trees=construct_starting_trees_choices.get_starting_trees(options.continue_samples,len(fullsetoftemps), adds=[], nodes=reduced_nodes,num_admixes = options.max_admixes)
 
     summary_verbose_scheme, summaries=get_summary_scheme(no_chains=len(fullsetoftemps))
 
     posterior = posterior_class(emp_cov=covariance[0], M=df, multiplier=covariance[1], nodes=reduced_nodes, 
-                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt", num_admixes = options.num_admixes)
+                                 varcovname=os.getcwd() +os.sep + temporaryfoldername + os.sep  + "variance_correction.txt", num_admixes = options.max_admixes)
 
     removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_starttree.txt")
     removefile(os.getcwd() + os.sep + temporaryfoldername + os.sep  +  "temp_start_tree.txt")
