@@ -44,17 +44,31 @@ admixes3Burn = admixes3[-(1:round(BurnInFraction*length(admixes3)))]
 #including those in the burn-in period)
 posteriormax = max(c(Post1, Post2, Post3))
 posteriormin =  min(c(Post1[-c(1:1000)], Post2[-c(1:1000)], Post3[-c(1:1000)]))
-plot(Post1, type = "l", col ="steelblue4", xlab = "", ylab = "log-Posterior", main = "Chain 1", ylim = c(posteriormin, posteriormax))
-plot(Post2, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 2", ylim = c(posteriormin, posteriormax))
-plot(Post3, type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 3", ylim = c(posteriormin, posteriormax))
 
-plot(Branches1, type = "l", col ="limegreen",  xlab = "", ylab = "Total Branch Length")
-plot(Branches2, type = "l", col ="limegreen",  xlab = "", ylab = "")
-plot(Branches3, type = "l", col ="limegreen",  xlab = "", ylab = "")
+branchmax = max(c(Branches1, Branches2, Branches3))
+branchmin =  min(c(Branches1[-c(1:1000)], Branches2[-c(1:1000)], Branches3[-c(1:1000)]))
 
-plot(admixes1, pch = 19, col ="orange", xlab = "Iteration", ylab = "Number of Admixture Events", cex = 0.48)
-plot(admixes2, pch = 19, col ="orange", xlab = "Iteration", ylab = "", cex = 0.48)
-plot(admixes3, pch = 19, col ="orange", xlab = "Iteration", ylab = "", cex = 0.48)
+admixmax = max(c(admixes1, admixes2, admixes3))
+admixmin =  min(c(admixes1[-c(1:1000)], admixes2[-c(1:1000)], admixes3[-c(1:1000)]))
+
+if (length(Post1) > 5000) {
+Thinningamount = round(seq(1, length(Post1), length.out = 5000))
+} else {
+Thinningamount = 1:length(Post1)
+}
+
+plot(Post1[Thinningamount], type = "l", col ="steelblue4", xlab = "", ylab = "log-Posterior", main = "Chain 1", ylim = c(posteriormin, posteriormax))
+plot(Post2[Thinningamount], type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 2", ylim = c(posteriormin, posteriormax))
+plot(Post3[Thinningamount], type = "l", col ="steelblue4", xlab = "", ylab = "", main = "Chain 3", ylim = c(posteriormin, posteriormax))
+
+plot(Branches1[Thinningamount], type = "l", col ="limegreen",  xlab = "", ylab = "Total Branch Length", ylim = c(branchmin, branchmax))
+plot(Branches2[Thinningamount], type = "l", col ="limegreen",  xlab = "", ylab = "", ylim = c(branchmin, branchmax))
+plot(Branches3[Thinningamount], type = "l", col ="limegreen",  xlab = "", ylab = "", ylim = c(branchmin, branchmax))
+
+plot(admixes1[Thinningamount], pch = 19, col ="orange", xlab = "Iteration", ylab = "Number of Admixture Events", cex = 0.48, ylim = c(admixmin, admixmax))
+plot(admixes2[Thinningamount], pch = 19, col ="orange", xlab = "Iteration", ylab = "", cex = 0.48, ylim = c(admixmin, admixmax))
+plot(admixes3[Thinningamount], pch = 19, col ="orange", xlab = "Iteration", ylab = "", cex = 0.48, ylim = c(admixmin, admixmax))
+
 
 #We reformat the plotting space for the Gelman-Rubin Plots
 par(mfrow=c(1,1))
