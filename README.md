@@ -25,7 +25,7 @@ https://pypi.org/project/pathos/
 
 https://pypi.org/project/graphviz/
 
-Furthermore, if you wish to use the given R script to evaluate convergence, then you need to also have R installed with the [coda](https://cran.r-project.org/web/packages/coda/index.html) package, which can be installed by running: 
+(Note: in recent versions of pandas, a warning about a deprecated feature can show up, although the function should remain unchanged. AdmixtureBayes was tested on pandas version 1.4.1). Furthermore, if you wish to use the given R script to evaluate convergence, then you need to also have R installed with the [coda](https://cran.r-project.org/web/packages/coda/index.html) package, which can be installed by running: 
 ```
 install.packages("coda")
 ```
