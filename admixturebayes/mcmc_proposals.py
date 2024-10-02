@@ -484,12 +484,12 @@ def get_admixture_proportion(x=None):
 def get_insertion_spot(x=None, length=1.0):
     if x is None:
         if length<1e-8:
-            warnings.warn('length of branch was too close to 0 - incorrect calculation follows')
+            #warnings.warn('length of branch was too close to 0 - incorrect calculation follows') Removed this warning on Oct 2 2024
             return random(), 1.0
         return random(), 1.0/length
     else:
         if length<1e-8:
-            warnings.warn('length of branch was too close to 0 - incorrect calculation follows')
+            #warnings.warn('length of branch was too close to 0 - incorrect calculation follows') Removed this warning on Oct 2 2024
             return 1.0
         return 1.0/length
     
